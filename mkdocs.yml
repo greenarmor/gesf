@@ -1,0 +1,99 @@
+site_name: GESF Documentation
+site_description: Green Engineering Standard Framework — Compliance-as-Code for GDPR, OWASP, NIST, and CIS
+site_url: https://greenarmor.github.io/gesf
+repo_url: https://github.com/greenarmor/gesf
+repo_name: greenarmor/gesf
+edit_uri: edit/master/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: green
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/greenarmor/gesf
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+  - User Guide:
+      - Initializing Your Project: user-guide/initializing.md
+      - Running an Audit: user-guide/running-an-audit.md
+      - Compliance Score: user-guide/compliance-score.md
+      - Generating Reports: user-guide/generating-reports.md
+      - External Scanners: user-guide/external-scanners.md
+      - Policy Packs: user-guide/policy-packs.md
+      - Complete Audit Workflow: user-guide/complete-workflow.md
+  - MCP Integration:
+      - Overview: mcp/overview.md
+      - Setup Guide: mcp/setup.md
+      - Tools Reference: mcp/tools-reference.md
+      - Using with Code Assistants: mcp/code-assistants.md
+  - CI/CD:
+      - GitHub Actions: cicd/github-actions.md
+      - Manual Setup: cicd/manual-setup.md
+  - Reference:
+      - Command Reference: reference/commands.md
+      - Project Structure: reference/project-structure.md
+      - Configuration: reference/configuration.md
+      - Audit Scanners: reference/audit-scanners.md
+      - GDPR Controls: reference/gdpr-controls.md
+      - Engineering Standards: reference/engineering-standards.md
+  - FAQ: faq.md
