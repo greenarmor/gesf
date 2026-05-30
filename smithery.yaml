@@ -1,0 +1,13 @@
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+# GESF MCP Server - Green Engineering Standard Framework
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({ command: 'node', args: ['packages/mcp-server/bundle/server.js'] })
+  exampleConfig: {}

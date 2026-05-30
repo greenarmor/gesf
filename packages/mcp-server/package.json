@@ -1,27 +1,65 @@
 {
   "name": "@greenarmor/ges-mcp-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
-  "description": "GESF MCP Server - AI Compliance Assistant",
+  "description": "GESF MCP Server - AI Compliance Assistant for GDPR, OWASP, NIST, CIS. Check compliance, generate policies, assess risks via MCP protocol.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "ges-mcp": "./dist/server.js"
+    "ges-mcp": "bundle/server.js"
   },
+  "files": [
+    "dist",
+    "bundle"
+  ],
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "build:bundle": "node scripts/build-bundle.mjs",
+    "build:all": "tsc && node scripts/build-bundle.mjs",
+    "clean": "rm -rf dist bundle tsconfig.tsbuildinfo",
+    "prepublishOnly": "npm run build:all",
     "test": "echo \"no tests yet\""
   },
   "dependencies": {
-    "@greenarmor/ges-core": "workspace:*",
-    "@greenarmor/ges-policy-engine": "workspace:*",
     "@greenarmor/ges-compliance-engine": "workspace:*",
-    "@greenarmor/ges-scoring-engine": "workspace:*",
-    "@greenarmor/ges-doc-generator": "workspace:*"
+    "@greenarmor/ges-core": "workspace:*",
+    "@greenarmor/ges-doc-generator": "workspace:*",
+    "@greenarmor/ges-policy-engine": "workspace:*",
+    "@greenarmor/ges-scoring-engine": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^6.0.0",
-    "@types/node": "^22.0.0"
-  }
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "gdpr",
+    "compliance",
+    "security",
+    "owasp",
+    "nist",
+    "cis",
+    "audit",
+    "privacy",
+    "data-protection",
+    "compliance-as-code",
+    "ai",
+    "llm",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greenarmor/gesf.git"
+  },
+  "homepage": "https://github.com/greenarmor/gesf"
 }

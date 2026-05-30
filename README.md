@@ -21,7 +21,14 @@ ges score
 
 GESF includes an MCP server that lets AI assistants (Claude, VS Code Copilot, Cursor, Crush, OpenCode, Windsurf) check compliance, list missing controls, and generate policies.
 
-### Quick Setup
+### One-Click Install
+
+| Client | Install |
+|--------|---------|
+| VS Code | [Install in VS Code](vscode:mcp/install?%7B%22name%22%3A%22gesf%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40greenarmor%2Fges-mcp-server%22%5D%7D) |
+| Smithery | `npx smithery add @greenarmor/ges-mcp-server` |
+
+### Quick Setup (CLI)
 
 ```bash
 ges mcp setup              # Interactive — pick your client
@@ -49,7 +56,7 @@ Add this to your MCP client config:
 }
 ```
 
-For VS Code, use `"servers"` instead of `"mcpServers"` and add `"type": "stdio"`.  
+For VS Code, use `"servers"` instead of `"mcpServers"` and add `"type": "stdio"`.
 For OpenCode/Crush, use `"mcp"` instead of `"mcpServers"` and add `"type": "stdio"`.
 
 ### Available Tools

@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-policy-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "GESF Policy Engine - Policy packs management and enforcement",
   "main": "./dist/index.js",
