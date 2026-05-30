@@ -12,9 +12,9 @@ Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and 
 
 ## What GESF Does NOT Do
 
-- It does not replace legal counsel for GDPR compliance
-- It does not automatically fix your code — it identifies issues and suggests fixes
-- It does not require a running server or database
+- It does not replace legal counsel for GDPR compliance.
+- It does not automatically fix your code — it identifies issues and suggests fixes.
+- It does not require a running server or database.
 
 ## Quick Start
 
