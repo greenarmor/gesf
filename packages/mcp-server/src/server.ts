@@ -8,16 +8,16 @@ import type { Control, ProjectType } from "@greenarmor/ges-core";
 
 export interface MCPRequest {
   jsonrpc: string;
-  id?: number;
+  id?: number | string | null;
   method: string;
   params?: Record<string, unknown>;
 }
 
 export interface MCPResponse {
   jsonrpc: string;
-  id?: number;
+  id?: number | string | null;
   result?: unknown;
-  error?: { code: number; message: string };
+  error?: { code: number; message: string; data?: unknown };
 }
 
 const TOOLS = [
@@ -25,7 +25,7 @@ const TOOLS = [
     name: "check_compliance",
     description: "Check GDPR compliance status for a project",
     inputSchema: {
-      type: "object",
+      type: "object" as const,
       properties: {
         project_type: { type: "string", description: "Project type" },
       },
@@ -35,10 +35,16 @@ const TOOLS = [
     name: "list_missing_controls",
     description: "Show missing compliance controls",
     inputSchema: {
-      type: "object",
+      type: "object" as const,
       properties: {
-        project_type: { type: "string", description: "Project type" },
-        framework: { type: "string", description: "Framework name (GDPR, OWASP, etc.)" },
+        project_type: {
+          type: "string",
+          description: "Project type",
+        },
+        framework: {
+          type: "string",
+          description: "Framework name (GDPR, OWASP, etc.)",
+        },
       },
     },
   },
@@ -46,7 +52,7 @@ const TOOLS = [
     name: "generate_retention_policy",
     description: "Generate a data retention policy template",
     inputSchema: {
-      type: "object",
+      type: "object" as const,
       properties: {
         project_name: { type: "string", description: "Project name" },
       },
@@ -56,7 +62,7 @@ const TOOLS = [
     name: "generate_incident_response",
     description: "Generate an incident response plan template",
     inputSchema: {
-      type: "object",
+      type: "object" as const,
       properties: {
         project_name: { type: "string", description: "Project name" },
       },
@@ -66,7 +72,7 @@ const TOOLS = [
     name: "generate_risk_assessment",
     description: "Generate a risk assessment template",
     inputSchema: {
-      type: "object",
+      type: "object" as const,
       properties: {
         project_name: { type: "string", description: "Project name" },
       },
@@ -76,7 +82,7 @@ const TOOLS = [
     name: "generate_dpa",
     description: "Generate a Data Processing Agreement template",
     inputSchema: {
-      type: "object",
+      type: "object" as const,
       properties: {
         project_name: { type: "string", description: "Project name" },
       },
@@ -84,7 +90,13 @@ const TOOLS = [
   },
 ];
 
-export function handleRequest(request: MCPRequest): MCPResponse {
+function send(message: MCPResponse): void {
+  process.stdout.write(JSON.stringify(message) + "\n");
+}
+
+export function handleRequest(request: MCPRequest): MCPResponse | null {
+  const isNotification = request.id === undefined || request.id === null;
+
   if (request.method === "initialize") {
     return {
       jsonrpc: "2.0",
@@ -97,6 +109,23 @@ export function handleRequest(request: MCPRequest): MCPResponse {
           version: "0.1.0",
         },
       },
+    };
+  }
+
+  if (request.method === "notifications/initialized") {
+    return null;
+  }
+
+  if (request.method === "notifications/cancelled") {
+    return null;
+  }
+
+  if (request.method === "ping") {
+    if (isNotification) return null;
+    return {
+      jsonrpc: "2.0",
+      id: request.id,
+      result: {},
     };
   }
 
@@ -118,20 +147,25 @@ export function handleRequest(request: MCPRequest): MCPResponse {
       case "check_compliance": {
         const projectType = (args.project_type || "saas") as ProjectType;
         const packs = getPacksForProjectType(projectType);
-        const controls = packs.flatMap(p => p.controls);
+        const controls = packs.flatMap((p) => p.controls);
         const score = generateScoreFile(controls, ["GDPR", "OWASP"]);
         resultText = formatScoreOutput(score);
         break;
       }
       case "list_missing_controls": {
         const framework = args.framework || "GDPR";
-        const allControls = getAllPacks().flatMap(p => p.controls);
+        const allControls = getAllPacks().flatMap((p) => p.controls);
         const missing = allControls.filter(
-          c => c.framework === framework && c.status !== "pass",
+          (c) => c.framework === framework && c.status !== "pass",
         );
-        resultText = missing.length > 0
-          ? missing.map(c => `- [${c.severity.toUpperCase()}] ${c.id}: ${c.name}`).join("\n")
-          : "All controls are passing.";
+        resultText =
+          missing.length > 0
+            ? missing
+                .map(
+                  (c) => `- [${c.severity.toUpperCase()}] ${c.id}: ${c.name}`,
+                )
+                .join("\n")
+            : "All controls are passing.";
         break;
       }
       case "generate_retention_policy": {
@@ -171,6 +205,10 @@ export function handleRequest(request: MCPRequest): MCPResponse {
     };
   }
 
+  if (isNotification) {
+    return null;
+  }
+
   return {
     jsonrpc: "2.0",
     id: request.id,
@@ -180,16 +218,40 @@ export function handleRequest(request: MCPRequest): MCPResponse {
 
 const rl = readline.createInterface({ input: process.stdin });
 
-let buffer = "";
-
 rl.on("line", (line) => {
-  buffer += line + "\n";
+  const trimmed = line.trim();
+  if (!trimmed) return;
+
+  let parsed: MCPRequest;
   try {
-    const request = JSON.parse(buffer.trim());
-    buffer = "";
-    const response = handleRequest(request);
-    process.stdout.write(JSON.stringify(response) + "\n");
+    parsed = JSON.parse(trimmed);
   } catch {
-    // incomplete JSON, keep buffering
+    send({
+      jsonrpc: "2.0",
+      id: null,
+      error: { code: -32700, message: "Parse error" },
+    });
+    return;
   }
+
+  try {
+    const response = handleRequest(parsed);
+    if (response !== null) {
+      send(response);
+    }
+  } catch (err) {
+    send({
+      jsonrpc: "2.0",
+      id: parsed.id ?? null,
+      error: {
+        code: -32603,
+        message: "Internal error",
+        data: err instanceof Error ? err.message : String(err),
+      },
+    });
+  }
+});
+
+rl.on("close", () => {
+  process.exit(0);
 });

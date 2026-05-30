@@ -17,6 +17,60 @@ ges audit
 ges score
 ```
 
+## MCP AI Assistant
+
+GESF includes an MCP server that lets AI assistants (Claude, VS Code Copilot, Cursor, Crush, OpenCode, Windsurf) check compliance, list missing controls, and generate policies.
+
+### Quick Setup
+
+```bash
+ges mcp setup              # Interactive — pick your client
+ges mcp setup claude       # Claude Desktop
+ges mcp setup vscode       # VS Code Copilot
+ges mcp setup cursor       # Cursor
+ges mcp setup opencode     # OpenCode
+ges mcp setup crush        # Crush
+ges mcp setup windsurf     # Windsurf
+ges mcp setup all          # Configure all clients
+```
+
+### Manual Configuration
+
+Add this to your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "gesf": {
+      "command": "npx",
+      "args": ["-y", "@greenarmor/ges-mcp-server"]
+    }
+  }
+}
+```
+
+For VS Code, use `"servers"` instead of `"mcpServers"` and add `"type": "stdio"`.  
+For OpenCode/Crush, use `"mcp"` instead of `"mcpServers"`.
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `check_compliance` | Check GDPR compliance status for a project |
+| `list_missing_controls` | Show missing compliance controls |
+| `generate_retention_policy` | Generate a data retention policy template |
+| `generate_incident_response` | Generate an incident response plan template |
+| `generate_risk_assessment` | Generate a risk assessment template |
+| `generate_dpa` | Generate a Data Processing Agreement template |
+
+### Example Prompts
+
+- "Are we GDPR compliant?"
+- "Show missing controls for GDPR"
+- "Generate a retention policy for MyApp"
+- "Generate an incident response plan"
+- "Generate a risk assessment"
+
 ## Architecture
 
 ```
