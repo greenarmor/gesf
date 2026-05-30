@@ -1,0 +1,46 @@
+{
+  "name": "@greenarmor/ges-mcp-server",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "GESF MCP Server - AI Compliance Assistant for GDPR, OWASP, NIST, CIS. Check compliance, generate policies, assess risks via MCP protocol.",
+  "bin": {
+    "ges-mcp": "bundle/server.js"
+  },
+  "files": [
+    "bundle",
+    "dist"
+  ],
+  "scripts": {
+    "start": "node bundle/server.js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "gdpr",
+    "compliance",
+    "security",
+    "owasp",
+    "nist",
+    "cis",
+    "audit",
+    "privacy",
+    "data-protection",
+    "compliance-as-code",
+    "ai",
+    "llm",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greenarmor/gesf.git"
+  },
+  "homepage": "https://github.com/greenarmor/gesf"
+}
