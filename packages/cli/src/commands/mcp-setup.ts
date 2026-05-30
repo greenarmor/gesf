@@ -122,7 +122,7 @@ function buildServerEntry(client: ClientConfig): Record<string, unknown> {
 
   const entry: Record<string, unknown> = { command, args };
 
-  if (client.format === "servers") {
+  if (client.format === "servers" || client.format === "mcp") {
     entry.type = "stdio";
   }
 
