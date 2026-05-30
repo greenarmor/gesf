@@ -1,0 +1,22 @@
+{
+  "name": "gesf",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Green Engineering Standard Framework - Compliance-as-Code",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "clean": "pnpm -r run clean && find packages -name '*.tsbuildinfo' -delete",
+    "lint": "eslint 'packages/*/src/**/*.ts'",
+    "test": "pnpm -r run test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^6.0.0",
+    "eslint": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "packageManager": "pnpm@11.4.0"
+}

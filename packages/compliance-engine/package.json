@@ -1,0 +1,26 @@
+{
+  "name": "@greenarmor/ges-compliance-engine",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "GESF Compliance Engine - GDPR controls, evaluation, and compliance checking",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "echo \"no tests yet\""
+  },
+  "dependencies": {
+    "@greenarmor/ges-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

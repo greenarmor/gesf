@@ -1,0 +1,27 @@
+{
+  "name": "@greenarmor/ges-mcp-server",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "GESF MCP Server - AI Compliance Assistant",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "ges-mcp": "./dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "echo \"no tests yet\""
+  },
+  "dependencies": {
+    "@greenarmor/ges-core": "workspace:*",
+    "@greenarmor/ges-policy-engine": "workspace:*",
+    "@greenarmor/ges-compliance-engine": "workspace:*",
+    "@greenarmor/ges-scoring-engine": "workspace:*",
+    "@greenarmor/ges-doc-generator": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

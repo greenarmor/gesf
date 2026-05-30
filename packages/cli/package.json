@@ -1,0 +1,48 @@
+{
+  "name": "@greenarmor/ges",
+  "version": "0.1.0",
+  "description": "Green Engineering Standard Framework - Compliance-as-Code CLI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "ges": "./dist/cli.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepublishOnly": "pnpm -r run build",
+    "test": "echo \"no tests yet\""
+  },
+  "dependencies": {
+    "@greenarmor/ges-audit-engine": "workspace:*",
+    "@greenarmor/ges-cicd-generator": "workspace:*",
+    "@greenarmor/ges-compliance-engine": "workspace:*",
+    "@greenarmor/ges-core": "workspace:*",
+    "@greenarmor/ges-doc-generator": "workspace:*",
+    "@greenarmor/ges-policy-engine": "workspace:*",
+    "@greenarmor/ges-report-generator": "workspace:*",
+    "@greenarmor/ges-rules-engine": "workspace:*",
+    "@greenarmor/ges-scanner-integration": "workspace:*",
+    "@greenarmor/ges-scoring-engine": "workspace:*",
+    "@inquirer/prompts": "^8.0.0",
+    "commander": "^13.0.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": ["compliance", "gdpr", "security", "audit", "owasp", "nist", "cis", "devsecops", "compliance-as-code"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/greenarmor/gesf"
+  },
+  "homepage": "https://github.com/greenarmor/gesf"
+}
