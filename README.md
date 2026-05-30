@@ -50,7 +50,7 @@ Add this to your MCP client config:
 ```
 
 For VS Code, use `"servers"` instead of `"mcpServers"` and add `"type": "stdio"`.  
-For OpenCode/Crush, use `"mcp"` instead of `"mcpServers"`.
+For OpenCode/Crush, use `"mcp"` instead of `"mcpServers"` and add `"type": "stdio"`.
 
 ### Available Tools
 

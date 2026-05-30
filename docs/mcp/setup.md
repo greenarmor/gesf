@@ -130,13 +130,16 @@ If automatic setup doesn't work or you need custom configuration, follow the ins
   "mcp": {
     "gesf": {
       "command": "npx",
-      "args": ["-y", "@greenarmor/ges-mcp-server"]
+      "args": ["-y", "@greenarmor/ges-mcp-server"],
+      "type": "stdio"
     }
   }
 }
 ```
 
 **Reload:** Restart OpenCode.
+
+**Verify:** Run `opencode` and check that GESF tools appear when prompting the AI.
 
 ---
 
@@ -151,7 +154,8 @@ If automatic setup doesn't work or you need custom configuration, follow the ins
   "mcp": {
     "gesf": {
       "command": "npx",
-      "args": ["-y", "@greenarmor/ges-mcp-server"]
+      "args": ["-y", "@greenarmor/ges-mcp-server"],
+      "type": "stdio"
     }
   }
 }
@@ -162,6 +166,8 @@ If automatic setup doesn't work or you need custom configuration, follow the ins
     Crush stores all configuration (providers, models, MCP servers) in a single `crush.json`. Only add/modify the `mcp.gesf` key — **do not overwrite** the rest of the file.
 
 **Reload:** Restart Crush.
+
+**Verify:** Run `crush_info` to confirm the GESF MCP server is connected, or ask any compliance question in a session.
 
 ---
 

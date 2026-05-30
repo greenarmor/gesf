@@ -160,7 +160,8 @@ If the file already exists, merge the `gesf` entry into the existing `mcpServers
   "mcp": {
     "gesf": {
       "command": "npx",
-      "args": ["-y", "@greenarmor/ges-mcp-server"]
+      "args": ["-y", "@greenarmor/ges-mcp-server"],
+      "type": "stdio"
     }
   }
 }
@@ -187,17 +188,18 @@ Global: `~/.local/share/crush/crush.json`
   "mcp": {
     "gesf": {
       "command": "npx",
-      "args": ["-y", "@greenarmor/ges-mcp-server"]
+      "args": ["-y", "@greenarmor/ges-mcp-server"],
+      "type": "stdio"
     }
   }
 }
 ```
 
-**Important:** Crush stores all configuration (providers, models, MCP servers) in a single `crush.json` file. Only add or modify the `mcp.gesf` entry — do not overwrite the rest of the file.
+**Important:** Crush stores all configuration (providers, models, MCP servers) in a single `crush.json` file. Only add or modify the `mcp.gesf` entry — do not overwrite the rest of the file. The `"type": "stdio"` field is required by Crush's MCP format.
 
 **Reload:** Restart Crush.
 
-**Verify:** Check `crush_info` or look for GESF tools in the available tools list.
+**Verify:** Run `crush_info` to confirm the GESF MCP server is connected, or ask any compliance question in a session.
 
 ---
 
@@ -323,6 +325,6 @@ Expected: JSON responses for `initialize`, `tools/list`, and `ping`. No output f
 | Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` | `mcpServers` | No | Global |
 | VS Code | `.vscode/mcp.json` | `servers` | Yes (`"type": "stdio"`) | Project |
 | Cursor | `.cursor/mcp.json` | `mcpServers` | No | Project |
-| OpenCode | `opencode.json` | `mcp` | No | Project or Global |
-| Crush | `~/.local/share/crush/crush.json` | `mcp` | No | Global |
+| OpenCode | `opencode.json` | `mcp` | Yes (`"type": "stdio"`) | Project or Global |
+| Crush | `~/.local/share/crush/crush.json` | `mcp` | Yes (`"type": "stdio"`) | Global |
 | Windsurf | `.windsurf/mcp.json` | `mcpServers` | No | Project |

@@ -141,7 +141,7 @@ GESF tools are available in the AI session. Ask compliance questions naturally.
 ges mcp setup crush
 ```
 
-Modifies `~/.local/share/crush/crush.json` (global). Then restart Crush.
+Modifies `~/.local/share/crush/crush.json` (global). Adds the `mcp.gesf` entry with `"type": "stdio"`. Then restart Crush.
 
 ### Usage
 
@@ -151,6 +151,7 @@ GESF tools appear in the available tools list. Use them in any Crush session.
 
 - Check `crush_info` to verify the MCP server is connected
 - The config is global — GESF is available in all Crush sessions
+- The CLI automatically adds `"type": "stdio"` required by Crush's MCP format
 
 ---
 
