@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Green Engineering Standard Framework - Compliance-as-Code CLI",
   "type": "module",
   "main": "./dist/index.js",
@@ -8,7 +8,9 @@
   "bin": {
     "ges": "./dist/cli.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
@@ -39,7 +41,17 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "keywords": ["compliance", "gdpr", "security", "audit", "owasp", "nist", "cis", "devsecops", "compliance-as-code"],
+  "keywords": [
+    "compliance",
+    "gdpr",
+    "security",
+    "audit",
+    "owasp",
+    "nist",
+    "cis",
+    "devsecops",
+    "compliance-as-code"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
