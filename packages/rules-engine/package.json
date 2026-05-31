@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-rules-engine",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "description": "GESF Rules Engine - Standards enforcement and validation rules",
   "main": "./dist/index.js",
