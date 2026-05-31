@@ -5,6 +5,7 @@ import { getAllPacks } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile, formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding } from "@greenarmor/ges-audit-engine";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as path from "node:path";
 
 export const auditCommand = new Command("audit")
@@ -78,6 +79,8 @@ export const auditCommand = new Command("audit")
     if (options.ci && critical.length > 0) {
       process.exit(1);
     }
+
+    await showNextStepsMenu("audit");
   });
 
 function updateControlsFromFindings(controls: Control[], findings: Finding[]): Control[] {

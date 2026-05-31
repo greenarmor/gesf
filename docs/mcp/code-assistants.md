@@ -69,6 +69,10 @@ ges mcp setup vscode
 
 This creates `.vscode/mcp.json` in your project. Then reload the VS Code window.
 
+!!! danger "Invalid config causes startup errors"
+
+    Do **not** add `cwd`, `envFile`, `sandboxEnabled`, `dev`, or `inputs` to `.vscode/mcp.json`. These fields are not supported in MCP configs and will cause `CodeExpectedError: Variable 'cwd' must be defined` on startup. If you see this error, re-run `ges mcp setup vscode` to regenerate a clean config.
+
 ### Usage
 
 1. Open Copilot Chat

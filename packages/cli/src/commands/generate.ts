@@ -3,6 +3,7 @@ import { ensureGESInitialized, readJsonFile, writeFileSync } from "../utils/proj
 import type { ProjectConfig } from "@greenarmor/ges-core";
 import { generateComplianceDocs, generateSecurityDocs } from "@greenarmor/ges-doc-generator";
 import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as path from "node:path";
 
 export const generateCommand = new Command("generate")
@@ -52,4 +53,6 @@ export const generateCommand = new Command("generate")
     }
 
     console.log("");
+
+    await showNextStepsMenu("generate");
   });

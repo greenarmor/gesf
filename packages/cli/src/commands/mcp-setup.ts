@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import * as url from "node:url";
 import { select } from "@inquirer/prompts";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const SERVER_NAME = "gesf";
@@ -210,6 +211,8 @@ async function setupClient(clientId: ClientId): Promise<void> {
 
   printSetupInstructions(client, configPath);
   console.log(`  Status: configured\n`);
+
+  await showNextStepsMenu("mcp-setup");
 }
 
 async function setupAll(): Promise<void> {
@@ -225,6 +228,8 @@ async function setupAll(): Promise<void> {
   }
 
   console.log("  Done. Restart your MCP clients to connect.\n");
+
+  await showNextStepsMenu("mcp-setup");
 }
 
 async function setupInteractive(): Promise<void> {
@@ -241,6 +246,8 @@ async function setupInteractive(): Promise<void> {
   } else {
     await setupClient(clientId as ClientId);
   }
+
+  await showNextStepsMenu("mcp-setup");
 }
 
 export const mcpSetupCommand = new Command("setup")

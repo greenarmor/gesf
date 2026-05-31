@@ -111,6 +111,22 @@ Project-level: `.vscode/mcp.json` in your project root.
 
 If the file already exists, merge the `gesf` entry into the existing `servers` object.
 
+!!! danger "Do not use `${input:...}` variables in `mcp.json`"
+
+    VS Code's `mcp.json` does **not** support `${input:...}` variable substitution or `"inputs"` arrays — those only work in `launch.json` and `tasks.json`. Adding them causes this error on startup:
+
+    > `CodeExpectedError: Variable 'cwd' must be defined in an 'inputs' section of the debug or task configuration.`
+
+    **Do NOT add these fields to `.vscode/mcp.json`:**
+
+    - `"cwd"` — MCP servers inherit the workspace directory automatically
+    - `"envFile"` — not a valid MCP config field
+    - `"sandboxEnabled"` — not a standard MCP field
+    - `"dev"` — not a standard MCP field
+    - `"inputs"` array — only valid in `launch.json`/`tasks.json`
+
+    If you encounter this error, remove the invalid fields or re-run `ges mcp setup vscode` to regenerate a clean config.
+
 **Reload:** `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux) → `Developer: Reload Window`.
 
 **Verify:** Open Copilot Chat, switch to Agent mode, click the tools icon — `gesf` should appear in the available tools list.
@@ -315,6 +331,7 @@ Expected: JSON responses for `initialize`, `tools/list`, and `ping`. No output f
 | `Cannot find module` | Package not installed | Run `npm install -g @greenarmor/ges-mcp-server` or use `npx -y` |
 | Multiple `gesf` entries | Re-ran setup | Manually edit config to keep only one `gesf` entry |
 | Crush loses other config | Config overwritten | Only edit the `mcp.gesf` key, do not replace the entire file |
+| VS Code: `CodeExpectedError: Variable 'cwd' must be defined` | Invalid `${input:...}` variables or `inputs` section in `mcp.json` | Remove `cwd`, `envFile`, `sandboxEnabled`, `dev` fields and `inputs` section; or re-run `ges mcp setup vscode` to regenerate clean config |
 
 ---
 

@@ -4,6 +4,7 @@ import type { ProjectConfig, ScoreFile, ReportOptions } from "@greenarmor/ges-co
 import { getAllPacks } from "@greenarmor/ges-policy-engine";
 import { generateMarkdownReport, generateHtmlReport } from "@greenarmor/ges-report-generator";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as path from "node:path";
 
 export const reportCommand = new Command("report")
@@ -59,4 +60,6 @@ export const reportCommand = new Command("report")
       console.log("  Note: PDF generation requires pandoc:");
       console.log(`    pandoc ${outputPath} -o ${outputPath.replace(".md", ".pdf")}\n`);
     }
+
+    await showNextStepsMenu("report");
   });

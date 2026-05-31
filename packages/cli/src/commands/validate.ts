@@ -3,6 +3,7 @@ import { ensureGESInitialized, readJsonFile } from "../utils/project.js";
 import type { Control, ProjectConfig } from "@greenarmor/ges-core";
 import { ProjectConfigSchema } from "@greenarmor/ges-core";
 import { GES_DIR } from "@greenarmor/ges-core";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -63,4 +64,6 @@ export const validateCommand = new Command("validate")
     console.log(hasErrors ? "\n  Validation failed.\n" : "\n  All validations passed.\n");
 
     if (hasErrors) process.exit(1);
+
+    await showNextStepsMenu("validate");
   });

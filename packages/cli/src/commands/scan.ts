@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { ensureGESInitialized } from "../utils/project.js";
 import { runAllScans, formatScanResults } from "@greenarmor/ges-scanner-integration";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 
 export const scanCommand = new Command("scan")
   .description("Run security scans")
@@ -19,4 +20,6 @@ export const scanCommand = new Command("scan")
         process.exit(1);
       }
     }
+
+    await showNextStepsMenu("scan");
   });

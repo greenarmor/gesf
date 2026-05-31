@@ -27,6 +27,7 @@ import {
 } from "@greenarmor/ges-doc-generator";
 import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
 import { writeFileSync } from "../utils/project.js";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -147,8 +148,10 @@ export const initCommand = new Command("init")
     console.log("  ✓ Control packs installed:", packs.map(p => p.id).join(", "));
     console.log("  ✓ GitHub Actions workflows generated");
     console.log(`\n  GESF initialized for "${projectName}" (${projectType})`);
-    console.log("\n  Next steps:");
+    console.log("  Next steps:");
     console.log("    1. Review generated compliance documents");
     console.log("    2. Run 'ges audit' to evaluate your project");
     console.log("    3. Run 'ges score' to see your compliance score\n");
+
+    await showNextStepsMenu("init");
   });

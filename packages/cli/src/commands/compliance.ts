@@ -4,6 +4,7 @@ import type { Control, ProjectConfig } from "@greenarmor/ges-core";
 import { getPacksForProjectType } from "@greenarmor/ges-policy-engine";
 import { formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import type { ScoreFile } from "@greenarmor/ges-core";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -35,4 +36,6 @@ export const complianceCommand = new Command("compliance")
     }
 
     console.log("");
+
+    await showNextStepsMenu("compliance");
   });

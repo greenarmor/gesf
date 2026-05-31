@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { ensureGESInitialized, readJsonFile, writeJsonFile } from "../utils/project.js";
 import type { ProjectConfig, ScoreFile } from "@greenarmor/ges-core";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as path from "node:path";
 
 export const scoreCommand = new Command("score")
@@ -13,6 +14,7 @@ export const scoreCommand = new Command("score")
 
     if (!score || !score.frameworks || Object.keys(score.frameworks).length === 0) {
       console.log("\n  No compliance score available. Run 'ges audit' first.\n");
+      await showNextStepsMenu("score");
       return;
     }
 
@@ -32,4 +34,6 @@ export const scoreCommand = new Command("score")
       lines.push("");
       console.log(lines.join("\n"));
     }
+
+    await showNextStepsMenu("score");
   });

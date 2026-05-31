@@ -1,0 +1,154 @@
+[
+  {
+    "id": "OWASP-ASVS-001",
+    "name": "Input Validation",
+    "description": "Verify that all input data is validated, filtered, or sanitized.",
+    "category": "validation",
+    "framework": "OWASP",
+    "status": "not-implemented",
+    "severity": "critical",
+    "implementation_guidance": "Validate all inputs on the server side. Use allowlists over denylists. Implement schema validation (Zod, Joi).",
+    "checks": [
+      {
+        "id": "OWASP-ASVS-001-C1",
+        "description": "Server-side input validation implemented",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-001-C2",
+        "description": "Schema validation library in use",
+        "status": "not-implemented"
+      }
+    ]
+  },
+  {
+    "id": "OWASP-ASVS-002",
+    "name": "Output Encoding",
+    "description": "Verify that output encoding prevents XSS and injection attacks.",
+    "category": "validation",
+    "framework": "OWASP",
+    "status": "not-implemented",
+    "severity": "critical",
+    "implementation_guidance": "Encode output appropriate to context (HTML, JavaScript, URL, CSS). Use framework-provided escaping.",
+    "checks": [
+      {
+        "id": "OWASP-ASVS-002-C1",
+        "description": "Output encoding implemented",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-002-C2",
+        "description": "Content-Security-Policy headers configured",
+        "status": "not-implemented"
+      }
+    ]
+  },
+  {
+    "id": "OWASP-ASVS-003",
+    "name": "Authentication Security",
+    "description": "Verify that authentication uses strong mechanisms.",
+    "category": "authentication",
+    "framework": "OWASP",
+    "status": "not-implemented",
+    "severity": "critical",
+    "implementation_guidance": "Implement MFA. Use Argon2id for hashing. Implement account lockout. Use rate limiting.",
+    "checks": [
+      {
+        "id": "OWASP-ASVS-003-C1",
+        "description": "MFA implemented",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-003-C2",
+        "description": "Secure password hashing (Argon2id)",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-003-C3",
+        "description": "Account lockout implemented",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-003-C4",
+        "description": "Rate limiting on authentication endpoints",
+        "status": "not-implemented"
+      }
+    ]
+  },
+  {
+    "id": "OWASP-ASVS-004",
+    "name": "Access Control",
+    "description": "Verify that access controls enforce least privilege and deny by default.",
+    "category": "authorization",
+    "framework": "OWASP",
+    "status": "not-implemented",
+    "severity": "critical",
+    "implementation_guidance": "Implement RBAC. Enforce deny-by-default. Validate authorization on every request.",
+    "checks": [
+      {
+        "id": "OWASP-ASVS-004-C1",
+        "description": "RBAC implemented",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-004-C2",
+        "description": "Deny-by-default enforced",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-004-C3",
+        "description": "Authorization checked on every request",
+        "status": "not-implemented"
+      }
+    ]
+  },
+  {
+    "id": "OWASP-ASVS-005",
+    "name": "Secrets Management",
+    "description": "Verify that secrets are properly managed and never stored in source code.",
+    "category": "secrets",
+    "framework": "OWASP",
+    "status": "not-implemented",
+    "severity": "critical",
+    "implementation_guidance": "Use vault or secret management. Never commit secrets. Use environment variables. Rotate secrets regularly.",
+    "checks": [
+      {
+        "id": "OWASP-ASVS-005-C1",
+        "description": "No secrets in source code",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-005-C2",
+        "description": "Secret management solution in use",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-005-C3",
+        "description": "Secret rotation policy defined",
+        "status": "not-implemented"
+      }
+    ]
+  },
+  {
+    "id": "OWASP-ASVS-006",
+    "name": "Secure Communications",
+    "description": "Verify that all communications use TLS 1.2+.",
+    "category": "encryption",
+    "framework": "OWASP",
+    "status": "not-implemented",
+    "severity": "critical",
+    "implementation_guidance": "Enforce TLS 1.2 minimum. Configure HSTS. Disable insecure protocols.",
+    "checks": [
+      {
+        "id": "OWASP-ASVS-006-C1",
+        "description": "TLS 1.2+ enforced",
+        "status": "not-implemented"
+      },
+      {
+        "id": "OWASP-ASVS-006-C2",
+        "description": "HSTS configured",
+        "status": "not-implemented"
+      }
+    ]
+  }
+]

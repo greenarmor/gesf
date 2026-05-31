@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { findProjectRoot, readJsonFile } from "../utils/project.js";
 import type { ProjectConfig } from "@greenarmor/ges-core";
 import { GESF_VERSION, GES_DIR } from "@greenarmor/ges-core";
+import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -66,4 +67,6 @@ export const doctorCommand = new Command("doctor")
     }
 
     console.log("");
+
+    await showNextStepsMenu("doctor");
   });
