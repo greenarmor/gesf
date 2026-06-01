@@ -264,7 +264,7 @@ This security policy is maintained alongside the codebase. Significant policy ch
 
 ## Contact
 
-- **Security issues:** security@greenarmor.dev
+- **Security issues:** security@coremates.dev
 - **General questions:** GitHub Discussions or Issues
 - **Maintainer:** [@greenarmor](https://github.com/greenarmor)
 
