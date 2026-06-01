@@ -21,7 +21,7 @@ GESF is currently in pre-1.0 active development. Breaking changes may occur betw
 
 Report security vulnerabilities to:
 
-- **Email:** security@greenarmor.dev
+- **Email:** security@coremates.dev
 - **GitHub Security Advisories:** [github.com/greenarmor/gesf/security/advisories/new](https://github.com/greenarmor/gesf/security/advisories/new)
 
 ### What to Include
