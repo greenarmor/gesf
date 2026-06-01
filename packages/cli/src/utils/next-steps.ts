@@ -1,4 +1,4 @@
-import { select } from "@inquirer/prompts";
+import { select } from "./prompts.js";
 import { GESF_VERSION } from "@greenarmor/ges-core";
 
 export interface NextStep {

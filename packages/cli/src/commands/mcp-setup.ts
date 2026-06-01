@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as url from "node:url";
-import { select } from "@inquirer/prompts";
+import { select } from "../utils/prompts.js";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));

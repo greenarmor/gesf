@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { input, select, checkbox } from "@inquirer/prompts";
+import { input, select, checkbox } from "../utils/prompts.js";
 import {
   PROJECT_TYPES,
   FRAMEWORKS,

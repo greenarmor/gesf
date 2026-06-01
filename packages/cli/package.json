@@ -29,12 +29,9 @@
     "@greenarmor/ges-scanner-integration": "workspace:*",
     "@greenarmor/ges-scoring-engine": "workspace:*",
     "@greenarmor/ges-mcp-server": "workspace:*",
-    "@inquirer/prompts": "^8.0.0",
-    "commander": "^13.0.0",
-    "js-yaml": "^4.1.0"
+    "commander": "^13.0.0"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.0",
     "@types/node": "^22.0.0",
     "typescript": "^6.0.0"
   },
