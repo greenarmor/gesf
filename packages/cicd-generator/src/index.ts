@@ -145,7 +145,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ${"fetch"}-depth: 0
+          fetch-depth: 0
 
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2

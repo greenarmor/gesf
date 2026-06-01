@@ -106,7 +106,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
         capabilities: { tools: {} },
         serverInfo: {
           name: "gesf-mcp-server",
-          version: "0.2.0",
+          version: "0.3.3",
         },
       },
     };
