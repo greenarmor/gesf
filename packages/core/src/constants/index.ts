@@ -1,6 +1,15 @@
 import type { ProjectType, FrameworkName } from "../types/index.js";
 
-export const GESF_VERSION = "0.3.3";
+import { createRequire } from "node:module";
+import * as url from "node:url";
+import * as path from "node:path";
+
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+const pkg = require("../../package.json");
+
+export const GESF_VERSION: string = pkg.version;
 
 export const PROJECT_TYPES: { value: ProjectType; label: string }[] = [
   { value: "saas", label: "SaaS" },

@@ -5,6 +5,7 @@ import { getAllPacks, getPacksForProjectType } from "@greenarmor/ges-policy-engi
 import { createGDPRControls } from "@greenarmor/ges-compliance-engine";
 import { generateScoreFile, formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import type { Control, ProjectType } from "@greenarmor/ges-core";
+import { GESF_VERSION } from "@greenarmor/ges-core";
 
 export interface MCPRequest {
   jsonrpc: string;
@@ -106,7 +107,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
         capabilities: { tools: {} },
         serverInfo: {
           name: "gesf-mcp-server",
-          version: "0.3.3",
+          version: GESF_VERSION,
         },
       },
     };

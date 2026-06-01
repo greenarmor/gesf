@@ -8,13 +8,18 @@ function createRL(): readline.Interface {
   return readline.createInterface({ input: process.stdin, output: process.stdout });
 }
 
-type InquirerModule = typeof import("@inquirer/prompts") | null;
-let cachedInquirer: InquirerModule | undefined;
+interface InquirerModule {
+  input(options: { message: string; default?: string }): Promise<string>;
+  select<T>(options: { message: string; choices: { name: string; value: T }[] }): Promise<T>;
+  checkbox<T>(options: { message: string; choices: { name: string; value: T; checked?: boolean }[] }): Promise<T[]>;
+}
+let cachedInquirer: InquirerModule | null | undefined;
 
-async function getInquirer(): Promise<InquirerModule> {
+async function getInquirer(): Promise<InquirerModule | null> {
   if (cachedInquirer !== undefined) return cachedInquirer;
   try {
-    cachedInquirer = await import("@inquirer/prompts");
+    const mod: InquirerModule = await import(String("@inquirer/prompts"));
+    cachedInquirer = mod;
   } catch {
     cachedInquirer = null;
   }
