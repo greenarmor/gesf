@@ -1,7 +1,7 @@
 import { Command } from "commander";
-import { ensureGESInitialized, readJsonFile, writeJsonFile } from "../utils/project.js";
+import { ensureGESInitialized, readJsonFile } from "../utils/project.js";
 import type { ScoreFile } from "@greenarmor/ges-core";
-import { generateBadgeSvg, injectBadgeIntoReadme, computeGrade } from "@greenarmor/ges-scoring-engine";
+import { generateBadgeSvg, injectBadgeIntoReadme, computeGrade, generateScoreExplainer } from "@greenarmor/ges-scoring-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -27,6 +27,8 @@ export const badgeCommand = new Command("badge")
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, svg);
 
+    const explainer = generateScoreExplainer(score);
+
     console.log(`\n  Badge generated: ${options.output}`);
     console.log(`  Score: ${score.overall}% (${score.overall_grade ?? computeGrade(score.overall)})`);
 
@@ -35,7 +37,7 @@ export const badgeCommand = new Command("badge")
       if (fs.existsSync(readmePath)) {
         const readmeContent = fs.readFileSync(readmePath, "utf-8");
         const relativeBadgePath = path.relative(path.dirname(readmePath), outputPath);
-        const updated = injectBadgeIntoReadme(readmeContent, relativeBadgePath);
+        const updated = injectBadgeIntoReadme(readmeContent, relativeBadgePath, explainer);
         fs.writeFileSync(readmePath, updated);
         console.log(`  Badge injected into ${options.readme}`);
       } else {

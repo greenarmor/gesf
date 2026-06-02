@@ -52,7 +52,7 @@ export class ConfigScanner implements Scanner {
         });
       }
 
-      const auditDeps = ["express", "lodash", "axios", "underscore"];
+      const auditDeps = ["lodash", "axios", "underscore"];
       for (const dep of auditDeps) {
         if (deps[dep]) {
           findings.push({

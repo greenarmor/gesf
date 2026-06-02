@@ -32,6 +32,8 @@ export function generateMarkdownReport(
     sections.push(generateSecuritySection(controls, findings));
   }
 
+  sections.push(generateRecommendationsSection(score, controls, findings));
+
   return sections.join("\n\n");
 }
 
@@ -169,6 +171,78 @@ function generateSecuritySection(controls: Control[], findings?: Finding[]): str
     for (const f of findings.slice(0, 20)) {
       lines.push(`- [${f.severity.toUpperCase()}] ${f.title} (${f.file})`);
     }
+  }
+
+  return lines.join("\n");
+}
+
+function generateRecommendationsSection(score: ScoreFile, controls: Control[], findings?: Finding[]): string {
+  const lines = ["## Compliance Recommendations\n"];
+
+  const failedControls = controls.filter(c => c.status === "fail");
+  const criticalFails = failedControls.filter(c => c.severity === "critical");
+  const highFails = failedControls.filter(c => c.severity === "high");
+  const notImplemented = controls.filter(c => c.status === "not-implemented");
+
+  if (criticalFails.length > 0) {
+    lines.push("### Critical Actions Required\n");
+    for (const c of criticalFails.slice(0, 10)) {
+      lines.push(`- **${c.id}**: ${c.name} — ${c.implementation_guidance.split(".")[0]}`);
+    }
+    lines.push("");
+  }
+
+  if (highFails.length > 0) {
+    lines.push("### High Priority Actions\n");
+    for (const c of highFails.slice(0, 10)) {
+      lines.push(`- **${c.id}**: ${c.name} — ${c.implementation_guidance.split(".")[0]}`);
+    }
+    lines.push("");
+  }
+
+  if (findings && findings.length > 0) {
+    const critFindings = findings.filter(f => f.severity === "critical");
+    const highFindings = findings.filter(f => f.severity === "high");
+
+    if (critFindings.length > 0) {
+      lines.push("### Immediate Security Fixes\n");
+      for (const f of critFindings) {
+        lines.push(`- **[${f.severity.toUpperCase()}] ${f.title}** (${f.file}): ${f.fix}`);
+      }
+      lines.push("");
+    }
+
+    if (highFindings.length > 0 && critFindings.length === 0) {
+      lines.push("### Security Fixes Needed\n");
+      for (const f of highFindings) {
+        lines.push(`- **[${f.severity.toUpperCase()}] ${f.title}** (${f.file}): ${f.fix}`);
+      }
+      lines.push("");
+    }
+  }
+
+  if (notImplemented.length > 0) {
+    const sample = notImplemented.slice(0, 5);
+    lines.push("### Not Yet Implemented\n");
+    lines.push(`${notImplemented.length} controls have not been implemented yet. Start with:`);
+    lines.push("");
+    for (const c of sample) {
+      lines.push(`- **${c.id}** (${c.severity}): ${c.name}`);
+    }
+    if (notImplemented.length > 5) {
+      lines.push(`- ... and ${notImplemented.length - 5} more`);
+    }
+    lines.push("");
+  }
+
+  if (score.overall >= 90) {
+    lines.push("Overall compliance posture is strong. Focus on maintaining controls and addressing remaining findings.");
+  } else if (score.overall >= 65) {
+    lines.push("Compliance posture needs improvement. Prioritize critical and high severity controls above all else.");
+  } else if (score.overall >= 50) {
+    lines.push("Compliance posture is below acceptable threshold. Immediate action required on critical controls.");
+  } else {
+    lines.push("**Compliance posture is critically low.** Resolve all critical findings before any deployment.");
   }
 
   return lines.join("\n");

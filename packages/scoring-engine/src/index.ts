@@ -329,20 +329,87 @@ export function generateBadgeSvg(score: ScoreFile): string {
 </svg>`;
 }
 
-export function injectBadgeIntoReadme(readmeContent: string, badgeSvgPath: string): string {
-  const badgeLine = `![GESF Compliance](${badgeSvgPath})`;
-  const existingPattern = /!\[GESF Compliance\]\([^)]*\)/;
+export function generateScoreExplainer(score: ScoreFile): string {
+  const lines: string[] = [];
+  const indent = "> ";
 
-  if (existingPattern.test(readmeContent)) {
-    return readmeContent.replace(existingPattern, badgeLine);
+  lines.push(`${indent}**GESF Compliance Score: ${score.overall}% (${score.overall_grade})**`);
+  lines.push(">");
+  lines.push(`${indent}| Framework | Score | Grade | Controls |`);
+  lines.push(`${indent}|-----------|-------|-------|----------|`);
+
+  for (const [fw, data] of Object.entries(score.frameworks)) {
+    const passed = data.passed_controls;
+    const total = data.total_controls;
+    lines.push(`${indent}| ${fw} | ${data.score}% | ${data.grade} | ${passed}/${total} passed |`);
+  }
+
+  if (score.audit_impact) {
+    const ai = score.audit_impact;
+    lines.push(">");
+    const parts: string[] = [];
+    if (ai.critical_findings > 0) parts.push(`${ai.critical_findings} critical`);
+    if (ai.high_findings > 0) parts.push(`${ai.high_findings} high`);
+    if (ai.medium_findings > 0) parts.push(`${ai.medium_findings} medium`);
+    if (ai.low_findings > 0) parts.push(`${ai.low_findings} low`);
+    if (parts.length > 0) {
+      lines.push(`${indent}Audit findings: ${parts.join(", ")} (score deduction: -${ai.total_deduction}%)`);
+    }
+  }
+
+  lines.push(">");
+  lines.push(`${indent}_(Last evaluated: ${score.evaluated_at.split("T")[0]})_`);
+
+  return lines.join("\n");
+}
+
+const EXPLAINER_START = "<!-- GESF-SCORE-START -->";
+const EXPLAINER_END = "<!-- GESF-SCORE-END -->";
+
+export function injectBadgeIntoReadme(readmeContent: string, badgeSvgPath: string, scoreExplainer?: string): string {
+  const badgeLine = `![GESF Compliance](${badgeSvgPath})`;
+  const explainerBlock = scoreExplainer
+    ? `\n${EXPLAINER_START}\n${scoreExplainer}\n${EXPLAINER_END}`
+    : "";
+
+  const existingBadge = /!\[GESF Compliance\]\([^)]*\)/;
+  const hasExistingExplainer = readmeContent.includes(EXPLAINER_START) && readmeContent.includes(EXPLAINER_END);
+
+  if (hasExistingExplainer) {
+    let updated = readmeContent;
+
+    if (existingBadge.test(updated)) {
+      updated = updated.replace(existingBadge, badgeLine);
+    }
+
+    const explainerRegex = new RegExp(
+      EXPLAINER_START.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
+      "[\\s\\S]*?" +
+      EXPLAINER_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    );
+    updated = updated.replace(explainerRegex, `${EXPLAINER_START}\n${scoreExplainer || ""}\n${EXPLAINER_END}\n`);
+
+    return updated;
+  }
+
+  if (existingBadge.test(readmeContent)) {
+    if (scoreExplainer) {
+      const badgeIdx = readmeContent.indexOf("![GESF Compliance]");
+      const lineEnd = readmeContent.indexOf("\n", badgeIdx);
+      const afterBadge = lineEnd !== -1 ? lineEnd : readmeContent.length;
+      return readmeContent.slice(0, badgeIdx) + badgeLine +
+        "\n" + EXPLAINER_START + "\n" + scoreExplainer + "\n" + EXPLAINER_END + "\n\n" +
+        readmeContent.slice(afterBadge + 1);
+    }
+    return readmeContent.replace(existingBadge, badgeLine);
   }
 
   const headingMatch = readmeContent.match(/^#\s+.+$/m);
   if (headingMatch && headingMatch.index !== undefined) {
     const afterHeading = headingMatch.index + headingMatch[0].length;
-    const insertion = `\n\n${badgeLine}`;
+    const insertion = `\n\n${badgeLine}${explainerBlock}\n`;
     return readmeContent.slice(0, afterHeading) + insertion + readmeContent.slice(afterHeading);
   }
 
-  return badgeLine + "\n\n" + readmeContent;
+  return badgeLine + explainerBlock + "\n\n" + readmeContent;
 }

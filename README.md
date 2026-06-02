@@ -1,6 +1,19 @@
 # 🔰 Green Engineering Standard Framework (GESF)
 
 ![GESF Compliance](badge.svg)
+<!-- GESF-SCORE-START -->
+> **GESF Compliance Score: 100% (A)**
+>
+> | Framework | Score | Grade | Controls |
+> |-----------|-------|-------|----------|
+> | GDPR | 100% | A | 22/22 passed |
+> | OWASP | 100% | A | 6/6 passed |
+> | CIS | 100% | A | 5/5 passed |
+> | NIST | 100% | A | 6/6 passed |
+>
+> _(Last evaluated: 2026-06-02)_
+<!-- GESF-SCORE-END -->
+
 
 Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and CIS engineering standards.
 
