@@ -1,6 +1,6 @@
 # 🔰 Green Engineering Standard Framework (GESF)
 
-![GESF Compliance](.ges/badge.svg)
+![GESF Compliance](badge.svg)
 
 Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and CIS engineering standards.
 

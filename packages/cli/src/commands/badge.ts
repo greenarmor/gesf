@@ -8,7 +8,7 @@ import * as path from "node:path";
 
 export const badgeCommand = new Command("badge")
   .description("Generate compliance score badge for README")
-  .option("-o, --output <path>", "Output path for badge SVG", ".ges/badge.svg")
+  .option("-o, --output <path>", "Output path for badge SVG", "badge.svg")
   .option("--readme <path>", "README file to inject badge into", "README.md")
   .option("--no-readme", "Do not inject badge into README")
   .action(async (options) => {

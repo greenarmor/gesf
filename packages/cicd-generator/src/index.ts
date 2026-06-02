@@ -48,7 +48,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .ges/badge.svg README.md || true
+          git add badge.svg README.md || true
           git diff --cached --quiet || git commit -m "Update compliance badge [skip ci]"
           git push
 
