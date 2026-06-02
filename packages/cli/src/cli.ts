@@ -13,6 +13,7 @@ import { generateCommand } from "./commands/generate.js";
 import { policyCommand } from "./commands/policy.js";
 import { updateCommand } from "./commands/update.js";
 import { mcpCommand } from "./commands/mcp.js";
+import { badgeCommand } from "./commands/badge.js";
 import { GESF_VERSION } from "@greenarmor/ges-core";
 
 const program = new Command();
@@ -34,5 +35,6 @@ program.addCommand(generateCommand);
 program.addCommand(policyCommand);
 program.addCommand(updateCommand);
 program.addCommand(mcpCommand);
+program.addCommand(badgeCommand);
 
 program.parse();

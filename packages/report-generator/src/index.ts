@@ -38,14 +38,15 @@ export function generateMarkdownReport(
 function generateExecutiveSummary(score: ScoreFile, findings?: Finding[]): string {
   const lines = [
     "## Executive Summary\n",
-    `Overall compliance score: **${score.overall}%**\n`,
-    "| Framework | Score | Controls | Passed | Failed | Warnings |",
-    "|-----------|-------|----------|--------|--------|----------|",
+    `Overall compliance score: **${score.overall}%** (Grade: **${score.overall_grade}**)
+`,
+    "| Framework | Grade | Score | Controls | Passed | Failed | Warnings | Critical Failures |",
+    "|-----------|-------|-------|----------|--------|--------|----------|-------------------|",
   ];
 
   for (const [fw, data] of Object.entries(score.frameworks)) {
     lines.push(
-      `| ${fw} | ${data.score}% | ${data.total_controls} | ${data.passed_controls} | ${data.failed_controls} | ${data.warning_controls} |`,
+      `| ${fw} | ${data.grade} | ${data.score}% | ${data.total_controls} | ${data.passed_controls} | ${data.failed_controls} | ${data.warning_controls} | ${data.critical_failures} |`,
     );
   }
 
@@ -53,6 +54,11 @@ function generateExecutiveSummary(score: ScoreFile, findings?: Finding[]): strin
     const critical = findings.filter(f => f.severity === "critical").length;
     const high = findings.filter(f => f.severity === "high").length;
     lines.push(`\n**Security Findings**: ${findings.length} total (${critical} critical, ${high} high)`);
+  }
+
+  if (score.audit_impact) {
+    const ai = score.audit_impact;
+    lines.push(`\n**Audit Impact**: -${ai.total_deduction}% (${ai.critical_findings} critical, ${ai.high_findings} high, ${ai.medium_findings} medium, ${ai.low_findings} low findings)`);
   }
 
   return lines.join("\n");
@@ -90,12 +96,23 @@ function generateComplianceSection(score: ScoreFile): string {
   ];
 
   for (const [fw, data] of Object.entries(score.frameworks)) {
-    lines.push(`#### ${fw} - ${data.score}%\n`);
+    lines.push(`#### ${fw} - ${data.score}% (Grade: ${data.grade})\n`);
     lines.push(`- Total Controls: ${data.total_controls}`);
     lines.push(`- Passed: ${data.passed_controls}`);
     lines.push(`- Failed: ${data.failed_controls}`);
     lines.push(`- Warnings: ${data.warning_controls}`);
     lines.push(`- Not Applicable: ${data.not_applicable}`);
+    lines.push(`- Not Implemented: ${data.not_implemented}`);
+    lines.push(`- Critical Failures: ${data.critical_failures}`);
+
+    const sb = data.severity_breakdown;
+    lines.push("\n**Severity Breakdown:**");
+    lines.push("| Level | Total | Passed | Failed | Warning | Not Implemented |");
+    lines.push("|-------|-------|--------|--------|---------|-----------------|");
+    if (sb.critical.total > 0) lines.push(`| Critical | ${sb.critical.total} | ${sb.critical.passed} | ${sb.critical.failed} | ${sb.critical.warning} | ${sb.critical.not_implemented} |`);
+    if (sb.high.total > 0) lines.push(`| High | ${sb.high.total} | ${sb.high.passed} | ${sb.high.failed} | ${sb.high.warning} | ${sb.high.not_implemented} |`);
+    if (sb.medium.total > 0) lines.push(`| Medium | ${sb.medium.total} | ${sb.medium.passed} | ${sb.medium.failed} | ${sb.medium.warning} | ${sb.medium.not_implemented} |`);
+    if (sb.low.total > 0) lines.push(`| Low | ${sb.low.total} | ${sb.low.passed} | ${sb.low.failed} | ${sb.low.warning} | ${sb.low.not_implemented} |`);
     lines.push("");
   }
 

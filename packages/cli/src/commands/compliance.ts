@@ -1,11 +1,9 @@
 import { Command } from "commander";
 import { ensureGESInitialized, readJsonFile } from "../utils/project.js";
-import type { Control, ProjectConfig } from "@greenarmor/ges-core";
+import type { Control, ProjectConfig, ScoreFile } from "@greenarmor/ges-core";
 import { getPacksForProjectType } from "@greenarmor/ges-policy-engine";
 import { formatScoreOutput } from "@greenarmor/ges-scoring-engine";
-import type { ScoreFile } from "@greenarmor/ges-core";
 import { showNextStepsMenu } from "../utils/next-steps.js";
-import * as fs from "node:fs";
 import * as path from "node:path";
 
 export const complianceCommand = new Command("compliance")
@@ -31,7 +29,10 @@ export const complianceCommand = new Command("compliance")
         const controls = readJsonFile<Control[]>(controlsFile);
         const total = controls?.length || 0;
         const passed = controls?.filter(c => c.status === "pass").length || 0;
-        console.log(`    ${pack.id.padEnd(15)} ${passed}/${total} controls passed`);
+        const failed = controls?.filter(c => c.status === "fail").length || 0;
+        const criticalFailed = controls?.filter(c => c.status === "fail" && c.severity === "critical").length || 0;
+        const statusTag = criticalFailed > 0 ? " ⚠" : "";
+        console.log(`    ${pack.id.padEnd(15)} ${passed}/${total} passed  ${failed} failed${statusTag}`);
       }
     }
 

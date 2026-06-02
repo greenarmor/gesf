@@ -1,6 +1,7 @@
 import { Command } from "commander";
-import { ensureGESInitialized, readJsonFile, writeJsonFile } from "../utils/project.js";
-import type { ProjectConfig, ScoreFile } from "@greenarmor/ges-core";
+import { ensureGESInitialized, readJsonFile } from "../utils/project.js";
+import type { ScoreFile } from "@greenarmor/ges-core";
+import { formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as path from "node:path";
 
@@ -21,18 +22,8 @@ export const scoreCommand = new Command("score")
     if (options.ci) {
       console.log(JSON.stringify(score, null, 2));
     } else {
-      const lines: string[] = [""];
-      for (const [fw, data] of Object.entries(score.frameworks)) {
-        const padding = Math.max(1, 20 - fw.length);
-        const dots = ".".repeat(padding);
-        lines.push(`  ${fw} ${dots} ${data.score}%`);
-      }
-      const overallPadding = Math.max(1, 20 - "Overall".length);
-      lines.push(`  Overall ${".".repeat(overallPadding)} ${score.overall}%`);
-      lines.push("");
-      lines.push(`  Last evaluated: ${score.evaluated_at}`);
-      lines.push("");
-      console.log(lines.join("\n"));
+      console.log(formatScoreOutput(score));
+      console.log(`  Last evaluated: ${score.evaluated_at}\n`);
     }
 
     await showNextStepsMenu("score");

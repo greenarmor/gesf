@@ -23,6 +23,8 @@ export type FrameworkName =
 
 export type DataClassification = "public" | "internal" | "confidential" | "restricted";
 
+export type SeverityLevel = "critical" | "high" | "medium" | "low";
+
 export type ControlStatus = "pass" | "fail" | "warning" | "not-applicable" | "not-implemented";
 
 export type ReportFormat = "markdown" | "html" | "pdf";
@@ -68,7 +70,7 @@ export interface Control {
   framework: FrameworkName;
   article?: string;
   status: ControlStatus;
-  severity: "critical" | "high" | "medium" | "low";
+  severity: SeverityLevel;
   implementation_guidance: string;
   checks: ControlCheck[];
 }
@@ -80,20 +82,44 @@ export interface ControlCheck {
   evidence?: string;
 }
 
+export type ComplianceGrade = "A" | "B" | "C" | "D" | "F";
+
+export interface SeverityBreakdown {
+  critical: { total: number; passed: number; failed: number; warning: number; not_implemented: number };
+  high: { total: number; passed: number; failed: number; warning: number; not_implemented: number };
+  medium: { total: number; passed: number; failed: number; warning: number; not_implemented: number };
+  low: { total: number; passed: number; failed: number; warning: number; not_implemented: number };
+}
+
 export interface ComplianceScore {
   framework: FrameworkName;
   score: number;
+  grade: ComplianceGrade;
   total_controls: number;
   passed_controls: number;
   failed_controls: number;
   warning_controls: number;
   not_applicable: number;
+  not_implemented: number;
+  severity_breakdown: SeverityBreakdown;
+  critical_failures: number;
+  max_possible_score: number;
   evaluated_at: string;
+}
+
+export interface AuditImpact {
+  total_deduction: number;
+  critical_findings: number;
+  high_findings: number;
+  medium_findings: number;
+  low_findings: number;
 }
 
 export interface ScoreFile {
   overall: number;
+  overall_grade: ComplianceGrade;
   frameworks: Record<string, ComplianceScore>;
+  audit_impact?: AuditImpact;
   evaluated_at: string;
 }
 

@@ -29,7 +29,7 @@ export const auditCommand = new Command("audit")
     const controls = getAllPacks().flatMap(p => p.controls);
 
     const updatedControls = updateControlsFromFindings(controls, findings);
-    const scoreData = generateScoreFile(updatedControls, frameworks);
+    const scoreData = generateScoreFile(updatedControls, frameworks, findings);
 
     writeJsonFile(path.join(root, ".ges", "score.json"), scoreData);
 
