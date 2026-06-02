@@ -26,7 +26,8 @@ export const complianceCommand = new Command("compliance")
       const packs = getPacksForProjectType(config.project_type);
       for (const pack of packs) {
         const controlsFile = path.join(root, "controls", pack.id, "controls.json");
-        const controls = readJsonFile<Control[]>(controlsFile);
+        const raw = readJsonFile<Control[] | { controls: Control[] }>(controlsFile);
+        const controls = Array.isArray(raw) ? raw : Array.isArray(raw?.controls) ? raw.controls : null;
         const total = controls?.length || 0;
         const passed = controls?.filter(c => c.status === "pass").length || 0;
         const failed = controls?.filter(c => c.status === "fail").length || 0;

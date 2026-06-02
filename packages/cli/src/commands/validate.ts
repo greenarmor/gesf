@@ -40,8 +40,9 @@ export const validateCommand = new Command("validate")
       for (const packDir of packDirs) {
         const controlsFile = path.join(controlsDir, packDir, "controls.json");
         if (fs.existsSync(controlsFile)) {
-          const controls = readJsonFile<Control[]>(controlsFile);
-          if (controls) {
+          const raw = readJsonFile<Control[] | { controls: Control[] }>(controlsFile);
+          const controls = Array.isArray(raw) ? raw : Array.isArray(raw?.controls) ? raw.controls : null;
+          if (controls && Array.isArray(controls)) {
             console.log(`  [✓] ${packDir}: ${controls.length} controls`);
           } else {
             console.log(`  [✗] ${packDir}: Invalid controls.json`);
