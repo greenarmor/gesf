@@ -23,7 +23,8 @@ const WEAK_CRYPTO_PATTERNS = [
 
 const INSECURE_PASSWORD_PATTERNS = [
   { pattern: /\.compare\s*\(.*,\s*.*\)|bcrypt\.compare|argon2\.verify/gi, check: false, desc: "Secure password comparison" },
-  { pattern: /password\s*===?\s*|password\s*!==?\s*|\.equals\s*\(\s*password/gi, check: true, desc: "Plaintext password comparison (use Argon2id/bcrypt)" },
+  { pattern: /(?:stored|saved|hashed|db|database)\s*\.?\s*(?:password|pw)\s*===?\s*(?:req|input|user|plain|raw)/gi, check: true, desc: "Plaintext password comparison (use Argon2id/bcrypt)" },
+  { pattern: /(?:password|pw)\s*===?\s*['"][^'"]{2,}['"]/gi, check: true, desc: "Hardcoded password comparison (use Argon2id/bcrypt)" },
 ];
 
 const SCAN_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".py", ".rb", ".go", ".java", ".php", ".cs"]);

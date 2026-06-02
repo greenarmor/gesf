@@ -25,10 +25,14 @@ const IGNORE_FILES = new Set([
   ".gitignore", "package-lock.json", "pnpm-lock.yaml", "yarn.lock",
 ]);
 
+const DOTENV_FILES = /^\.env(?:\.\w+)?$/;
+
 function shouldScanFile(filePath: string): boolean {
   const parts = filePath.split("/");
   if (parts.some(p => IGNORE_DIRS.has(p))) return false;
-  if (IGNORE_FILES.has(parts[parts.length - 1] || "")) return false;
+  const basename = parts[parts.length - 1] || "";
+  if (IGNORE_FILES.has(basename)) return false;
+  if (DOTENV_FILES.test(basename)) return false;
   return true;
 }
 

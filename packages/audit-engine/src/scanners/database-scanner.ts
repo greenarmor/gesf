@@ -22,9 +22,15 @@ const ORM_ENTITY_PATTERNS: Record<string, RegExp> = {
   ".php": /class\s+\w+\s+extends\s+(?:Model|Eloquent|Doctrine)/i,
 };
 
+const MIGRATION_DIR_PATTERN = /[\/\\]migrations?[\/\\]/i;
+
 function isDatabaseSchemaFile(filePath: string, content: string): boolean {
   const ext = filePath.substring(filePath.lastIndexOf("."));
   const basename = filePath.substring(filePath.lastIndexOf("/") + 1);
+
+  if (ext === ".prisma") return true;
+
+  if (MIGRATION_DIR_PATTERN.test(filePath)) return false;
 
   if (DB_SCHEMA_EXTENSIONS.has(ext)) return true;
 
@@ -58,9 +64,15 @@ export class DatabaseScanner implements Scanner {
     for (const [filePath, content] of ctx.fileContents) {
       if (!isDatabaseSchemaFile(filePath, content)) continue;
 
-      const hasTimestamps = /\b(?:timestamps|created_at|createdAt|createdDate|date_created|timecreated|createdTime)\s*[:\(]/i.test(content);
-      const hasSoftDelete = /\b(?:deleted_at|deletedAt|softDelete|paranoid|is_deleted|isDeleted|deleted|active)\s*[:\(]/i.test(content);
-      const hasUserAudit = /\b(?:created_by|createdBy|updated_by|updatedBy|owner_id|author_id)\s*[:\(]/i.test(content);
+      const isPrisma = filePath.endsWith(".prisma");
+
+      const hasTimestamps = isPrisma
+        ? /\b(?:createdAt|created_at)\b.*(?:DateTime|timestamp)/i.test(content)
+        : /\b(?:timestamps|created_at|createdAt|createdDate|date_created|timecreated|createdTime)\s*[:\(]/i.test(content);
+      const hasSoftDelete = /\b(?:deleted_at|deletedAt|softDelete|paranoid|is_deleted|isDeleted|deleted|active)\s*[:\(]/i.test(content)
+        || (isPrisma && /\b(?:deletedAt|deleted_at)\s+DateTime/i.test(content));
+      const hasUserAudit = /\b(?:created_by|createdBy|updated_by|updatedBy|owner_id|author_id)\s*[:\(]/i.test(content)
+        || (isPrisma && /\b(?:createdBy|updatedBy|ownerId|authorId)\s+String/i.test(content));
 
       const hasSchemaDef = /\b(?:model|schema|entity|table|struct|class)\b.*\{/i.test(content) ||
         /\bCREATE\s+TABLE\b/i.test(content) ||
