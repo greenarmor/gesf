@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Green Engineering Standard Framework - Compliance-as-Code CLI",
   "type": "module",
   "main": "./dist/index.js",

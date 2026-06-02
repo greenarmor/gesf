@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-doc-generator",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "description": "GESF Documentation Generator - Compliance and security document templates",
   "main": "./dist/index.js",
