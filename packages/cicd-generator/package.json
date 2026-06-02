@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-cicd-generator",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "type": "module",
   "description": "GESF CI/CD Generator - GitHub Actions workflow generation",
   "main": "./dist/index.js",
