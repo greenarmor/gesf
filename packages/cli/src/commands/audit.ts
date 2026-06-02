@@ -1,11 +1,12 @@
 import { Command } from "commander";
 import { ensureGESInitialized, readJsonFile, writeJsonFile } from "../utils/project.js";
-import type { ProjectConfig, ScoreFile, FrameworkName, Control } from "@greenarmor/ges-core";
-import { getAllPacks } from "@greenarmor/ges-policy-engine";
+import type { ProjectConfig, ScoreFile, FrameworkName, Control, ControlOverride } from "@greenarmor/ges-core";
+import { getPacksForProjectType, getAllPacks } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile, formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 export const auditCommand = new Command("audit")
@@ -26,10 +27,20 @@ export const auditCommand = new Command("audit")
     console.log(`  Scanned ${scannedFiles} files\n`);
 
     const frameworks = (config?.frameworks || ["GDPR", "OWASP"]) as FrameworkName[];
-    const controls = getAllPacks().flatMap(p => p.controls);
 
-    const updatedControls = updateControlsFromFindings(controls, findings);
-    const scoreData = generateScoreFile(updatedControls, frameworks, findings);
+    const projectPacks = getPacksForProjectType(config?.project_type || "generic-web-application");
+    const packIds = new Set(projectPacks.map(p => p.id));
+    const fwLower = new Set(frameworks.map(f => f.toLowerCase()));
+    const allPacks = getAllPacks();
+    for (const p of allPacks) {
+      if (fwLower.has(p.id)) packIds.add(p.id);
+    }
+    const controls = allPacks.filter(p => packIds.has(p.id)).flatMap(p => p.controls);
+
+    const overrides = loadControlOverrides(root);
+    const updatedControls = applyControlOverrides(controls, overrides);
+    const auditedControls = updateControlsFromFindings(updatedControls, findings);
+    const scoreData = generateScoreFile(auditedControls, frameworks, findings);
 
     writeJsonFile(path.join(root, ".ges", "score.json"), scoreData);
 
@@ -37,6 +48,12 @@ export const auditCommand = new Command("audit")
     const high = findings.filter(f => f.severity === "high");
     const medium = findings.filter(f => f.severity === "medium");
     const low = findings.filter(f => f.severity === "low");
+
+    if (overrides.length > 0) {
+      const naCount = overrides.filter(o => o.status === "not-applicable").length;
+      const passCount = overrides.filter(o => o.status === "pass").length;
+      console.log(`  Control overrides: ${naCount} not-applicable, ${passCount} pre-verified\n`);
+    }
 
     if (options.json) {
       console.log(JSON.stringify({ findings, score: scoreData }, null, 2));
@@ -83,8 +100,34 @@ export const auditCommand = new Command("audit")
     await showNextStepsMenu("audit");
   });
 
+function loadControlOverrides(root: string): ControlOverride[] {
+  const overridePath = path.join(root, ".ges", "control-overrides.json");
+  if (!fs.existsSync(overridePath)) return [];
+  const overrides = readJsonFile<ControlOverride[]>(overridePath);
+  return Array.isArray(overrides) ? overrides : [];
+}
+
+function applyControlOverrides(controls: Control[], overrides: ControlOverride[]): Control[] {
+  if (overrides.length === 0) return controls;
+
+  const overrideMap = new Map(overrides.map(o => [o.control_id, o]));
+
+  return controls.map(control => {
+    const override = overrideMap.get(control.id);
+    if (!override) return control;
+
+    return {
+      ...control,
+      status: override.status,
+      checks: control.checks.map(check => ({ ...check, status: override.status })),
+    };
+  });
+}
+
 function updateControlsFromFindings(controls: Control[], findings: Finding[]): Control[] {
   return controls.map(control => {
+    if (control.status === "pass" || control.status === "not-applicable") return control;
+
     const relevantFindings = findings.filter(f => f.controlIds.includes(control.id));
     if (relevantFindings.length === 0) return control;
 

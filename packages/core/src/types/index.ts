@@ -164,3 +164,9 @@ export interface ReportOptions {
   include_compliance: boolean;
   include_security: boolean;
 }
+
+export interface ControlOverride {
+  control_id: string;
+  status: ControlStatus;
+  reason: string;
+}

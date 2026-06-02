@@ -9,6 +9,8 @@ export class AuthScanner implements Scanner {
     const findings: Finding[] = [];
     const content = ctx.fileContents;
 
+    if (!ctx.isWebProject) return findings;
+
     const hasAuthMiddleware = this.detectAuthMiddleware(content);
     const routesWithoutAuth = this.detectRoutesWithoutAuth(content, hasAuthMiddleware);
     const hasRateLimiting = this.detectRateLimiting(content);

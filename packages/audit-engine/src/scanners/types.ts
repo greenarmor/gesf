@@ -16,6 +16,7 @@ export interface ScanContext {
   files: string[];
   fileContents: Map<string, string>;
   config?: Record<string, unknown>;
+  isWebProject?: boolean;
 }
 
 export interface Scanner {
