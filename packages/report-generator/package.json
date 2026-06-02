@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-report-generator",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "type": "module",
   "description": "GESF Report Generator - Markdown/HTML/PDF compliance reports",
   "main": "./dist/index.js",

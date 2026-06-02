@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-scoring-engine",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "type": "module",
   "description": "GESF Scoring Engine - Compliance scoring across frameworks",
   "main": "./dist/index.js",
