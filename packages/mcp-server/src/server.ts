@@ -769,11 +769,155 @@ function applyAutoFixAction(root: string, action: AutoFixAction): AutoFixResult 
 }
 
 function findMainAppFile(root: string): string | null {
-  const candidates = ["src/index.ts", "src/index.js", "src/app.ts", "src/app.js", "src/server.ts", "src/server.js", "src/main.ts", "src/main.js", "index.ts", "index.js", "app.ts", "app.js"];
-  for (const c of candidates) {
+  const lang = detectProjectLanguage(root);
+  const candidates: Record<string, string[]> = {
+    typescript: ["src/index.ts", "src/app.ts", "src/server.ts", "src/main.ts", "index.ts", "app.ts", "server.ts"],
+    javascript: ["src/index.js", "src/app.js", "src/server.js", "src/main.js", "index.js", "app.js", "server.js"],
+    python: ["app.py", "main.py", "manage.py", "wsgi.py", "asgi.py", "src/app.py", "src/main.py"],
+    ruby: ["config.ru", "app.rb", "server.rb", "main.rb", "config/application.rb"],
+    go: ["main.go", "cmd/server/main.go", "cmd/app/main.go"],
+    java: ["src/main/java/com/example/Application.java", "src/main/java/Application.java"],
+    php: ["public/index.php", "index.php", "app.php", "app/Http/Kernel.php"],
+    rust: ["src/main.rs", "src/bin/main.rs", "src/app.rs"],
+    csharp: ["Program.cs", "Startup.cs"],
+  };
+  const exts = candidates[lang] || [];
+  for (const c of exts) {
     if (fs.existsSync(path.join(root, c))) return c;
   }
+  if (lang === "java") {
+    const found = findFileRecursive(root, "Application.java", "src/main/java");
+    if (found) return found;
+  }
+  if (lang === "go") {
+    for (const c of ["cmd/server/main.go", "cmd/app/main.go", "main.go"]) {
+      if (fs.existsSync(path.join(root, c))) return c;
+    }
+  }
   return null;
+}
+
+function findFileRecursive(root: string, name: string, baseDir: string): string | null {
+  const dir = path.join(root, baseDir);
+  if (!fs.existsSync(dir)) return null;
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.name.startsWith(".") || e.name === "node_modules" || e.name === "venv" || e.name === "__pycache__" || e.name === ".git") continue;
+      const childPath = path.join(baseDir, e.name);
+      if (e.isDirectory()) {
+        const found = findFileRecursive(root, name, childPath);
+        if (found) return found;
+      } else if (e.name === name) {
+        return childPath;
+      }
+    }
+  } catch { /* skip */ }
+  return null;
+}
+
+function detectProjectLanguage(root: string): string {
+  if (fs.existsSync(path.join(root, "go.mod"))) return "go";
+  if (fs.existsSync(path.join(root, "Cargo.toml"))) return "rust";
+  if (fs.existsSync(path.join(root, "requirements.txt")) || fs.existsSync(path.join(root, "pyproject.toml")) || fs.existsSync(path.join(root, "Pipfile")) || fs.existsSync(path.join(root, "setup.py"))) return "python";
+  if (fs.existsSync(path.join(root, "go.mod"))) return "go";
+  if (fs.existsSync(path.join(root, "pom.xml")) || fs.existsSync(path.join(root, "build.gradle")) || fs.existsSync(path.join(root, "build.gradle.kts"))) return "java";
+  if (fs.existsSync(path.join(root, "Gemfile"))) return "ruby";
+  if (fs.existsSync(path.join(root, "composer.json"))) return "php";
+  const pkgContent = readFileSafe(path.join(root, "package.json"));
+  if (pkgContent) {
+    try {
+      const pkg = JSON.parse(pkgContent);
+      const deps = { ...(pkg.dependencies as Record<string, string>), ...(pkg.devDependencies as Record<string, string>) };
+      if (deps.typescript || deps["@types/node"] || fs.existsSync(path.join(root, "tsconfig.json"))) return "typescript";
+      return "javascript";
+    } catch { /* fallthrough */ }
+  }
+  if (fs.existsSync(path.join(root, "tsconfig.json"))) return "typescript";
+  return "javascript";
+}
+
+function detectWebFramework(root: string, lang: string): string {
+  if (lang === "typescript" || lang === "javascript") {
+    if (hasDep(root, "express")) return "express";
+    if (hasDep(root, "fastify")) return "fastify";
+    if (hasDep(root, "koa")) return "koa";
+    if (hasDep(root, "hono")) return "hono";
+    if (hasDep(root, "next")) return "next";
+    if (hasDep(root, "@nestjs/core")) return "nestjs";
+    if (hasDep(root, "@sveltejs/kit")) return "sveltekit";
+  }
+  if (lang === "python") {
+    const reqFiles = ["requirements.txt", "pyproject.toml", "Pipfile"];
+    for (const f of reqFiles) {
+      const c = readFileSafe(path.join(root, f));
+      if (c) {
+        if (/^\s*django\b/mi.test(c) || /django/i.test(c)) return "django";
+        if (/^\s*flask\b/mi.test(c) || /flask/i.test(c)) return "flask";
+        if (/^\s*fastapi\b/mi.test(c) || /fastapi/i.test(c)) return "fastapi";
+        if (/^\s*sanic\b/mi.test(c) || /sanic/i.test(c)) return "sanic";
+      }
+    }
+    const settingsPy = readFileSafe(path.join(root, "settings.py")) || readFileSafe(path.join(root, "app/settings.py")) || readFileSafe(path.join(root, "config/settings.py"));
+    if (settingsPy && /DJANGO_SETTINGS_MODULE|INSTALLED_APPS|django/.test(settingsPy)) return "django";
+    const appPy = readFileSafe(path.join(root, "app.py")) || readFileSafe(path.join(root, "main.py"));
+    if (appPy) {
+      if (/from\s+flask\s+import|import\s+flask/.test(appPy)) return "flask";
+      if (/from\s+fastapi\s+import|import\s+fastapi/.test(appPy)) return "fastapi";
+      if (/from\s+django/.test(appPy)) return "django";
+    }
+  }
+  if (lang === "ruby") {
+    const gemfile = readFileSafe(path.join(root, "Gemfile"));
+    if (gemfile) {
+      if (/rails/i.test(gemfile)) return "rails";
+      if (/sinatra/i.test(gemfile)) return "sinatra";
+    }
+  }
+  if (lang === "go") {
+    const goMod = readFileSafe(path.join(root, "go.mod")) || "";
+    const mainGo = readFileSafe(path.join(root, "main.go")) || "";
+    const allGo = goMod + mainGo;
+    if (/gin-gonic|gin\.Default|gin\.New/.test(allGo)) return "gin";
+    if (/fiber\.New/.test(allGo)) return "fiber";
+    if (/echo\.New/.test(allGo)) return "echo";
+    if (/chi\.NewRouter|chi\.Mux/.test(allGo)) return "chi";
+    if (/mux\.NewRouter/.test(allGo)) return "gorilla";
+    if (/http\.ListenAndServe|http\.HandleFunc/.test(allGo)) return "nethttp";
+  }
+  if (lang === "java") {
+    const pom = readFileSafe(path.join(root, "pom.xml")) || "";
+    const gradle = readFileSafe(path.join(root, "build.gradle")) || "";
+    const all = pom + gradle;
+    if (/spring-boot|springframework/.test(all)) return "spring";
+    if (/ktor/.test(all)) return "ktor";
+    if (/quarkus/.test(all)) return "quarkus";
+    if (/micronaut/.test(all)) return "micronaut";
+  }
+  if (lang === "rust") {
+    const cargo = readFileSafe(path.join(root, "Cargo.toml")) || "";
+    const mainRs = readFileSafe(path.join(root, "src/main.rs")) || "";
+    const libRs = readFileSafe(path.join(root, "src/lib.rs")) || "";
+    const all = cargo + mainRs + libRs;
+    if (/actix-web|actix_web/.test(all)) return "actix";
+    if (/axum/.test(all)) return "axum";
+    if (/rocket/.test(all)) return "rocket";
+    if (/warp/.test(all)) return "warp";
+  }
+  if (lang === "php") {
+    const composer = readFileSafe(path.join(root, "composer.json"));
+    if (composer) {
+      try {
+        const pkg = JSON.parse(composer);
+        const req = pkg.require || {};
+        if (req["laravel/framework"]) return "laravel";
+        if (req["symfony/symfony"] || req["symfony/framework-bundle"]) return "symfony";
+        if (req["slim/slim"]) return "slim";
+        if (req["laravel/lumen-framework"]) return "lumen";
+      } catch { /* skip */ }
+    }
+  }
+  return "generic";
 }
 
 function hasDep(root: string, dep: string): boolean {
@@ -783,40 +927,231 @@ function hasDep(root: string, dep: string): boolean {
   return dep in deps;
 }
 
+function hasPyDep(root: string, dep: string): boolean {
+  for (const f of ["requirements.txt", "requirements-dev.txt"]) {
+    const c = readFileSafe(path.join(root, f));
+    if (c && new RegExp(`^\\s*${dep}\\b`, "mi").test(c)) return true;
+  }
+  const pyproject = readFileSafe(path.join(root, "pyproject.toml"));
+  if (pyproject && new RegExp(`^\\s*${dep}\\b`, "mi").test(pyproject)) return true;
+  return false;
+}
+
+function hasGoDep(root: string, dep: string): boolean {
+  const goMod = readFileSafe(path.join(root, "go.mod"));
+  return goMod ? goMod.includes(dep) : false;
+}
+
+function hasRubyDep(root: string, dep: string): boolean {
+  const gemfile = readFileSafe(path.join(root, "Gemfile"));
+  return gemfile ? new RegExp(`gem\\s+['"]${dep}`, "i").test(gemfile) : false;
+}
+
+function hasJavaDep(root: string, dep: string): boolean {
+  const pom = readFileSafe(path.join(root, "pom.xml"));
+  if (pom && pom.includes(dep)) return true;
+  const gradle = readFileSafe(path.join(root, "build.gradle"));
+  return gradle ? gradle.includes(dep) : false;
+}
+
+function hasPhpDep(root: string, dep: string): boolean {
+  const composer = readFileSafe(path.join(root, "composer.json"));
+  if (!composer) return false;
+  try {
+    const pkg = JSON.parse(composer);
+    const req = { ...(pkg.require || {}), ...(pkg["require-dev"] || {}) };
+    return dep in req;
+  } catch { return false; }
+}
+
+function hasRustDep(root: string, dep: string): boolean {
+  const cargo = readFileSafe(path.join(root, "Cargo.toml"));
+  return cargo ? new RegExp(`^${dep}\\b`, "m").test(cargo) || new RegExp(`${dep}\\s*=`).test(cargo) : false;
+}
+
 function readFileSafe(filePath: string): string | null {
   try { return fs.readFileSync(filePath, "utf-8"); } catch { return null; }
 }
 
 function buildHelmetFix(root: string): AutoFixAction[] {
-  const appFile = findMainAppFile(root);
-  if (!appFile) return [];
-  const actions: AutoFixAction[] = [
-    { type: "npm-install", filePath: "package.json", description: "Install helmet", ruleId: "CONFIG-001" },
-  ];
-  const content = readFileSafe(path.join(root, appFile));
-  if (content && content.includes("const app = express()")) {
-    actions.push({ type: "modify", filePath: appFile, search: "const app = express()", replace: "const app = express()\n\napp.use(helmet())", description: "Add helmet middleware", ruleId: "CONFIG-001" });
-  } else {
-    actions.push({ type: "append", filePath: appFile, content: "\nimport helmet from 'helmet';\napp.use(helmet());\n", description: "Add helmet import and middleware", ruleId: "CONFIG-001" });
+  const lang = detectProjectLanguage(root);
+  const fw = detectWebFramework(root, lang);
+  const actions: AutoFixAction[] = [];
+
+  if (lang === "typescript" || lang === "javascript") {
+    const appFile = findMainAppFile(root);
+    if (!appFile) return [];
+    if (fw === "express") {
+      actions.push({ type: "npm-install", filePath: "package.json", description: "Install helmet", ruleId: "CONFIG-001" });
+      const content = readFileSafe(path.join(root, appFile));
+      if (content && content.includes("const app = express()")) {
+        actions.push({ type: "modify", filePath: appFile, search: "const app = express()", replace: "const app = express()\n\napp.use(helmet())", description: "Add helmet middleware", ruleId: "CONFIG-001" });
+      } else {
+        actions.push({ type: "append", filePath: appFile, content: "\nimport helmet from 'helmet';\napp.use(helmet());\n", description: "Add helmet import and middleware", ruleId: "CONFIG-001" });
+      }
+    } else if (fw === "fastify") {
+      actions.push({ type: "npm-install", filePath: "package.json", description: "Install @fastify/helmet", ruleId: "CONFIG-001" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport helmet from '@fastify/helmet';\napp.register(helmet);\n", description: "Add Fastify helmet plugin", ruleId: "CONFIG-001" });
+    } else if (fw === "koa") {
+      actions.push({ type: "npm-install", filePath: "package.json", description: "Install koa-helmet", ruleId: "CONFIG-001" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport helmet from 'koa-helmet';\napp.use(helmet());\n", description: "Add koa-helmet middleware", ruleId: "CONFIG-001" });
+    } else if (fw === "hono") {
+      actions.push({ type: "append", filePath: appFile, content: "\nimport { secureHeaders } from 'hono/secure-headers';\napp.use(secureHeaders());\n", description: "Add Hono secure headers", ruleId: "CONFIG-001" });
+    }
+  } else if (lang === "python") {
+    if (fw === "django") {
+      actions.push({ type: "npm-install", filePath: "package.json", description: "Python uses django-csp/secure", ruleId: "CONFIG-001" });
+      const settingsFile = findFileRecursive(root, "settings.py", ".") || "settings.py";
+      actions.push({ type: "append", filePath: settingsFile, content: "\n# Security headers\nSECURE_BROWSER_XSS_FILTER = True\nSECURE_CONTENT_TYPE_NOSNIFF = True\nSECURE_HSTS_SECONDS = 31536000\nSECURE_HSTS_INCLUDE_SUBDOMAINS = True\nSECURE_HSTS_PRELOAD = True\nX_FRAME_OPTIONS = 'DENY'\nSECURE_SSL_REDIRECT = True\nSESSION_COOKIE_SECURE = True\nCSRF_COOKIE_SECURE = True\n", description: "Add Django security headers settings", ruleId: "CONFIG-001" });
+    } else if (fw === "flask" || fw === "fastapi" || fw === "sanic") {
+      const appFile = findMainAppFile(root) || "app.py";
+      actions.push({ type: "append", filePath: appFile, content: fw === "fastapi"
+        ? "\nfrom fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware\napp.add_middleware(HTTPSRedirectMiddleware)\n"
+        : "\nfrom flask_talisman import Talisman\nTalisman(app, force_https=True, strict_transport_security=True, session_cookie_secure=True)\n",
+        description: `Add security headers for ${fw}`, ruleId: "CONFIG-001" });
+    }
+  } else if (lang === "ruby") {
+    if (fw === "rails") {
+      const envFile = fs.existsSync(path.join(root, "config/environments/production.rb")) ? "config/environments/production.rb" : "config/application.rb";
+      actions.push({ type: "append", filePath: envFile, content: "\nconfig.force_ssl = true\nconfig.ssl_options = { hsts: { subdomains: true, preload: true, expires: 1.year } }\nconfig.x_frame_options = 'SAMEORIGIN'\nconfig.x_content_type_options = 'nosniff'\nconfig.x_xss_protection = '1; mode=block'\nconfig.strict_transport_security = 'max-age=31536000; includeSubDomains'\n", description: "Add Rails security headers", ruleId: "CONFIG-001" });
+    }
+  } else if (lang === "go") {
+    const appFile = findMainAppFile(root) || "main.go";
+    if (fw === "gin" || fw === "echo" || fw === "fiber" || fw === "chi" || fw === "nethttp") {
+      actions.push({ type: "append", filePath: appFile, content: "\nimport \"net/http\"\n\n// Security headers middleware\nfunc securityHeaders(next http.Handler) http.Handler {\n\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tw.Header().Set(\"X-Content-Type-Options\", \"nosniff\")\n\t\tw.Header().Set(\"X-Frame-Options\", \"DENY\")\n\t\tw.Header().Set(\"X-XSS-Protection\", \"1; mode=block\")\n\t\tw.Header().Set(\"Strict-Transport-Security\", \"max-age=31536000; includeSubDomains\")\n\t\tw.Header().Set(\"Referrer-Policy\", \"strict-origin-when-cross-origin\")\n\t\tw.Header().Set(\"Content-Security-Policy\", \"default-src 'self'\")\n\t\tnext.ServeHTTP(w, r)\n\t})\n}\n", description: "Add Go security headers middleware", ruleId: "CONFIG-001" });
+    }
+  } else if (lang === "java") {
+    if (fw === "spring") {
+      const hasSrc = fs.existsSync(path.join(root, "src/main/java"));
+      const configPath = hasSrc ? "src/main/java/com/example/SecurityConfig.java" : "SecurityConfig.java";
+      actions.push({ type: "create", filePath: configPath, content: `import org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.security.config.annotation.web.builders.HttpSecurity;\nimport org.springframework.security.web.SecurityFilterChain;\nimport org.springframework.security.web.header.writers.StaticHeadersWriter;\n\n@Configuration\npublic class SecurityConfig {\n    @Bean\n    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {\n        http.headers()\n            .contentSecurityPolicy("default-src 'self'")\n            .and()\n            .xssProtection()\n            .and()\n            .frameOptions().deny()\n            .httpStrictTransportSecurity()\n                .includeSubDomains(true)\n                .preload(true)\n                .maxAgeInSeconds(31536000);\n        return http.build();\n    }\n}\n`, description: "Create Spring Security config with headers", ruleId: "CONFIG-001" });
+    }
+  } else if (lang === "php") {
+    if (fw === "laravel" || fw === "symfony") {
+      const middleware = fw === "laravel" ? "app/Http/Middleware/SecurityHeaders.php" : "src/Middleware/SecurityHeadersMiddleware.php";
+      const content = fw === "laravel"
+        ? `<?php\n\nnamespace App\\Http\\Middleware;\n\nuse Closure;\n\nclass SecurityHeaders\n{\n    public function handle($request, Closure $next)\n    {\n        $response = $next($request);\n        $response->headers->set('X-Content-Type-Options', 'nosniff');\n        $response->headers->set('X-Frame-Options', 'DENY');\n        $response->headers->set('X-XSS-Protection', '1; mode=block');\n        $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');\n        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');\n        return $response;\n    }\n}\n`
+        : `<?php\n\nnamespace App\\Middleware;\n\nuse Symfony\\Component\\HttpFoundation\\Response;\n\nclass SecurityHeadersMiddleware\n{\n    public function __invoke($request, $handler)\n    {\n        $response = $handler->handle($request);\n        $response->headers->set('X-Content-Type-Options', 'nosniff');\n        $response->headers->set('X-Frame-Options', 'DENY');\n        $response->headers->set('X-XSS-Protection', '1; mode=block');\n        $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');\n        return $response;\n    }\n}\n`;
+      actions.push({ type: "create", filePath: middleware, content, description: `Create security headers middleware for ${fw}`, ruleId: "CONFIG-001" });
+    }
+  } else if (lang === "rust") {
+    const appFile = findMainAppFile(root) || "src/main.rs";
+    if (fw === "actix") {
+      actions.push({ type: "create", filePath: "src/middleware/security_headers.rs", content: `use actix_web::{HttpResponse, dev::{ServiceRequest, Service, ServiceResponse}};
+
+pub fn add_security_headers(res: &mut HttpResponse) {
+    res.headers_mut().insert(("X-Content-Type-Options", "nosniff"));
+    res.headers_mut().insert(("X-Frame-Options", "DENY"));
+    res.headers_mut().insert(("X-XSS-Protection", "1; mode=block"));
+    res.headers_mut().insert(("Strict-Transport-Security", "max-age=31536000; includeSubDomains"));
+    res.headers_mut().insert(("Referrer-Policy", "strict-origin-when-cross-origin"));
+    res.headers_mut().insert(("Content-Security-Policy", "default-src 'self'"));
+}
+`, description: "Create Actix-web security headers middleware", ruleId: "CONFIG-001" });
+    } else if (fw === "axum") {
+      actions.push({ type: "create", filePath: "src/middleware/security_headers.rs", content: `use axum::{http::HeaderValue, response::Response};
+
+pub async fn security_headers(mut res: Response) -> Response {
+    let headers = res.headers_mut();
+    headers.insert("X-Content-Type-Options", HeaderValue::from_static("nosniff"));
+    headers.insert("X-Frame-Options", HeaderValue::from_static("DENY"));
+    headers.insert("X-XSS-Protection", HeaderValue::from_static("1; mode=block"));
+    headers.insert("Strict-Transport-Security", HeaderValue::from_static("max-age=31536000; includeSubDomains"));
+    headers.insert("Referrer-Policy", HeaderValue::from_static("strict-origin-when-cross-origin"));
+    headers.insert("Content-Security-Policy", HeaderValue::from_static("default-src 'self'"));
+    res
+}
+`, description: "Create Axum security headers middleware", ruleId: "CONFIG-001" });
+    } else {
+      actions.push({ type: "append", filePath: appFile, content: "\n// GESF: Add security headers middleware\n// actix-web: use actix_web::middleware::DefaultHeaders\n// axum: use tower-http::set-header::SetResponseHeader\n// rocket: use rocket::fairing\n", description: "Add Rust security headers guidance", ruleId: "CONFIG-001" });
+    }
   }
   return actions;
 }
 
 function buildCorsFix(root: string): AutoFixAction[] {
-  const appFile = findMainAppFile(root);
-  if (!appFile) return [];
-  return [
-    { type: "npm-install", filePath: "package.json", description: "Install cors", ruleId: "CONFIG-002" },
-    { type: "append", filePath: appFile, content: "\nimport cors from 'cors';\napp.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'] }));\n", description: "Add CORS with configured origins", ruleId: "CONFIG-002" },
-  ];
+  const lang = detectProjectLanguage(root);
+  const fw = detectWebFramework(root, lang);
+  const actions: AutoFixAction[] = [];
+
+  if (lang === "typescript" || lang === "javascript") {
+    const appFile = findMainAppFile(root);
+    if (!appFile) return [];
+    actions.push({ type: "npm-install", filePath: "package.json", description: "Install cors", ruleId: "CONFIG-002" });
+    if (fw === "fastify") {
+      actions.push({ type: "npm-install", filePath: "package.json", description: "Install @fastify/cors", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from '@fastify/cors';\napp.register(cors, { origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'] });\n", description: "Add Fastify CORS", ruleId: "CONFIG-002" });
+    } else {
+      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from 'cors';\napp.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'] }));\n", description: "Add CORS with configured origins", ruleId: "CONFIG-002" });
+    }
+  } else if (lang === "python") {
+    const appFile = findMainAppFile(root) || "app.py";
+    if (fw === "django") {
+      const settingsFile = findFileRecursive(root, "settings.py", ".") || "settings.py";
+      actions.push({ type: "append", filePath: settingsFile, content: "\nCORS_ALLOWED_ORIGINS = ['https://yourdomain.com']\nCORS_ALLOW_CREDENTIALS = True\n", description: "Add Django CORS settings", ruleId: "CONFIG-002" });
+    } else if (fw === "fastapi") {
+      actions.push({ type: "append", filePath: appFile, content: "\nfrom fastapi.middleware.cors import CORSMiddleware\napp.add_middleware(CORSMiddleware, allow_origins=['http://localhost:3000'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])\n", description: "Add FastAPI CORS middleware", ruleId: "CONFIG-002" });
+    } else if (fw === "flask") {
+      actions.push({ type: "append", filePath: appFile, content: "\nfrom flask_cors import CORS\nCORS(app, origins=['http://localhost:3000'])\n", description: "Add Flask CORS", ruleId: "CONFIG-002" });
+    } else {
+      actions.push({ type: "append", filePath: appFile, content: "\n# CORS: Configure allowed origins in production\n# pip install flask-cors or fastapi[all]\n", description: "Add CORS note", ruleId: "CONFIG-002" });
+    }
+  } else if (lang === "ruby") {
+    if (fw === "rails") {
+      actions.push({ type: "append", filePath: "config/application.rb", content: "\nconfig.middleware.insert_before 0, Rack::Cors do\n  allow do\n    origins 'https://yourdomain.com'\n    resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete]\n  end\nend\n", description: "Add Rails CORS via Rack::Cors", ruleId: "CONFIG-002" });
+    }
+  } else if (lang === "go") {
+    const appFile = findMainAppFile(root) || "main.go";
+    actions.push({ type: "append", filePath: appFile, content: "\nimport \"net/http\"\n\nfunc corsMiddleware(allowedOrigins []string, next http.Handler) http.Handler {\n\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\torigin := r.Header.Get(\"Origin\")\n\t\tfor _, o := range allowedOrigins {\n\t\t\tif origin == o {\n\t\t\t\tw.Header().Set(\"Access-Control-Allow-Origin\", origin)\n\t\t\t\tw.Header().Set(\"Access-Control-Allow-Methods\", \"GET, POST, PUT, DELETE, OPTIONS\")\n\t\t\t\tw.Header().Set(\"Access-Control-Allow-Headers\", \"Content-Type, Authorization\")\n\t\t\t\tbreak\n\t\t\t}\n\t\t}\n\t\tif r.Method == \"OPTIONS\" { w.WriteHeader(http.StatusNoContent); return }\n\t\tnext.ServeHTTP(w, r)\n\t})\n}\n", description: "Add Go CORS middleware", ruleId: "CONFIG-002" });
+  } else if (lang === "java") {
+    if (fw === "spring") {
+      actions.push({ type: "create", filePath: "src/main/java/com/example/CorsConfig.java", content: `import org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.web.cors.CorsConfiguration;\nimport org.springframework.web.cors.UrlBasedCorsConfigurationSource;\nimport org.springframework.web.filter.CorsFilter;\n\n@Configuration\npublic class CorsConfig {\n    @Bean\n    public CorsFilter corsFilter() {\n        CorsConfiguration config = new CorsConfiguration();\n        config.addAllowedOrigin(\"https://yourdomain.com\");\n        config.addAllowedHeader(\"*\");\n        config.addAllowedMethod(\"*\");\n        config.setAllowCredentials(true);\n        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();\n        source.registerCorsConfiguration(\"/**\", config);\n        return new CorsFilter(source);\n    }\n}\n`, description: "Create Spring CORS configuration", ruleId: "CONFIG-002" });
+    }
+  } else if (lang === "rust") {
+    const appFile = findMainAppFile(root) || "src/main.rs";
+    if (fw === "actix") {
+      actions.push({ type: "create", filePath: "src/middleware/cors.rs", content: `use actix_cors::Cors;
+use actix_web::http::header;
+
+pub fn cors_config() -> Cors {
+    Cors::default()
+        .allowed_origin("http://localhost:3000")
+        .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+        .allowed_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION])
+        .max_age(3600)
+}
+`, description: "Create Actix-web CORS configuration", ruleId: "CONFIG-002" });
+    } else if (fw === "axum") {
+      actions.push({ type: "create", filePath: "src/middleware/cors.rs", content: `use tower_http::cors::{CorsLayer, Any};
+use http::Method;
+
+pub fn cors_layer() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin(["http://localhost:3000".parse().unwrap()])
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_headers(Any)
+}
+`, description: "Create Axum CORS layer", ruleId: "CONFIG-002" });
+    } else {
+      actions.push({ type: "append", filePath: appFile, content: "\n// GESF CORS: Configure allowed origins\n// actix-web: cargo add actix-cors\n// axum: cargo add tower-http --features cors\n// rocket: cargo add rocket_cors\n", description: "Add Rust CORS guidance", ruleId: "CONFIG-002" });
+    }
+  }
+  return actions;
 }
 
 function buildEnvGitignoreFix(root: string): AutoFixAction[] {
   const gi = fs.existsSync(path.join(root, ".gitignore")) ? ".gitignore" : null;
+  const envFiles = detectProjectLanguage(root) === "python" ? "\n.env\n.env.*\n!.env.example\n*.pyc\n__pycache__/\n"
+    : detectProjectLanguage(root) === "go" ? "\n.env\n.env.*\n!.env.example\n*.exe\n"
+    : detectProjectLanguage(root) === "ruby" ? "\n.env\n.env.*\n!.env.example\n*.gem\n"
+    : detectProjectLanguage(root) === "java" ? "\n.env\n.env.*\n!.env.example\n*.class\ntarget/\n"
+    : detectProjectLanguage(root) === "php" ? "\n.env\n.env.*\n!.env.example\nvendor/\n"
+    : detectProjectLanguage(root) === "rust" ? "\n.env\n.env.*\n!.env.example\ntarget/\n*.key\n*.pem\n"
+    : "\n.env\n.env.*\n!.env.example\n";
   if (!gi) return buildGitignoreCreateFix(root);
   const content = readFileSafe(path.join(root, gi)) || "";
   if (content.includes(".env")) return [];
-  return [{ type: "append", filePath: ".gitignore", content: "\n.env\n.env.*\n!.env.example\n", description: "Add .env to .gitignore", ruleId: "CONFIG-004" }];
+  return [{ type: "append", filePath: ".gitignore", content: envFiles, description: "Add .env to .gitignore", ruleId: "CONFIG-004" }];
 }
 
 function buildDockerNonRootFix(root: string): AutoFixAction[] {
@@ -829,7 +1164,19 @@ function buildTLSFix(root: string, f: Finding): AutoFixAction[] {
 }
 
 function buildGitignoreCreateFix(root: string): AutoFixAction[] {
-  return [{ type: "create", filePath: ".gitignore", content: "node_modules/\n.env\n.env.*\n!.env.example\ndist/\nbuild/\n*.key\n*.pem\ncoverage/\n.DS_Store\n", description: "Create .gitignore with security entries", ruleId: "CONFIG-008" }];
+  const lang = detectProjectLanguage(root);
+  const templates: Record<string, string> = {
+    typescript: "node_modules/\n.env\n.env.*\n!.env.example\ndist/\nbuild/\n*.key\n*.pem\ncoverage/\n.DS_Store\n",
+    javascript: "node_modules/\n.env\n.env.*\n!.env.example\ndist/\nbuild/\n*.key\n*.pem\ncoverage/\n.DS_Store\n",
+    python: "__pycache__/\n*.pyc\n*.pyo\n.env\n.env.*\n!.env.example\n*.key\n*.pem\n.pytest_cache/\n.venv/\nvenv/\n*.egg-info/\ndist/\nbuild/\n.DS_Store\n",
+    ruby: ".env\n.env.*\n!.env.example\n*.key\n*.pem\nlog/\ntmp/\n*.gem\n.DS_Store\n",
+    go: ".env\n.env.*\n!.env.example\n*.key\n*.pem\n*.exe\n/bin/\n.DS_Store\n",
+    java: ".env\n.env.*\n!.env.example\n*.key\n*.pem\n*.class\ntarget/\n.idea/\n*.iml\n.DS_Store\n",
+    php: ".env\n.env.*\n!.env.example\nvendor/\n*.key\n*.pem\n.DS_Store\n",
+    rust: "target/\nCargo.lock\n.env\n.env.*\n!.env.example\n*.key\n*.pem\n.DS_Store\n",
+    csharp: ".env\n.env.*\n!.env.example\nbin/\nobj/\n*.key\n*.pem\n.DS_Store\n",
+  };
+  return [{ type: "create", filePath: ".gitignore", content: templates[lang] || templates.javascript, description: `Create .gitignore for ${lang} project`, ruleId: "CONFIG-008" }];
 }
 
 function buildGitignoreEntryFix(root: string, f: Finding): AutoFixAction[] {
@@ -839,15 +1186,52 @@ function buildGitignoreEntryFix(root: string, f: Finding): AutoFixAction[] {
 }
 
 function buildLoggingFix(root: string): AutoFixAction[] {
-  const appFile = findMainAppFile(root);
-  const hasSrc = fs.existsSync(path.join(root, "src"));
-  const loggerPath = hasSrc ? "src/lib/logger.ts" : "lib/logger.ts";
-  const actions: AutoFixAction[] = [
-    { type: "npm-install", filePath: "package.json", description: "Install pino logger", ruleId: "CONFIG-010" },
-    { type: "create", filePath: loggerPath, content: `import pino from 'pino';\n\nconst logger = pino({\n  level: process.env.LOG_LEVEL || 'info',\n  timestamp: pino.stdTimeFunctions.isoTime,\n});\n\ninterface AuditLogParams {\n  userId: string;\n  action: string;\n  resource: string;\n  ipAddress: string;\n  metadata?: Record<string, unknown>;\n}\n\nexport function auditLog(params: AuditLogParams): void {\n  logger.info({ ...params, timestamp: new Date().toISOString(), type: 'audit' });\n}\n\nexport default logger;\n`, description: "Create structured logger with audit logging", ruleId: "CONFIG-010" },
-  ];
-  if (appFile) {
-    actions.push({ type: "append", filePath: appFile, content: `\nimport logger from './${hasSrc ? "lib/logger" : (hasSrc ? "src/lib/logger" : "lib/logger")}';\n`, description: "Import logger", ruleId: "CONFIG-010" });
+  const lang = detectProjectLanguage(root);
+  const actions: AutoFixAction[] = [];
+
+  if (lang === "typescript" || lang === "javascript") {
+    const hasSrc = fs.existsSync(path.join(root, "src"));
+    const loggerPath = hasSrc ? "src/lib/logger.ts" : "lib/logger.ts";
+    actions.push({ type: "npm-install", filePath: "package.json", description: "Install pino logger", ruleId: "CONFIG-010" });
+    actions.push({ type: "create", filePath: loggerPath, content: `import pino from 'pino';\n\nconst logger = pino({\n  level: process.env.LOG_LEVEL || 'info',\n  timestamp: pino.stdTimeFunctions.isoTime,\n});\n\ninterface AuditLogParams {\n  userId: string;\n  action: string;\n  resource: string;\n  ipAddress: string;\n  metadata?: Record<string, unknown>;\n}\n\nexport function auditLog(params: AuditLogParams): void {\n  logger.info({ ...params, timestamp: new Date().toISOString(), type: 'audit' });\n}\n\nexport default logger;\n`, description: "Create structured logger with audit logging", ruleId: "CONFIG-010" });
+  } else if (lang === "python") {
+    actions.push({ type: "create", filePath: "lib/logger.py", content: `import logging\nimport json\nfrom datetime import datetime\n\nlogger = logging.getLogger("audit")\nlogger.setLevel(logging.INFO)\n\nhandler = logging.StreamHandler()\nhandler.setFormatter(logging.Formatter('%(message)s'))\nlogger.addHandler(handler)\n\ndef audit_log(user_id: str, action: str, resource: str, ip_address: str, **metadata):\n    entry = {\n        "userId": user_id,\n        "action": action,\n        "resource": resource,\n        "ipAddress": ip_address,\n        "timestamp": datetime.utcnow().isoformat() + "Z",\n        "type": "audit",\n        **metadata,\n    }\n    logger.info(json.dumps(entry))\n`, description: "Create Python audit logger", ruleId: "CONFIG-010" });
+  } else if (lang === "ruby") {
+    actions.push({ type: "create", filePath: "lib/audit_logger.rb", content: `require 'logger'\nrequire 'json'\n\nclass AuditLogger\n  def initialize(logdev = $stdout)\n    @logger = Logger.new(logdev)\n    @logger.formatter = proc { |_, _, _, msg| msg }\n  end\n\n  def audit_log(user_id:, action:, resource:, ip_address:, **metadata)\n    entry = {\n      userId: user_id,\n      action: action,\n      resource: resource,\n      ipAddress: ip_address,\n      timestamp: Time.now.utc.iso8601,\n      type: 'audit',\n      **metadata,\n    }\n    @logger.info(entry.to_json)\n  end\nend\n\nAUDIT = AuditLogger.new\n`, description: "Create Ruby audit logger", ruleId: "CONFIG-010" });
+  } else if (lang === "go") {
+    actions.push({ type: "create", filePath: "lib/audit.go", content: `package lib\n\nimport (\n\t"encoding/json"\n\t"log"\n\t"os"\n\t"time"\n)\n\ntype AuditEntry struct {\n\tUserID    string                 "json:\\"userId\\""\n\tAction    string                 "json:\\"action\\""\n\tResource  string                 "json:\\"resource\\""\n\tIPAddress string                 "json:\\"ipAddress\\""\n\tTimestamp string                 "json:\\"timestamp\\""\n\tType      string                 "json:\\"type\\""\n\tMetadata  map[string]interface{} "json:\\"metadata,omitempty\\""\n}\n\nvar auditLogger = log.New(os.Stdout, "", 0)\n\nfunc AuditLog(userID, action, resource, ipAddr string, metadata map[string]interface{}) {\n\tentry := AuditEntry{\n\t\tUserID:    userID,\n\t\tAction:    action,\n\t\tResource:  resource,\n\t\tIPAddress: ipAddr,\n\t\tTimestamp: time.Now().UTC().Format(time.RFC3339),\n\t\tType:      "audit",\n\t\tMetadata:  metadata,\n\t}\n\tdata, _ := json.Marshal(entry)\n\tauditLogger.Println(string(data))\n}\n`, description: "Create Go audit logger", ruleId: "CONFIG-010" });
+  } else if (lang === "java") {
+    actions.push({ type: "create", filePath: "src/main/java/com/example/AuditLogger.java", content: `package com.example;\n\nimport com.fasterxml.jackson.databind.ObjectMapper;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\nimport java.time.Instant;\nimport java.util.Map;\n\npublic class AuditLogger {\n    private static final Logger logger = LoggerFactory.getLogger("audit");\n    private static final ObjectMapper mapper = new ObjectMapper();\n\n    public static void auditLog(String userId, String action, String resource, String ipAddress, Map<String, Object> metadata) {\n        try {\n            Map<String, Object> entry = Map.of(\n                "userId", userId,\n                "action", action,\n                "resource", resource,\n                "ipAddress", ipAddress,\n                "timestamp", Instant.now().toString(),\n                "type", "audit"\n            );\n            if (metadata != null) entry.putAll(metadata);\n            logger.info(mapper.writeValueAsString(entry));\n        } catch (Exception e) {\n            logger.error("Audit log failed", e);\n        }\n    }\n}\n`, description: "Create Java audit logger", ruleId: "CONFIG-010" });
+  } else if (lang === "php") {
+    actions.push({ type: "create", filePath: "lib/audit_logger.php", content: `<?php\n\nclass AuditLogger\n{\n    public static function log(string $userId, string $action, string $resource, string $ipAddress, array $metadata = []): void\n    {\n        $entry = array_merge([\n            'userId' => $userId,\n            'action' => $action,\n            'resource' => $resource,\n            'ipAddress' => $ipAddress,\n            'timestamp' => gmdate('c'),\n            'type' => 'audit',\n        ], $metadata);\n        error_log(json_encode($entry));\n    }\n}\n`, description: "Create PHP audit logger", ruleId: "CONFIG-010" });
+  } else if (lang === "rust") {
+    actions.push({ type: "create", filePath: "src/logger.rs", content: `use serde_json::json;
+use tracing::{info, instrument};
+use chrono::Utc;
+
+#[derive(Debug, serde::Serialize)]
+pub struct AuditEntry {
+    pub user_id: String,
+    pub action: String,
+    pub resource: String,
+    pub ip_address: String,
+    pub timestamp: String,
+    #[serde(rename = "type")]
+    pub entry_type: String,
+}
+
+pub fn audit_log(user_id: &str, action: &str, resource: &str, ip_address: &str) {
+    let entry = AuditEntry {
+        user_id: user_id.to_string(),
+        action: action.to_string(),
+        resource: resource.to_string(),
+        ip_address: ip_address.to_string(),
+        timestamp: Utc::now().to_rfc3339(),
+        entry_type: "audit".to_string(),
+    };
+    info!("{}", serde_json::to_string(&entry).unwrap_or_default());
+}
+`, description: "Create Rust audit logger (tracing)", ruleId: "CONFIG-010" });
   }
   return actions;
 }
@@ -860,19 +1244,38 @@ function buildSecretsFix(root: string, f: Finding): AutoFixAction[] {
   const idx = (f.line || 1) - 1;
   if (idx >= lines.length) return actions;
   const line = lines[idx];
+  const lang = detectProjectLanguage(root);
+
   const match = line.match(/(\w+)\s*[:=]\s*['"]([^'"]+)['"]/);
   if (match) {
     const varName = match[1];
     const value = match[2];
-    const envFile = fs.existsSync(path.join(root, ".env")) ? ".env" : ".env";
-    actions.push({ type: "append", filePath: envFile, content: `\n${varName}=${value}\n`, description: `Move ${varName} to .env`, ruleId: "SECRETS-001" });
-    actions.push({ type: "modify", filePath: f.file, search: line, replace: `${varName}: process.env.${varName}`, description: `Replace hardcoded ${varName}`, ruleId: "SECRETS-001" });
+    actions.push({ type: "append", filePath: ".env", content: `\n${varName}=${value}\n`, description: `Move ${varName} to .env`, ruleId: "SECRETS-001" });
+
+    let replacement: string;
+    if (lang === "python") {
+      replacement = line.replace(match[0], `${varName} = os.environ.get('${varName}')`);
+    } else if (lang === "ruby") {
+      replacement = line.replace(match[0], `${varName} = ENV['${varName}']`);
+    } else if (lang === "go") {
+      replacement = line.replace(match[0], `${varName} := os.Getenv("${varName}")`);
+    } else if (lang === "java") {
+      replacement = line.replace(match[0], `String ${varName} = System.getenv("${varName}")`);
+    } else if (lang === "php") {
+      replacement = line.replace(match[0], `$${varName} = getenv('${varName}')`);
+    } else if (lang === "rust") {
+      replacement = line.replace(match[0], `let ${varName} = std::env::var("${varName}").unwrap_or_default()`);
+    } else {
+      replacement = `${varName}: process.env.${varName}`;
+    }
+    actions.push({ type: "modify", filePath: f.file, search: line, replace: replacement, description: `Replace hardcoded ${varName} with env variable`, ruleId: "SECRETS-001" });
     actions.push(...buildEnvGitignoreFix(root));
   }
   return actions;
 }
 
 function buildWeakHashFix(root: string, f: Finding): AutoFixAction[] {
+  const lang = detectProjectLanguage(root);
   const content = readFileSafe(path.join(root, f.file));
   if (!content) return [];
   const lines = content.split("\n");
@@ -880,116 +1283,317 @@ function buildWeakHashFix(root: string, f: Finding): AutoFixAction[] {
   if (idx >= lines.length) return [];
   const line = lines[idx];
   let replacement = line;
-  if (/createHash\s*\(\s*['"](?:md5|sha1)['"]\s*\)/.test(line)) {
+
+  if (lang === "python") {
+    replacement = line.replace(/hashlib\.md5\(/gi, "hashlib.sha256(").replace(/hashlib\.sha1\(/gi, "hashlib.sha256(");
+  } else if (lang === "go") {
+    replacement = line.replace(/md5\.New\(\)/gi, "sha256.New()").replace(/sha1\.New\(\)/gi, "sha256.New()");
+  } else if (lang === "ruby") {
+    replacement = line.replace(/Digest::MD5/gi, "Digest::SHA256").replace(/Digest::SHA1/gi, "Digest::SHA256");
+  } else if (lang === "java") {
+    replacement = line.replace(/MessageDigest\.getInstance\(["']MD5["']\)/gi, 'MessageDigest.getInstance("SHA-256")').replace(/MessageDigest\.getInstance\(["']SHA-1["']\)/gi, 'MessageDigest.getInstance("SHA-256")');
+  } else if (lang === "php") {
+    replacement = line.replace(/md5\(/gi, "hash('sha256', ").replace(/sha1\(/gi, "hash('sha256', ");
+  } else if (lang === "rust") {
+    replacement = line.replace(/md5::compute/gi, "sha2::Sha256::digest").replace(/use md5/gi, "use sha2::{Sha256, Digest}");
+  } else {
     replacement = line.replace(/createHash\s*\(\s*['"](?:md5|sha1)['"]\s*\)/, "createHash('sha256')");
-  } else if (/hashlib\.md5\(/i.test(line)) {
-    replacement = line.replace(/hashlib\.md5\(/gi, "hashlib.sha256(");
-  } else if (/hashlib\.sha1\(/i.test(line)) {
-    replacement = line.replace(/hashlib\.sha1\(/gi, "hashlib.sha256(");
   }
   if (replacement === line) return [];
   return [{ type: "modify", filePath: f.file, search: line, replace: replacement, description: "Replace weak hash with SHA-256", ruleId: "CRYPTO-001" }];
 }
 
 function buildPasswordFix(root: string, _f: Finding): AutoFixAction[] {
-  const hasSrc = fs.existsSync(path.join(root, "src"));
-  const authPath = hasSrc ? "src/lib/auth.ts" : "lib/auth.ts";
-  const actions: AutoFixAction[] = [
-    { type: "npm-install", filePath: "package.json", description: "Install argon2", ruleId: "CRYPTO-003" },
-  ];
-  if (!fs.existsSync(path.join(root, authPath))) {
-    actions.push({ type: "create", filePath: authPath, content: `import argon2 from 'argon2';\n\nexport async function hashPassword(password: string): Promise<string> {\n  return argon2.hash(password, { type: argon2.argon2id });\n}\n\nexport async function verifyPassword(hashedPassword: string, inputPassword: string): Promise<boolean> {\n  return argon2.verify(hashedPassword, inputPassword);\n}\n`, description: "Create Argon2id password utility", ruleId: "CRYPTO-003" });
+  const lang = detectProjectLanguage(root);
+  const actions: AutoFixAction[] = [];
+
+  if (lang === "typescript" || lang === "javascript") {
+    const hasSrc = fs.existsSync(path.join(root, "src"));
+    const authPath = hasSrc ? "src/lib/auth.ts" : "lib/auth.ts";
+    actions.push({ type: "npm-install", filePath: "package.json", description: "Install argon2", ruleId: "CRYPTO-003" });
+    if (!fs.existsSync(path.join(root, authPath))) {
+      actions.push({ type: "create", filePath: authPath, content: `import argon2 from 'argon2';\n\nexport async function hashPassword(password: string): Promise<string> {\n  return argon2.hash(password, { type: argon2.argon2id });\n}\n\nexport async function verifyPassword(hashedPassword: string, inputPassword: string): Promise<boolean> {\n  return argon2.verify(hashedPassword, inputPassword);\n}\n`, description: "Create Argon2id password utility", ruleId: "CRYPTO-003" });
+    }
+  } else if (lang === "python") {
+    actions.push({ type: "create", filePath: "lib/auth.py", content: `import hashlib\nimport os\n\ndef hash_password(password: str) -> str:\n    salt = os.urandom(16)\n    key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)\n    return salt.hex() + ':' + key.hex()\n\ndef verify_password(stored: str, provided: str) -> bool:\n    salt_hex, key_hex = stored.split(':')\n    salt = bytes.fromhex(salt_hex)\n    new_key = hashlib.pbkdf2_hmac('sha256', provided.encode(), salt, 100000)\n    return new_key.hex() == key_hex\n`, description: "Create Python password utility (PBKDF2-SHA256)", ruleId: "CRYPTO-003" });
+  } else if (lang === "go") {
+    actions.push({ type: "create", filePath: "lib/auth.go", content: `package lib\n\nimport (\n\t"crypto/rand"\n\t"crypto/subtle"\n\t"encoding/hex"\n\t"golang.org/x/crypto/argon2"\n)\n\nfunc HashPassword(password string) (string, error) {\n\tsalt := make([]byte, 16)\n\tif _, err := rand.Read(salt); err != nil {\n\t\treturn "", err\n\t}\n\thash := argon2.IDKey([]byte(password), salt, 1, 64*1024, 4, 32)\n\treturn hex.EncodeToString(salt) + ":" + hex.EncodeToString(hash), nil\n}\n\nfunc VerifyPassword(stored, provided string) (bool, error) {\n\tparts := strings.SplitN(stored, ":", 2)\n\tif len(parts) != 2 { return false, nil }\n\tsalt, _ := hex.DecodeString(parts[0])\n\tstoredHash, _ := hex.DecodeString(parts[1])\n\tprovidedHash := argon2.IDKey([]byte(provided), salt, 1, 64*1024, 4, 32)\n\treturn subtle.ConstantTimeCompare(storedHash, providedHash) == 1, nil\n}\n`, description: "Create Go Argon2id password utility", ruleId: "CRYPTO-003" });
+  } else if (lang === "ruby") {
+    actions.push({ type: "create", filePath: "lib/auth.rb", content: `require 'bcrypt'\n\ndef hash_password(password)\n  BCrypt::Password.create(password)\nend\n\ndef verify_password(stored_hash, provided_password)\n  BCrypt::Password.new(stored_hash) == provided_password\nend\n`, description: "Create Ruby BCrypt password utility", ruleId: "CRYPTO-003" });
+  } else if (lang === "java") {
+    actions.push({ type: "create", filePath: "src/main/java/com/example/PasswordUtil.java", content: `package com.example;\n\nimport javax.crypto.SecretKeyFactory;\nimport javax.crypto.spec.PBEKeySpec;\nimport java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class PasswordUtil {\n    private static final int ITERATIONS = 100000;\n    private static final int KEY_LENGTH = 256;\n    private static final SecureRandom RANDOM = new SecureRandom();\n\n    public static String hashPassword(String password) throws Exception {\n        byte[] salt = new byte[16];\n        RANDOM.nextBytes(salt);\n        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATIONS, KEY_LENGTH);\n        byte[] hash = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();\n        return Base64.getEncoder().encodeToString(salt) + ":" + Base64.getEncoder().encodeToString(hash);\n    }\n\n    public static boolean verifyPassword(String stored, String provided) throws Exception {\n        String[] parts = stored.split(":");\n        byte[] salt = Base64.getDecoder().decode(parts[0]);\n        byte[] storedHash = Base64.getDecoder().decode(parts[1]);\n        PBEKeySpec spec = new PBEKeySpec(provided.toCharArray(), salt, ITERATIONS, KEY_LENGTH);\n        byte[] testHash = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();\n        return java.util.Arrays.equals(storedHash, testHash);\n    }\n}\n`, description: "Create Java PBKDF2 password utility", ruleId: "CRYPTO-003" });
+  } else if (lang === "php") {
+    actions.push({ type: "create", filePath: "lib/auth.php", content: `<?php\n\nfunction hash_password(string $password): string {\n    return password_hash($password, PASSWORD_ARGON2ID);\n}\n\nfunction verify_password(string $hash, string $password): bool {\n    return password_verify($password, $hash);\n}\n`, description: "Create PHP Argon2id password utility", ruleId: "CRYPTO-003" });
+  } else if (lang === "rust") {
+    actions.push({ type: "create", filePath: "src/auth.rs", content: `use argon2::{Argon2, Algorithm, Version, Params};
+use argon2::password_hash::{SaltString, PasswordHasher, PasswordVerifier};
+use rand::rngs::OsRng;
+
+pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
+    let salt = SaltString::generate(&mut OsRng);
+    let params = Params::new(65536, 3, 4, Some(32))?;
+    let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
+    let hash = argon2.hash_password(password.as_bytes(), &salt)?;
+    Ok(hash.to_string())
+}
+
+pub fn verify_password(hash: &str, password: &str) -> Result<bool, argon2::password_hash::Error> {
+    let parsed = argon2::PasswordHash::new(hash)?;
+    Ok(Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok())
+}
+`, description: "Create Rust Argon2id password utility", ruleId: "CRYPTO-003" });
   }
   return actions;
 }
 
 function buildRateLimitFix(root: string): AutoFixAction[] {
-  const appFile = findMainAppFile(root);
-  if (!appFile) return [];
-  const isExpress = hasDep(root, "express");
-  const isFastify = hasDep(root, "fastify");
-  if (isExpress) {
-    return [
-      { type: "npm-install", filePath: "package.json", description: "Install express-rate-limit", ruleId: "AUTH-002" },
-      { type: "append", filePath: appFile, content: `\nimport rateLimit from 'express-rate-limit';\n\nconst limiter = rateLimit({\n  windowMs: 15 * 60 * 1000,\n  max: 100,\n  standardHeaders: true,\n  legacyHeaders: false,\n});\napp.use(limiter);\n`, description: "Add rate limiting (100 req/15min)", ruleId: "AUTH-002" },
-    ];
-  } else if (isFastify) {
-    return [
-      { type: "npm-install", filePath: "package.json", description: "Install @fastify/rate-limit", ruleId: "AUTH-002" },
-      { type: "append", filePath: appFile, content: `\nimport rateLimit from '@fastify/rate-limit';\napp.register(rateLimit, { max: 100, timeWindow: '15 minutes' });\n`, description: "Add rate limiting to Fastify", ruleId: "AUTH-002" },
-    ];
+  const lang = detectProjectLanguage(root);
+  const fw = detectWebFramework(root, lang);
+  const actions: AutoFixAction[] = [];
+
+  if (lang === "typescript" || lang === "javascript") {
+    const appFile = findMainAppFile(root);
+    if (!appFile) return [];
+    if (fw === "express") {
+      actions.push({ type: "npm-install", filePath: "package.json", description: "Install express-rate-limit", ruleId: "AUTH-002" });
+      actions.push({ type: "append", filePath: appFile, content: `\nimport rateLimit from 'express-rate-limit';\n\nconst limiter = rateLimit({\n  windowMs: 15 * 60 * 1000,\n  max: 100,\n  standardHeaders: true,\n  legacyHeaders: false,\n});\napp.use(limiter);\n`, description: "Add rate limiting (100 req/15min)", ruleId: "AUTH-002" });
+    } else if (fw === "fastify") {
+      actions.push({ type: "npm-install", filePath: "package.json", description: "Install @fastify/rate-limit", ruleId: "AUTH-002" });
+      actions.push({ type: "append", filePath: appFile, content: `\nimport rateLimit from '@fastify/rate-limit';\napp.register(rateLimit, { max: 100, timeWindow: '15 minutes' });\n`, description: "Add rate limiting to Fastify", ruleId: "AUTH-002" });
+    }
+  } else if (lang === "python") {
+    const appFile = findMainAppFile(root) || "app.py";
+    if (fw === "django") {
+      actions.push({ type: "append", filePath: appFile, content: "\n# Rate limiting: pip install django-ratelimit\n# Add to views: @ratelimit(key='ip', rate='100/h', block=True)\n", description: "Add Django rate limiting note", ruleId: "AUTH-002" });
+    } else if (fw === "fastapi") {
+      actions.push({ type: "append", filePath: appFile, content: "\nfrom slowapi import Limiter\nfrom slowapi.util import get_remote_address\n\nlimiter = Limiter(key_func=get_remote_address)\n# Add to routes: @limiter.limit('100/15minutes')\n", description: "Add FastAPI rate limiting (slowapi)", ruleId: "AUTH-002" });
+    } else if (fw === "flask") {
+      actions.push({ type: "append", filePath: appFile, content: "\nfrom flask_limiter import Limiter\nfrom flask_limiter.util import get_remote_address\n\nlimiter = Limiter(app=app, key_func=get_remote_address, default_limits=['100 per 15 minute'])\n", description: "Add Flask rate limiting", ruleId: "AUTH-002" });
+    }
+  } else if (lang === "ruby") {
+    if (fw === "rails") {
+      actions.push({ type: "append", filePath: "Gemfile", content: "\ngem 'rack-attack'\n", description: "Add rack-attack for rate limiting", ruleId: "AUTH-002" });
+      actions.push({ type: "append", filePath: "config/application.rb", content: "\nconfig.middleware.use Rack::Attack\nRack::Attack.throttle('req/ip', limit: 100, period: 15.minutes) { |req| req.ip }\n", description: "Add Rails rate limiting config", ruleId: "AUTH-002" });
+    }
+  } else if (lang === "go") {
+    const appFile = findMainAppFile(root) || "main.go";
+    actions.push({ type: "append", filePath: appFile, content: "\nimport (\n\t\"net/http\"\n\t\"sync\"\n\t\"time\"\n)\n\ntype rateLimiter struct {\n\tmu       sync.Mutex\n\tvisitors map[string][]time.Time\n\tlimit    int\n\twindow   time.Duration\n}\n\nfunc newRateLimiter(limit int, window time.Duration) *rateLimiter {\n\treturn &rateLimiter{visitors: make(map[string][]time.Time), limit: limit, window: window}\n}\n\nfunc (rl *rateLimiter) allow(ip string) bool {\n\trl.mu.Lock()\n\tdefer rl.mu.Unlock()\n\tnow := time.Now()\n\twindowStart := now.Add(-rl.window)\n\tvar recent []time.Time\n\tfor _, t := range rl.visitors[ip] {\n\t\tif t.After(windowStart) { recent = append(recent, t) }\n\t}\n\trl.visitors[ip] = recent\n\tif len(recent) >= rl.limit { return false }\n\trl.visitors[ip] = append(rl.visitors[ip], now)\n\treturn true\n}\n\nvar limiter = newRateLimiter(100, 15*time.Minute)\n\nfunc rateLimitMiddleware(next http.Handler) http.Handler {\n\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\tif !limiter.allow(r.RemoteAddr) {\n\t\t\thttp.Error(w, \"Too many requests\", http.StatusTooManyRequests)\n\t\t\treturn\n\t\t}\n\t\tnext.ServeHTTP(w, r)\n\t})\n}\n", description: "Add Go rate limiter middleware", ruleId: "AUTH-002" });
+  } else if (lang === "java") {
+    if (fw === "spring") {
+      actions.push({ type: "create", filePath: "src/main/java/com/example/RateLimitConfig.java", content: `package com.example;\n\nimport io.github.bucket4j.Bandwidth;\nimport io.github.bucket4j.Bucket;\nimport io.github.bucket4j.Refill;\nimport org.springframework.stereotype.Component;\nimport org.springframework.web.servlet.HandlerInterceptor;\n\nimport jakarta.servlet.http.HttpServletRequest;\nimport jakarta.servlet.http.HttpServletResponse;\nimport java.time.Duration;\nimport java.util.Map;\nimport java.util.concurrent.ConcurrentHashMap;\n\n@Component\npublic class RateLimitInterceptor implements HandlerInterceptor {\n    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();\n\n    private Bucket newBucket() {\n        Bandwidth limit = Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(15)));\n        return Bucket.builder().addLimit(limit).build();\n    }\n\n    @Override\n    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {\n        Bucket bucket = buckets.computeIfAbsent(request.getRemoteAddr(), k -> newBucket());\n        if (bucket.tryConsume(1)) return true;\n        response.setStatus(429);\n        return false;\n    }\n}\n`, description: "Create Spring rate limiter (bucket4j)", ruleId: "AUTH-002" });
+    }
+  } else if (lang === "php") {
+    const appFile = findMainAppFile(root) || "public/index.php";
+    actions.push({ type: "append", filePath: appFile, content: "\n// Rate limiting middleware\n$ip = $_SERVER['REMOTE_ADDR'];\n$limit = 100;\n$window = 900; // 15 minutes\n$cacheKey = 'rate_limit_' . $ip;\n// Implement with your cache layer (Redis, APCu, file-based)\n", description: "Add PHP rate limiting scaffolding", ruleId: "AUTH-002" });
+  } else if (lang === "rust") {
+    const appFile = findMainAppFile(root) || "src/main.rs";
+    if (fw === "actix") {
+      actions.push({ type: "append", filePath: appFile, content: "\n// Rate limiting: cargo add actix-governor\n// use actix_governor::{GovernorConfigBuilder, Governor};\n// let governor_conf = GovernorConfigBuilder::default()\n//     .per_second(1)\n//     .burst_size(20)\n//     .finish()\n//     .unwrap();\n// app.wrap(Governor::new(&governor_conf));\n", description: "Add Actix-web rate limiting (actix-governor)", ruleId: "AUTH-002" });
+    } else if (fw === "axum") {
+      actions.push({ type: "append", filePath: appFile, content: "\n// Rate limiting: cargo add tower --features limit\n// use tower::ServiceBuilder;\n// use tower::limit::RateLimitLayer;\n// use std::time::Duration;\n// let app = axum::Router::new()\n//     .layer(ServiceBuilder::new()\n//         .layer(RateLimitLayer::new(100, Duration::from_secs(900))));\n", description: "Add Axum rate limiting (tower)", ruleId: "AUTH-002" });
+    } else {
+      actions.push({ type: "append", filePath: appFile, content: "\n// GESF Rate Limiting: 100 requests per 15 minutes\n// actix-web: cargo add actix-governor\n// axum: cargo add tower --features limit\n", description: "Add Rust rate limiting guidance", ruleId: "AUTH-002" });
+    }
   }
-  return [];
+  return actions;
 }
 
 function buildSessionTimeoutFix(root: string): AutoFixAction[] {
-  const appFile = findMainAppFile(root);
-  if (!appFile) return [];
-  const isExpress = hasDep(root, "express");
-  if (!isExpress) return [{ type: "append", filePath: appFile, content: "\nconst SESSION_TIMEOUT_MS = 30 * 60 * 1000;\n", description: "Add session timeout constant", ruleId: "AUTH-003" }];
-  const content = readFileSafe(path.join(root, appFile)) || "";
-  if (content.includes("session(")) return [];
-  return [
-    { type: "npm-install", filePath: "package.json", description: "Install express-session", ruleId: "AUTH-003" },
-    { type: "append", filePath: appFile, content: `\nimport session from 'express-session';\n\napp.use(session({\n  secret: process.env.SESSION_SECRET || 'change-me-in-production',\n  resave: false,\n  saveUninitialized: false,\n  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 30 * 60 * 1000 },\n}));\n`, description: "Add session with 30-min timeout", ruleId: "AUTH-003" },
-  ];
+  const lang = detectProjectLanguage(root);
+  const fw = detectWebFramework(root, lang);
+  const actions: AutoFixAction[] = [];
+
+  if (lang === "typescript" || lang === "javascript") {
+    const appFile = findMainAppFile(root);
+    if (!appFile) return [];
+    if (fw === "express") {
+      actions.push({ type: "npm-install", filePath: "package.json", description: "Install express-session", ruleId: "AUTH-003" });
+      actions.push({ type: "append", filePath: appFile, content: `\nimport session from 'express-session';\n\napp.use(session({\n  secret: process.env.SESSION_SECRET || 'change-me-in-production',\n  resave: false,\n  saveUninitialized: false,\n  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 30 * 60 * 1000 },\n}));\n`, description: "Add session with 30-min timeout", ruleId: "AUTH-003" });
+    } else {
+      actions.push({ type: "append", filePath: appFile, content: "\nconst SESSION_TIMEOUT_MS = 30 * 60 * 1000;\n", description: "Add session timeout constant", ruleId: "AUTH-003" });
+    }
+  } else if (lang === "python") {
+    if (fw === "django") {
+      const settingsFile = findFileRecursive(root, "settings.py", ".") || "settings.py";
+      actions.push({ type: "append", filePath: settingsFile, content: "\nSESSION_COOKIE_AGE = 1800  # 30 minutes\nSESSION_COOKIE_SECURE = True\nSESSION_COOKIE_HTTPONLY = True\nSESSION_EXPIRE_AT_BROWSER_CLOSE = True\n", description: "Add Django session timeout settings", ruleId: "AUTH-003" });
+    } else {
+      const appFile = findMainAppFile(root) || "app.py";
+      actions.push({ type: "append", filePath: appFile, content: "\n# Session timeout: 30 minutes\nSESSION_TIMEOUT = 30 * 60\n", description: "Add session timeout constant", ruleId: "AUTH-003" });
+    }
+  } else if (lang === "ruby") {
+    if (fw === "rails") {
+      actions.push({ type: "append", filePath: "config/initializers/session_store.rb", content: "\nRails.application.config.session_store :cookie_store, expire_after: 30.minutes, secure: Rails.env.production?, httponly: true\n", description: "Add Rails session timeout", ruleId: "AUTH-003" });
+    }
+  } else if (lang === "go") {
+    const appFile = findMainAppFile(root) || "main.go";
+    actions.push({ type: "append", filePath: appFile, content: "\nconst sessionTimeout = 30 * time.Minute\n", description: "Add Go session timeout constant", ruleId: "AUTH-003" });
+  } else if (lang === "java") {
+    if (fw === "spring") {
+      actions.push({ type: "append", filePath: "src/main/resources/application.properties", content: "\nserver.servlet.session.timeout=30m\nserver.servlet.session.cookie.http-only=true\nserver.servlet.session.cookie.secure=true\n", description: "Add Spring session timeout config", ruleId: "AUTH-003" });
+    }
+  } else if (lang === "php") {
+    if (fw === "laravel") {
+      actions.push({ type: "append", filePath: "config/session.php", content: "\n'lifetime' => 30,\n'expire_on_close' => true,\n'secure' => env('APP_ENV') === 'production',\n'http_only' => true,\n", description: "Add Laravel session timeout", ruleId: "AUTH-003" });
+    } else {
+      const appFile = findMainAppFile(root) || "public/index.php";
+      actions.push({ type: "append", filePath: appFile, content: "\nini_set('session.gc_maxlifetime', 1800); // 30 minutes\nsession_set_cookie_params(1800, '/', '', true, true);\n", description: "Add PHP session timeout config", ruleId: "AUTH-003" });
+    }
+  } else if (lang === "rust") {
+    const appFile = findMainAppFile(root) || "src/main.rs";
+    actions.push({ type: "append", filePath: appFile, content: "\nconst SESSION_TIMEOUT_SECS: u64 = 30 * 60; // 30 minutes\n", description: "Add Rust session timeout constant", ruleId: "AUTH-003" });
+  }
+  return actions;
 }
 
 function buildCORSWildcardFix(root: string): AutoFixAction[] {
+  const lang = detectProjectLanguage(root);
   const appFile = findMainAppFile(root);
   if (!appFile) return [];
   const content = readFileSafe(path.join(root, appFile)) || "";
   const actions: AutoFixAction[] = [];
-  if (content.includes("origin: '*'")) {
-    actions.push({ type: "modify", filePath: appFile, search: "origin: '*'", replace: "origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000']", description: "Replace CORS wildcard", ruleId: "AUTH-004" });
-  }
-  if (content.includes('origin:"*"')) {
-    actions.push({ type: "modify", filePath: appFile, search: 'origin:"*"', replace: "origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000']", description: "Replace CORS wildcard", ruleId: "AUTH-004" });
+
+  const wildcardPatterns = ["origin: '*'", "origin:'*'", 'origin:"*"', "Access-Control-Allow-Origin: *"];
+  for (const pattern of wildcardPatterns) {
+    if (!content.includes(pattern)) continue;
+    if (lang === "python") {
+      const replacement = pattern.includes("*'") || pattern.includes('*"')
+        ? "origins=['http://localhost:3000']"
+        : "origins=['http://localhost:3000']";
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: replacement, description: "Replace CORS wildcard", ruleId: "AUTH-004" });
+    } else if (lang === "go") {
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: 'w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGIN"))', description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
+    } else if (lang === "ruby") {
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "origins ENV.fetch('ALLOWED_ORIGINS', 'http://localhost:3000').split(',')", description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
+    } else if (lang === "java") {
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: 'config.addAllowedOrigin(System.getenv("ALLOWED_ORIGIN"))', description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
+    } else if (lang === "php") {
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "$response->headers->set('Access-Control-Allow-Origin', getenv('ALLOWED_ORIGIN'))", description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
+    } else if (lang === "rust") {
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "allowed_origin(std::env::var(\"ALLOWED_ORIGIN\").unwrap_or(\"http://localhost:3000\".to_string()))", description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
+    } else {
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000']", description: "Replace CORS wildcard", ruleId: "AUTH-004" });
+    }
   }
   return actions;
 }
 
 function buildTimestampsFix(root: string, f: Finding): AutoFixAction[] {
-  if (!f.file.endsWith(".prisma")) return [];
-  const content = readFileSafe(path.join(root, f.file));
-  if (!content) return [];
-  const modelMatch = content.match(/model\s+\w+\s*\{[^}]*\}/g);
-  if (!modelMatch || modelMatch.length === 0) return [];
-  const block = modelMatch[0];
-  const closingBrace = block.lastIndexOf("}");
-  if (closingBrace === -1) return [];
-  const insertion = "\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @updatedAt";
-  return [{ type: "modify", filePath: f.file, search: block, replace: block.slice(0, closingBrace) + insertion + block.slice(closingBrace), description: "Add createdAt/updatedAt to Prisma model", ruleId: "DB-001" }];
+  if (f.file.endsWith(".prisma")) {
+    const content = readFileSafe(path.join(root, f.file));
+    if (!content) return [];
+    const modelMatch = content.match(/model\s+\w+\s*\{[^}]*\}/g);
+    if (!modelMatch || modelMatch.length === 0) return [];
+    const block = modelMatch[0];
+    const closingBrace = block.lastIndexOf("}");
+    if (closingBrace === -1) return [];
+    const insertion = "\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @updatedAt";
+    return [{ type: "modify", filePath: f.file, search: block, replace: block.slice(0, closingBrace) + insertion + block.slice(closingBrace), description: "Add createdAt/updatedAt to Prisma model", ruleId: "DB-001" }];
+  }
+  if (f.file.endsWith(".py")) {
+    return [{ type: "append", filePath: f.file, content: "\n# GESF: Add audit timestamps\n# For Django models:\n#   created_at = models.DateTimeField(auto_now_add=True)\n#   updated_at = models.DateTimeField(auto_now=True)\n# For SQLAlchemy:\n#   created_at = Column(DateTime, default=datetime.utcnow)\n#   updated_at = Column(DateTime, onupdate=datetime.utcnow)\n", description: "Add Python timestamp guidance", ruleId: "DB-001" }];
+  }
+  if (f.file.endsWith(".rb")) {
+    return [{ type: "append", filePath: f.file, content: "\n# GESF: Rails has built-in timestamps. Add to model:\n#   create_table :your_table do |t|\n#     t.timestamps\n#   end\n", description: "Add Rails timestamp guidance", ruleId: "DB-001" }];
+  }
+  if (f.file.endsWith(".go")) {
+    return [{ type: "append", filePath: f.file, content: "\n// GESF: Add audit timestamps to GORM models:\n// type YourModel struct {\n//   ID        uint           `json:\"id\" gorm:\"primaryKey\"`\n//   CreatedAt time.Time      `json:\"created_at\"`\n//   UpdatedAt time.Time      `json:\"updated_at\"`\n// }\n", description: "Add Go timestamp guidance", ruleId: "DB-001" }];
+  }
+  if (f.file.endsWith(".java")) {
+    return [{ type: "append", filePath: f.file, content: "\n// GESF: Add JPA audit timestamps:\n// @CreatedDate\n// @Column(name = \"created_at\", updatable = false)\n// private Instant createdAt;\n//\n// @LastModifiedDate\n// @Column(name = \"updated_at\")\n// private Instant updatedAt;\n", description: "Add Java JPA timestamp guidance", ruleId: "DB-001" }];
+  }
+  if (f.file.endsWith(".php")) {
+    return [{ type: "append", filePath: f.file, content: "\n// GESF: Laravel uses timestamps() in migrations:\n// $table->timestamps(); // adds created_at, updated_at\n// $table->softDeletes(); // adds deleted_at\n", description: "Add Laravel timestamp guidance", ruleId: "DB-001" }];
+  }
+  if (f.file.endsWith(".rs")) {
+    return [{ type: "append", filePath: f.file, content: "\n// GESF: Add audit timestamps to ORM models:\n// Diesel: created_at TIMESTAMP NOT NULL DEFAULT NOW(),\n//         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),\n// SQLx:   created_at: chrono::NaiveDateTime,\n//         updated_at: chrono::NaiveDateTime,\n// SeaORM: created_at: DateTime,\n//         updated_at: DateTime,\n", description: "Add Rust timestamp guidance", ruleId: "DB-001" }];
+  }
+  return [];
 }
 
 function buildSoftDeleteFix(root: string, f: Finding): AutoFixAction[] {
-  if (!f.file.endsWith(".prisma")) return [];
-  const content = readFileSafe(path.join(root, f.file));
-  if (!content) return [];
-  const modelMatch = content.match(/model\s+\w+\s*\{[^}]*\}/g);
-  if (!modelMatch || modelMatch.length === 0) return [];
-  const block = modelMatch[0];
-  const closingBrace = block.lastIndexOf("}");
-  if (closingBrace === -1) return [];
-  return [{ type: "modify", filePath: f.file, search: block, replace: block.slice(0, closingBrace) + "\n  deletedAt  DateTime?" + block.slice(closingBrace), description: "Add deletedAt to Prisma model", ruleId: "DB-002" }];
+  if (f.file.endsWith(".prisma")) {
+    const content = readFileSafe(path.join(root, f.file));
+    if (!content) return [];
+    const modelMatch = content.match(/model\s+\w+\s*\{[^}]*\}/g);
+    if (!modelMatch || modelMatch.length === 0) return [];
+    const block = modelMatch[0];
+    const closingBrace = block.lastIndexOf("}");
+    if (closingBrace === -1) return [];
+    return [{ type: "modify", filePath: f.file, search: block, replace: block.slice(0, closingBrace) + "\n  deletedAt  DateTime?" + block.slice(closingBrace), description: "Add deletedAt to Prisma model", ruleId: "DB-002" }];
+  }
+  if (f.file.endsWith(".py")) {
+    return [{ type: "append", filePath: f.file, content: "\n# GESF: Add soft delete to Django/SQLAlchemy:\n# Django: deleted_at = models.DateTimeField(null=True, blank=True)\n# SQLAlchemy: deleted_at = Column(DateTime, nullable=True)\n", description: "Add Python soft delete guidance", ruleId: "DB-002" }];
+  }
+  if (f.file.endsWith(".go")) {
+    return [{ type: "append", filePath: f.file, content: "\n// GESF: Add soft delete to GORM:\n// DeletedAt gorm.DeletedAt `json:\"deleted_at\" gorm:\"index\"`\n", description: "Add Go soft delete guidance", ruleId: "DB-002" }];
+  }
+  if (f.file.endsWith(".rs")) {
+    return [{ type: "append", filePath: f.file, content: "\n// GESF: Add soft delete:\n// Diesel: deleted_at TIMESTAMP NULL,\n// SQLx:   deleted_at: Option<chrono::NaiveDateTime>,\n// SeaORM: deleted_at: Option<DateTime>,\n", description: "Add Rust soft delete guidance", ruleId: "DB-002" }];
+  }
+  return [];
 }
 
 function buildUserAuditFix(root: string, f: Finding): AutoFixAction[] {
-  if (!f.file.endsWith(".prisma")) return [];
-  const content = readFileSafe(path.join(root, f.file));
-  if (!content) return [];
-  const modelMatch = content.match(/model\s+\w+\s*\{[^}]*\}/g);
-  if (!modelMatch || modelMatch.length === 0) return [];
-  const block = modelMatch[0];
-  const closingBrace = block.lastIndexOf("}");
-  if (closingBrace === -1) return [];
-  return [{ type: "modify", filePath: f.file, search: block, replace: block.slice(0, closingBrace) + "\n  createdBy  String?\n  updatedBy  String?" + block.slice(closingBrace), description: "Add createdBy/updatedBy columns", ruleId: "DB-003" }];
+  if (f.file.endsWith(".prisma")) {
+    const content = readFileSafe(path.join(root, f.file));
+    if (!content) return [];
+    const modelMatch = content.match(/model\s+\w+\s*\{[^}]*\}/g);
+    if (!modelMatch || modelMatch.length === 0) return [];
+    const block = modelMatch[0];
+    const closingBrace = block.lastIndexOf("}");
+    if (closingBrace === -1) return [];
+    return [{ type: "modify", filePath: f.file, search: block, replace: block.slice(0, closingBrace) + "\n  createdBy  String?\n  updatedBy  String?" + block.slice(closingBrace), description: "Add createdBy/updatedBy columns", ruleId: "DB-003" }];
+  }
+  if (f.file.endsWith(".py")) {
+    return [{ type: "append", filePath: f.file, content: "\n# GESF: Add user audit columns:\n# Django: created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='+')\n# SQLAlchemy: created_by = Column(Integer, ForeignKey('users.id'))\n", description: "Add Python user audit guidance", ruleId: "DB-003" }];
+  }
+  if (f.file.endsWith(".rs")) {
+    return [{ type: "append", filePath: f.file, content: "\n// GESF: Add user audit columns:\n// Diesel: created_by VARCHAR(255) NULL,\n//         updated_by VARCHAR(255) NULL,\n// SQLx:   created_by: Option<String>,\n//         updated_by: Option<String>,\n", description: "Add Rust user audit guidance", ruleId: "DB-003" }];
+  }
+  return [];
 }
 
 function buildAuditModelFix(root: string): AutoFixAction[] {
-  const content = readFileSafe(path.join(root, "prisma/schema.prisma"));
-  if (!content) return [];
-  return [{ type: "append", filePath: "prisma/schema.prisma", content: "\\nmodel Audit {\\n  id        Int      @id @default(autoincrement())\\n  userId    String\\n  action    String\\n  resource  String\\n  timestamp DateTime @default(now())\\n  ipAddress String\\n  metadata  Json?\\n}\\n", description: "Add Audit model to Prisma schema", ruleId: "DB-004" }];
+  if (fs.existsSync(path.join(root, "prisma/schema.prisma"))) {
+    return [{ type: "append", filePath: "prisma/schema.prisma", content: "\\nmodel Audit {\\n  id        Int      @id @default(autoincrement())\\n  userId    String\\n  action    String\\n  resource  String\\n  timestamp DateTime @default(now())\\n  ipAddress String\\n  metadata  Json?\\n}\\n", description: "Add Audit model to Prisma schema", ruleId: "DB-004" }];
+  }
+  const lang = detectProjectLanguage(root);
+  if (lang === "python") {
+    return [{ type: "create", filePath: "lib/models/audit.py", content: `from datetime import datetime\nfrom sqlalchemy import Column, Integer, String, DateTime, JSON\nfrom sqlalchemy.ext.declarative import declarative_base\n\nBase = declarative_base()\n\nclass Audit(Base):\n    __tablename__ = 'audit'\n    id = Column(Integer, primary_key=True, autoincrement=True)\n    user_id = Column(String(255))\n    action = Column(String(255))\n    resource = Column(String(255))\n    timestamp = Column(DateTime, default=datetime.utcnow)\n    ip_address = Column(String(45))\n    metadata = Column(JSON)\n`, description: "Create Python Audit model (SQLAlchemy)", ruleId: "DB-004" }];
+  }
+  if (lang === "go") {
+    return [{ type: "create", filePath: "lib/models/audit.go", content: `package models\n\nimport "time"\n\ntype Audit struct {\n\tID        uint      \`json:"id" gorm:"primaryKey;autoIncrement"\`\n\tUserID    string    \`json:"userId"\`\n\tAction    string    \`json:"action"\`\n\tResource  string    \`json:"resource"\`\n\tTimestamp time.Time \`json:"timestamp" gorm:"default:now()"\`\n\tIPAddress string    \`json:"ipAddress"\`\n}\n`, description: "Create Go Audit model (GORM)", ruleId: "DB-004" }];
+  }
+  if (lang === "java") {
+    return [{ type: "create", filePath: "src/main/java/com/example/Audit.java", content: `package com.example;\n\nimport jakarta.persistence.*;\nimport java.time.Instant;\n\n@Entity\n@Table(name = "audit")\npublic class Audit {\n    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)\n    private Long id;\n    private String userId;\n    private String action;\n    private String resource;\n    private String ipAddress;\n    @Column(columnDefinition = "jsonb")\n    private String metadata;\n    private Instant timestamp = Instant.now();\n}\n`, description: "Create Java Audit entity (JPA)", ruleId: "DB-004" }];
+  }
+  if (lang === "rust") {
+    return [{ type: "create", filePath: "src/models/audit.rs", content: `use chrono::NaiveDateTime;
+
+#[derive(Debug, Queryable, Serialize)]
+pub struct Audit {
+    pub id: i32,
+    pub user_id: String,
+    pub action: String,
+    pub resource: String,
+    pub ip_address: String,
+    pub timestamp: NaiveDateTime,
+}
+
+// Diesel table definition:
+// table! {
+//     audit (id) {
+//         id -> Int4,
+//         user_id -> Varchar,
+//         action -> Varchar,
+//         resource -> Varchar,
+//         ip_address -> Varchar,
+//         timestamp -> Timestamp,
+//     }
+// }
+`, description: "Create Rust Audit model (Diesel)", ruleId: "DB-004" }];
+  }
+  return [];
 }
 
 function getNpmInstallsFromActions(actions: AutoFixAction[]): string[] {
@@ -1010,6 +1614,36 @@ function getNpmInstallsFromActions(actions: AutoFixAction[]): string[] {
 }
 
 function buildEncryptionAtRestImpl(root: string, hasSrc: boolean): AutoFixAction[] {
+  const lang = detectProjectLanguage(root);
+  if (lang === "rust") {
+    return [
+      { type: "create", filePath: "src/encryption.rs", content: `use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
+use aes_gcm::aead::Aead;
+use rand::RngCore;
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
+
+pub fn encrypt(plaintext: &str, key: &[u8; 32]) -> Result<String, aes_gcm::Error> {
+    let cipher = Aes256Gcm::new(key.into());
+    let mut nonce_bytes = [0u8; 12];
+    rand::thread_rng().fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes())?;
+    let mut combined = nonce_bytes.to_vec();
+    combined.extend_from_slice(&ciphertext);
+    Ok(BASE64.encode(&combined))
+}
+
+pub fn decrypt(encoded: &str, key: &[u8; 32]) -> Result<String, aes_gcm::Error> {
+    let combined = BASE64.decode(encoded).map_err(|_| aes_gcm::Error)?;
+    let (nonce_bytes, ciphertext) = combined.split_at(12);
+    let cipher = Aes256Gcm::new(key.into());
+    let nonce = Nonce::from_slice(nonce_bytes);
+    let plaintext = cipher.decrypt(nonce, ciphertext)?;
+    String::from_utf8(plaintext).map_err(|_| aes_gcm::Error)
+}
+`, description: "Create Rust AES-256-GCM encryption utility", ruleId: "GDPR-ART32-002" },
+    ];
+  }
   const cryptoPath = hasSrc ? "src/lib/encryption.ts" : "lib/encryption.ts";
   return [
     { type: "npm-install", filePath: "package.json", description: "Node.js crypto is built-in", ruleId: "GDPR-ART32-002" },
@@ -1018,8 +1652,15 @@ function buildEncryptionAtRestImpl(root: string, hasSrc: boolean): AutoFixAction
 }
 
 function buildEncryptionInTransitImpl(root: string, _hasSrc: boolean): AutoFixAction[] {
+  const lang = detectProjectLanguage(root);
   const appFile = findMainAppFile(root);
   const actions: AutoFixAction[] = [];
+  if (lang === "rust") {
+    if (appFile) {
+      actions.push({ type: "append", filePath: appFile, content: "\n// GESF: Enforce TLS in production\n// Use a reverse proxy (nginx, caddy) for TLS termination\n// or configure rustls with your certificate:\n// let config = rustls::ServerConfig::builder()\n//     .with_safe_defaults()\n//     .with_no_client_auth()\n//     .with_single_cert(certs, key);\n", description: "Add Rust TLS guidance", ruleId: "GDPR-ART32-003" });
+    }
+    return actions;
+  }
   if (appFile) {
     actions.push({ type: "append", filePath: appFile, content: "\nif (process.env.NODE_ENV === 'production') {\n  app.use((req, res, next) => {\n    if (req.headers['x-forwarded-proto'] === 'http') {\n      return res.redirect(301, `https://${req.headers.host}${req.url}`);\n    }\n    next();\n  });\n}\n", description: "Add HTTPS redirect middleware", ruleId: "GDPR-ART32-003" });
   }
@@ -1027,6 +1668,30 @@ function buildEncryptionInTransitImpl(root: string, _hasSrc: boolean): AutoFixAc
 }
 
 function buildUserIdentificationImpl(root: string, hasSrc: boolean): AutoFixAction[] {
+  const lang = detectProjectLanguage(root);
+  if (lang === "rust") {
+    const authPath = "src/auth.rs";
+    if (fs.existsSync(path.join(root, authPath))) return [];
+    return [
+      { type: "create", filePath: authPath, content: `use argon2::{Argon2, Algorithm, Version, Params};
+use argon2::password_hash::{SaltString, PasswordHasher, PasswordVerifier};
+use rand::rngs::OsRng;
+
+pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
+    let salt = SaltString::generate(&mut OsRng);
+    let params = Params::new(65536, 3, 4, Some(32))?;
+    let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
+    let hash = argon2.hash_password(password.as_bytes(), &salt)?;
+    Ok(hash.to_string())
+}
+
+pub fn verify_password(hash: &str, password: &str) -> Result<bool, argon2::password_hash::Error> {
+    let parsed = argon2::PasswordHash::new(hash)?;
+    Ok(Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok())
+}
+`, description: "Create Rust auth utility with Argon2id", ruleId: "GDPR-ART32-004" },
+    ];
+  }
   const authPath = hasSrc ? "src/lib/auth.ts" : "lib/auth.ts";
   if (fs.existsSync(path.join(root, authPath))) return [];
   return [
@@ -1036,6 +1701,29 @@ function buildUserIdentificationImpl(root: string, hasSrc: boolean): AutoFixActi
 }
 
 function buildIntegrityControlsImpl(root: string, hasSrc: boolean): AutoFixAction[] {
+  const lang = detectProjectLanguage(root);
+  if (lang === "rust") {
+    return [
+      { type: "create", filePath: "src/integrity.rs", content: `use sha2::{Sha256, Digest};
+
+pub fn hash_data(data: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(data.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+pub fn verify_integrity(data: &str, expected_hash: &str) -> bool {
+    hash_data(data) == expected_hash
+}
+
+pub fn generate_checksum(content: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(content);
+    format!("{:x}", hasher.finalize())
+}
+`, description: "Create Rust integrity verification utility", ruleId: "GDPR-ART32-007" },
+    ];
+  }
   const integrityPath = hasSrc ? "src/lib/integrity.ts" : "lib/integrity.ts";
   return [
     { type: "create", filePath: integrityPath, content: `import { createHash } from 'node:crypto';\n\nexport function hashData(data: string): string {\n  return createHash('sha256').update(data).digest('hex');\n}\n\nexport function verifyIntegrity(data: string, expectedHash: string): boolean {\n  return hashData(data) === expectedHash;\n}\n\nexport function generateChecksum(content: string): string {\n  return createHash('sha256').update(content).digest('base64');\n}\n`, description: "Create integrity verification utility", ruleId: "GDPR-ART32-007" },
@@ -1049,9 +1737,12 @@ function buildBackupPolicyImpl(root: string, _hasSrc: boolean): AutoFixAction[] 
 }
 
 function buildSecurityTestingImpl(root: string): AutoFixAction[] {
-  const ghDir = path.join(root, ".github/workflows");
+  const lang = detectProjectLanguage(root);
+  const setupSteps = lang === "rust"
+    ? `      - uses: actions-rs/toolchain@v1\n        with:\n          toolchain: stable\n      - run: cargo build\n      - name: cargo audit\n        run: cargo install cargo-audit && cargo audit`
+    : `      - uses: actions/setup-node@v4\n        with:\n          node-version: '22'\n      - run: npm ci\n      - name: npm audit\n        run: npm audit --audit-level=high\n        continue-on-error: true`;
   return [
-    { type: "create", filePath: ".github/workflows/security-scan.yml", content: `name: Security Scan\non:\n  push:\n    branches: [main, master]\n  pull_request:\n    branches: [main, master]\n  schedule:\n    - cron: '0 6 * * 1'\n\njobs:\n  security:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '22'\n      - run: npm ci\n      - name: npm audit\n        run: npm audit --audit-level=high\n        continue-on-error: true\n      - name: Run GESF compliance check\n        run: npx @greenarmor/ges audit --ci\n`, description: "Create security scanning GitHub Actions workflow", ruleId: "GDPR-ART32-009" },
+    { type: "create", filePath: ".github/workflows/security-scan.yml", content: `name: Security Scan\non:\n  push:\n    branches: [main, master]\n  pull_request:\n    branches: [main, master]\n  schedule:\n    - cron: '0 6 * * 1'\n\njobs:\n  security:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n${setupSteps}\n      - name: Run GESF compliance check\n        run: npx @greenarmor/ges audit --ci\n`, description: "Create security scanning GitHub Actions workflow", ruleId: "GDPR-ART32-009" },
   ];
 }
 
