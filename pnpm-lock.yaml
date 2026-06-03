@@ -134,6 +134,9 @@ importers:
 
   packages/mcp-server:
     dependencies:
+      '@greenarmor/ges-audit-engine':
+        specifier: workspace:*
+        version: link:../audit-engine
       '@greenarmor/ges-compliance-engine':
         specifier: workspace:*
         version: link:../compliance-engine
@@ -146,6 +149,12 @@ importers:
       '@greenarmor/ges-policy-engine':
         specifier: workspace:*
         version: link:../policy-engine
+      '@greenarmor/ges-report-generator':
+        specifier: workspace:*
+        version: link:../report-generator
+      '@greenarmor/ges-rules-engine':
+        specifier: workspace:*
+        version: link:../rules-engine
       '@greenarmor/ges-scoring-engine':
         specifier: workspace:*
         version: link:../scoring-engine

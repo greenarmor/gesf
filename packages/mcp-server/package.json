@@ -54,10 +54,13 @@
     "test": "echo \"no tests yet\""
   },
   "dependencies": {
+    "@greenarmor/ges-audit-engine": "workspace:*",
     "@greenarmor/ges-compliance-engine": "workspace:*",
     "@greenarmor/ges-core": "workspace:*",
     "@greenarmor/ges-doc-generator": "workspace:*",
     "@greenarmor/ges-policy-engine": "workspace:*",
+    "@greenarmor/ges-report-generator": "workspace:*",
+    "@greenarmor/ges-rules-engine": "workspace:*",
     "@greenarmor/ges-scoring-engine": "workspace:*"
   },
   "devDependencies": {
