@@ -34,7 +34,6 @@ theme:
     - search.highlight
     - content.code.copy
     - content.code.annotate
-  custom_dir: docs/overrides
   icon:
     repo: fontawesome/brands/github
 
