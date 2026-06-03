@@ -2,19 +2,6 @@
   <img src="assets/images/logo.png" alt="GESF Logo" width="200" />
 </center>
 
-<center>
-  <img src="assets/images/badge.svg" alt="Compliance Score: 100% (Grade A)" />
-</center>
-
-| Framework | Score | Grade | Controls |
-|-----------|-------|-------|----------|
-| GDPR | 100% | A | 22/22 passed |
-| OWASP | 100% | A | 6/6 passed |
-| CIS | 100% | A | 5/5 passed |
-| NIST | 100% | A | 6/6 passed |
-
-*Last evaluated: 2026-06-02*
-
 # GESF — Green Engineering Standard Framework
 
 Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and CIS engineering standards in any software project.
