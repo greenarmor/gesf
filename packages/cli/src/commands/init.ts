@@ -36,13 +36,20 @@ export const initCommand = new Command("init")
   .option("-n, --name <name>", "Project name")
   .option("-t, --type <type>", "Project type")
   .option("-f, --frameworks <frameworks>", "Comma-separated frameworks")
+  .option("--force", "Re-initialize even if GESF is already set up")
   .action(async (options) => {
     console.log("\n  Green Engineering Standard Framework (GESF) v" + GESF_VERSION);
     console.log("  ─────────────────────────────────────────────\n");
 
-    if (fs.existsSync(path.join(process.cwd(), GES_DIR))) {
-      console.error("  Error: GESF is already initialized in this project.");
-      process.exit(1);
+    const gesDir = path.join(process.cwd(), GES_DIR);
+    if (fs.existsSync(gesDir)) {
+      if (!options.force) {
+        console.error("  Error: GESF is already initialized in this project.");
+        console.error("  Use 'ges init --force' to re-initialize.\n");
+        process.exit(1);
+      }
+      console.log("  ⚠ Re-initializing GESF (existing files will be overwritten)...\n");
+      fs.rmSync(gesDir, { recursive: true, force: true });
     }
 
     const projectName = options.name || await input({ message: "Project name:", default: path.basename(process.cwd()) });

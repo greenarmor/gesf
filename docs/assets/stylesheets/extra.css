@@ -1,0 +1,13 @@
+:root {
+  --logo-max-width: 280px;
+}
+
+.md-typeset center {
+  margin-bottom: 1.2rem;
+}
+
+.md-typeset center img {
+  max-width: var(--logo-max-width);
+  height: auto;
+  border-radius: 12px;
+}

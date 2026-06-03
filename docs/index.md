@@ -1,3 +1,7 @@
+<center>
+  <img src="assets/images/logo.png" alt="GESF Logo" width="200" />
+</center>
+
 # GESF — Green Engineering Standard Framework
 
 Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and CIS engineering standards in any software project.
