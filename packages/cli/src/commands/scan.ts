@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { ensureGESInitialized } from "../utils/project.js";
-import { runAllScansWithSbom, formatScanResults, formatSbomResults } from "@greenarmor/ges-scanner-integration";
+import { runAllScansWithSbom, formatScanResults, formatSbomResults, detectProject } from "@greenarmor/ges-scanner-integration";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 
 export const scanCommand = new Command("scan")
@@ -9,9 +9,16 @@ export const scanCommand = new Command("scan")
   .action(async (options) => {
     const root = ensureGESInitialized();
 
-    console.log("\n  Running security scans...\n");
+    const detection = detectProject(root);
+    const detail = detection.ecosystem === "node" && detection.nodePackageManager
+      ? `node (${detection.nodePackageManager})`
+      : detection.ecosystem === "python" && detection.pythonToolchain
+        ? `python (${detection.pythonToolchain})`
+        : detection.ecosystem;
+    console.log(`\n  Detected ecosystem: ${detail}`);
+    console.log("  Running security scans...\n");
 
-    const results = runAllScansWithSbom();
+    const results = runAllScansWithSbom(detection);
     console.log(formatScanResults(results));
     console.log(formatSbomResults(results));
 

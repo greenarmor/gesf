@@ -28,6 +28,19 @@ jobs:
       - name: Generate Compliance Score
         run: ges score --ci
 
+      - name: Generate Compliance Badge
+        if: github.event_name != 'pull_request'
+        run: ges badge
+
+      - name: Commit Compliance Badge
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add badge.svg README.md || true
+          git diff --cached --quiet || git commit -m "Update compliance badge [skip ci]"
+          git push
+
       - name: Upload Compliance Report
         if: always()
         uses: actions/upload-artifact@v4
