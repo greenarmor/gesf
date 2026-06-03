@@ -82,6 +82,27 @@ ges report --output ./my-report.md   # Custom output path
 
 ---
 
+## `ges badge`
+
+Generate a compliance score badge (SVG) for your README or documentation.
+
+```bash
+ges badge                                        # Generate badge.svg + inject into README
+ges badge -o ./docs/assets/images/badge.svg      # Custom output path
+ges badge --readme ./docs/README.md               # Inject into a specific README
+ges badge --no-readme                             # Generate SVG only, skip README injection
+```
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--output <path>` | `-o` | Output path for the SVG badge | `badge.svg` |
+| `--readme <path>` | | README file to inject badge and score summary into | `README.md` |
+| `--no-readme` | | Skip README injection, generate SVG only | — |
+
+The badge displays your overall compliance score and letter grade with color coding. When injected into a README, it also adds a per-framework score breakdown table. See the [Compliance Badge guide](../user-guide/compliance-badge.md) for full details.
+
+---
+
 ## `ges scan`
 
 Run external security scanner integrations.

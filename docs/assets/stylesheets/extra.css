@@ -11,3 +11,31 @@
   height: auto;
   border-radius: 12px;
 }
+
+.compliance-badge {
+  margin: 1rem auto;
+}
+
+.compliance-badge img {
+  max-width: 220px;
+  height: auto;
+}
+
+.compliance-score-table {
+  margin: 0 auto 1.5rem;
+  max-width: 520px;
+}
+
+.compliance-score-table th {
+  background-color: var(--md-primary-fg-color);
+  color: #fff;
+}
+
+.compliance-score-table td {
+  text-align: center;
+}
+
+.compliance-score-table td:first-child {
+  text-align: left;
+  font-weight: 700;
+}

@@ -90,6 +90,18 @@ Output:
     owasp           4/6 controls passed
 ```
 
+!!! tip "Generate a Score Badge"
+
+    You can embed your compliance score as an SVG badge in your README or documentation:
+
+    ```bash
+    ges badge
+    ```
+
+    This generates `badge.svg` and injects a score summary table into your README. See the [Compliance Badge guide](compliance-badge.md) for full details including embedding options, CI/CD automation, and how the scoring engine computes the grade.
+
+---
+
 !!! example "Exercise: Track Score Over Multiple Audits"
 
     1. Start with a fresh project and run `ges init`

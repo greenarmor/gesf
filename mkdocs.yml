@@ -81,6 +81,7 @@ nav:
       - Initializing Your Project: user-guide/initializing.md
       - Running an Audit: user-guide/running-an-audit.md
       - Compliance Score: user-guide/compliance-score.md
+      - Compliance Badge: user-guide/compliance-badge.md
       - Generating Reports: user-guide/generating-reports.md
       - External Scanners: user-guide/external-scanners.md
       - Policy Packs: user-guide/policy-packs.md

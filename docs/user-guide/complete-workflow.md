@@ -88,7 +88,15 @@ ges report --format html
 
 Share with stakeholders, auditors, or attach to compliance records.
 
-## Step 10 — Integrate with CI/CD
+## Step 10 — Generate Compliance Badge
+
+```bash
+ges badge
+```
+
+This generates `badge.svg` in your project root and injects it into your README with a score summary table. The badge shows your overall score, letter grade, and per-framework breakdown. See the [Compliance Badge guide](compliance-badge.md) for embedding options and CI/CD automation.
+
+## Step 11 — Integrate with CI/CD
 
 Commit the generated `.github/workflows/` files to your repository:
 
@@ -99,7 +107,7 @@ git commit -m "Add GESF compliance workflows"
 
 Future commits and PRs will automatically run compliance checks and fail the build on critical issues.
 
-## Step 11 — Set Up MCP AI Assistant
+## Step 12 — Set Up MCP AI Assistant
 
 Connect GESF to your code assistant for real-time compliance guidance:
 
@@ -119,6 +127,7 @@ See the [MCP Integration guide](../mcp/overview.md) for full details.
 ges init          → Set up compliance structure
 ges audit         → Scan code for violations
 ges score         → Check compliance score
+ges badge         → Generate compliance badge (SVG)
 ges report        → Generate compliance report
 ges scan          → Run external scanners
 ges validate      → Validate configuration
@@ -137,7 +146,8 @@ ges mcp setup     → Connect to AI assistant
     3. Fix issues in order: criticals first, then highs, then mediums
     4. After each round of fixes, run `ges audit && ges score`
     5. Generate a final report with `ges report -f html`
-    6. Commit the `.github/workflows/` files
+    6. Generate a compliance badge with `ges badge`
+    7. Commit the `.github/workflows/` files
 
     Fill in this tracker:
 
