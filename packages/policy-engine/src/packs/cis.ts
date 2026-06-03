@@ -19,15 +19,18 @@ export function createCISPolicyPack(): PolicyPack {
     {
       id: "CIS-002",
       name: "Inventory of Authorized and Unauthorized Software",
-      description: "Maintain a software inventory.",
+      description: "Maintain a software inventory via SBOM generation and scanning.",
       category: "asset-management",
       framework: "CIS",
       status: "not-implemented",
       severity: "high",
-      implementation_guidance: "Use package managers and lock files. Scan for unauthorized software. Maintain SBOM.",
+      implementation_guidance: "Generate SBOM in CycloneDX or SPDX format using Syft or Trivy. Scan SBOM for vulnerabilities using Grype. Automate SBOM generation in CI/CD pipeline. Store SBOM artifacts alongside release artifacts.",
       checks: [
         { id: "CIS-002-C1", description: "Software inventory (SBOM) maintained", status: "not-implemented" },
         { id: "CIS-002-C2", description: "Dependency scanning implemented", status: "not-implemented" },
+        { id: "CIS-002-C3", description: "SBOM generated in CycloneDX or SPDX format", status: "not-implemented" },
+        { id: "CIS-002-C4", description: "SBOM vulnerability scanning configured", status: "not-implemented" },
+        { id: "CIS-002-C5", description: "SBOM generation automated in CI/CD", status: "not-implemented" },
       ],
     },
     {

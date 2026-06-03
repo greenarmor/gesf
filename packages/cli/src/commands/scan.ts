@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { ensureGESInitialized } from "../utils/project.js";
-import { runAllScans, formatScanResults } from "@greenarmor/ges-scanner-integration";
+import { runAllScansWithSbom, formatScanResults, formatSbomResults } from "@greenarmor/ges-scanner-integration";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 
 export const scanCommand = new Command("scan")
@@ -11,8 +11,9 @@ export const scanCommand = new Command("scan")
 
     console.log("\n  Running security scans...\n");
 
-    const results = runAllScans();
+    const results = runAllScansWithSbom();
     console.log(formatScanResults(results));
+    console.log(formatSbomResults(results));
 
     if (options.ci) {
       const failed = results.filter(r => r.status === "fail");

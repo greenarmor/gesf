@@ -168,11 +168,68 @@ jobs:
   };
 }
 
+export function generateSbomWorkflow(config: ProjectConfig): WorkflowFile {
+  return {
+    filePath: path.join(".github", "workflows", "sbom-scan.yml"),
+    content: `name: SBOM Generation & Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: ""
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.json
+          fail-build: false
+
+      - name: Scan SBOM for vulnerabilities with Grype
+        uses: anchore/scan-action@v6
+        with:
+          sbom: sbom.json
+          fail-build: true
+          severity-cutoff: high
+
+      - name: Generate SBOM with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'cyclonedx'
+          output: 'trivy-sbom.json'
+
+      - name: Upload SBOM artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-artifacts
+          path: |
+            sbom.json
+            trivy-sbom.json
+          retention-days: 90
+`,
+  };
+}
+
 export function generateAllWorkflows(config: ProjectConfig): WorkflowFile[] {
   return [
     generateComplianceWorkflow(config),
     generateSecurityWorkflow(config),
     generateDependencyScanWorkflow(config),
     generateSecretScanWorkflow(config),
+    generateSbomWorkflow(config),
   ];
 }

@@ -1,7 +1,7 @@
 # Current Session State
 
-**Last session**: [Session 011](./session-011.md) — 2026-06-04
-**Next session number**: 012
+**Last session**: [Session 012](./session-012.md) — 2026-06-03
+**Next session number**: 013
 **Version**: 0.6.0
 **Build status**: All 12 packages compile clean (TS 6.0.0, pnpm 11.4.0, Node v24)
 **GitHub Release**: https://github.com/greenarmor/gesf/releases/tag/v0.6.0
@@ -10,13 +10,14 @@
 
 ## Quick Summary
 
-GESF v0.6.0. Session 010 overhauled the MCP server from 6 to 17 tools with auto-fix engine, control implementation, and compliance overrides. Session 011 added Rust support — the auto-fix engine now covers 7 languages (JS, Python, Go, Java, Ruby, PHP, Rust) with framework detection for actix-web, axum, rocket, warp. Test suite: 53/53 pass.
+GESF v0.6.0. Session 010 overhauled the MCP server from 6 to 17 tools with auto-fix engine, control implementation, and compliance overrides. Session 011 added Rust support — the auto-fix engine now covers 7 languages (JS, Python, Go, Java, Ruby, PHP, Rust) with framework detection for actix-web, axum, rocket, warp. Test suite: 53/53 pass. Session 012 added SBOM scanning — 4 new scanners (Syft, Trivy SBOM, Grype, npm SBOM), new NIST-ID-002 supply-chain control, expanded CIS-002 and GDPR-ART32-009, new `sbom-scan.yml` CI/CD workflow. 38 tests all passing.
 
 ## What Works
 
 - `pnpm -r run build` — all 12 packages compile clean
 - `node packages/cli/dist/cli.js init` — full project setup wizard
 - `ges audit` — real source code scanning with 6 scanners
+- `ges scan` — 8 scanners (4 security + 4 SBOM: Syft, Trivy SBOM, Grype, npm SBOM)
 - `ges score`, `ges doctor`, `ges report`, `ges validate`, `ges policy list` all verified
 - `ges mcp start` — starts MCP server (JSON-RPC over stdio)
 - `ges mcp setup <client>` — auto-configures 6 MCP clients
@@ -24,6 +25,7 @@ GESF v0.6.0. Session 010 overhauled the MCP server from 6 to 17 tools with auto-
 - **auto_fix**: Reduces findings from 9→4 on test projects (7 languages)
 - **implement_control**: Generates real implementation files (encryption, auth, logging, etc.)
 - **apply_control_override**: Writes .ges/control-overrides.json for score improvement
+- **SBOM scanning**: CycloneDX/SPDX generation + vulnerability scanning, `sbom-scan.yml` workflow
 
 ## Languages Supported (7)
 

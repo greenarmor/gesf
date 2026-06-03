@@ -27,6 +27,22 @@ export function runSemgrep(): ScanResult {
   return runScan("Semgrep", "semgrep", "--config auto --json .");
 }
 
+export function runSyft(): ScanResult {
+  return runScan("Syft (SBOM)", "syft", ". -o cyclonedx-json");
+}
+
+export function runTrivySbom(): ScanResult {
+  return runScan("Trivy SBOM", "trivy", "sbom . --format cyclonedx-json");
+}
+
+export function runGrype(): ScanResult {
+  return runScan("Grype (SBOM scan)", "grype", "sbom:./sbom.json --fail-on high");
+}
+
+export function runNpmSbom(): ScanResult {
+  return runScan("npm SBOM", "npm", "sbom --sbom-type cyclodedx");
+}
+
 function runScan(name: string, command: string, args: string): ScanResult {
   try {
     const output = execSync(`${command} ${args}`, {
@@ -59,6 +75,14 @@ function runScan(name: string, command: string, args: string): ScanResult {
   }
 }
 
+export interface SbomResult {
+  scanner: string;
+  status: "generated" | "error" | "not-available";
+  format: string;
+  components: number;
+  output: string;
+}
+
 export function runAllScans(): ScanResult[] {
   return [
     runNpmAudit(),
@@ -68,11 +92,42 @@ export function runAllScans(): ScanResult[] {
   ];
 }
 
+export function runAllSbomScans(): ScanResult[] {
+  return [
+    runSyft(),
+    runTrivySbom(),
+    runGrype(),
+    runNpmSbom(),
+  ];
+}
+
+export function runAllScansWithSbom(): ScanResult[] {
+  return [
+    ...runAllScans(),
+    ...runAllSbomScans(),
+  ];
+}
+
 export function formatScanResults(results: ScanResult[]): string {
   const lines: string[] = ["", "  Security Scan Results", "  -------------------"];
   for (const result of results) {
     const statusIcon = result.status === "pass" ? "PASS" : result.status === "fail" ? "FAIL" : result.status === "error" ? "ERROR" : "N/A";
     lines.push(`  ${result.scanner.padEnd(20)} ${statusIcon}`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+export function formatSbomResults(results: ScanResult[]): string {
+  const sbomScanners = results.filter((r) =>
+    r.scanner.includes("SBOM") || r.scanner.includes("Syft") || r.scanner.includes("Grype")
+  );
+  if (sbomScanners.length === 0) return "";
+
+  const lines: string[] = ["", "  SBOM Scan Results", "  -----------------"];
+  for (const result of sbomScanners) {
+    const statusIcon = result.status === "pass" ? "GENERATED" : result.status === "fail" ? "FAIL" : result.status === "error" ? "ERROR" : "N/A";
+    lines.push(`  ${result.scanner.padEnd(24)} ${statusIcon}`);
   }
   lines.push("");
   return lines.join("\n");

@@ -142,12 +142,13 @@ export function createArticle32Controls(): Control[] {
       article: "Article 32(1)(d)",
       status: "not-implemented",
       severity: "critical",
-      implementation_guidance: "Run dependency scans (Trivy, Dependabot). Perform secret scanning (Gitleaks). Use SAST (Semgrep). Schedule penetration tests.",
+      implementation_guidance: "Run dependency scans (Trivy, Dependabot). Perform secret scanning (Gitleaks). Use SAST (Semgrep). Schedule penetration tests. Generate SBOM for supply-chain visibility.",
       checks: [
         { id: "GDPR-ART32-009-C1", description: "Dependency scanning in CI/CD", status: "not-implemented" },
         { id: "GDPR-ART32-009-C2", description: "Secret scanning in CI/CD", status: "not-implemented" },
         { id: "GDPR-ART32-009-C3", description: "SAST analysis integrated", status: "not-implemented" },
         { id: "GDPR-ART32-009-C4", description: "Penetration test schedule defined", status: "not-implemented" },
+        { id: "GDPR-ART32-009-C5", description: "SBOM generated and scanned for vulnerabilities", status: "not-implemented" },
       ],
     },
   ];

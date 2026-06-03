@@ -89,6 +89,21 @@ export function createNISTPolicyPack(): PolicyPack {
         { id: "NIST-RC-001-C3", description: "Regular recovery tests", status: "not-implemented" },
       ],
     },
+    {
+      id: "NIST-ID-002",
+      name: "Supply Chain Risk Management",
+      description: "Identify and manage supply chain risks through software Bill of Materials (SBOM).",
+      category: "identify",
+      framework: "NIST",
+      status: "not-implemented",
+      severity: "high",
+      implementation_guidance: "Generate SBOM for all software components using Syft or Trivy. Scan SBOM for known vulnerabilities using Grype. Automate SBOM generation in CI/CD. Enforce SBOM-based policies for third-party dependencies.",
+      checks: [
+        { id: "NIST-ID-002-C1", description: "SBOM generated for all dependencies", status: "not-implemented" },
+        { id: "NIST-ID-002-C2", description: "SBOM vulnerability scanning automated", status: "not-implemented" },
+        { id: "NIST-ID-002-C3", description: "Third-party dependency risk assessed", status: "not-implemented" },
+      ],
+    },
   ];
 
   return {
