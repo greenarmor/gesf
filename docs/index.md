@@ -4,14 +4,15 @@
 
 # GESF — Green Engineering Standard Framework
 
-Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and CIS engineering standards in any software project.
+Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and CIS engineering standards in any software project — regardless of programming language.
 
 ## What GESF Does
 
-- **Scans** your source code for security vulnerabilities and compliance violations using 6 built-in scanners
+- **Scans** your source code for security vulnerabilities and compliance violations using 6 built-in scanners (language-agnostic pattern matching)
+- **Detects** your project's ecosystem automatically — Node.js, Python, Rust, Go, Ruby, Java, PHP, .NET — and runs the correct dependency auditor
 - **Generates** compliance documentation — GDPR, data inventory, retention policies, risk assessments
-- **Scores** your project against multiple compliance frameworks
-- **Creates** CI/CD pipelines that fail the build on critical issues
+- **Scores** your project against multiple compliance frameworks with severity-weighted grading
+- **Creates** CI/CD pipelines (5 GitHub Actions workflows including SBOM scanning) that fail the build on critical issues
 - **Provides** an AI compliance assistant via MCP for Claude, VS Code Copilot, Cursor, and more
 
 ## What GESF Does NOT Do
@@ -30,17 +31,22 @@ ges audit
 ges score
 ```
 
+GESF requires Node.js to run the CLI, but it scans **any** project — Python, Rust, Go, Java, Ruby, PHP, .NET, and more.
+
 ## Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **6 Source Code Scanners** | Secrets, crypto, injection, auth, config, database |
+| **6 Source Code Scanners** | Secrets, crypto, injection, auth, config, database — scans 20+ file types |
+| **Language-Agnostic Scanning** | Auto-detects your ecosystem and runs the right dependency auditor |
+| **8 Supported Ecosystems** | Node.js (npm/pnpm/yarn/bun), Python (pip/poetry/uv), Rust, Go, Ruby, Java, PHP, .NET |
 | **7 Policy Packs** | GDPR (22 controls), OWASP, CIS, NIST, AI, Blockchain, Government |
 | **13 Project Types** | SaaS, AI, MCP Server, Blockchain, Wallet, Government, Healthcare, and more |
 | **MCP AI Assistant** | Works with Claude, VS Code Copilot, Cursor, OpenCode, Crush, Windsurf |
-| **CI/CD Workflows** | 4 GitHub Actions workflows auto-generated |
+| **5 CI/CD Workflows** | Compliance, security, dependency scan, secret scan, SBOM scan (auto-generated) |
 | **14 Document Templates** | Compliance docs, security policies, threat models |
 | **Compliance Reports** | Markdown and HTML reports with executive summary |
+| **Compliance Badge** | SVG badge with letter grade for your README |
 
 ## Architecture
 
@@ -50,12 +56,29 @@ packages/
 ├── core/                   # Types, schemas, constants
 ├── audit-engine/           # Real source code scanning (6 scanners)
 ├── compliance-engine/      # GDPR Article 5/25/30/32/33/34 controls
-├── policy-engine/          # 7 policy packs (56 total controls)
+├── policy-engine/          # 7 policy packs (56+ total controls)
 ├── rules-engine/           # Auth, encryption, secrets, logging standards
 ├── doc-generator/          # 14 compliance/security document templates
-├── cicd-generator/         # GitHub Actions workflow generation
-├── scoring-engine/         # Multi-framework compliance scoring
-├── scanner-integration/    # External tool integration (Trivy, Gitleaks, Semgrep)
+├── cicd-generator/         # 5 GitHub Actions workflow generation
+├── scoring-engine/         # Multi-framework severity-weighted scoring
+├── scanner-integration/    # External tool integration (Trivy, Gitleaks, Semgrep, SBOM)
 ├── report-generator/       # Markdown/HTML report generation
-└── mcp-server/             # MCP AI compliance assistant
+└── mcp-server/             # MCP AI compliance assistant (6 tools)
 ```
+
+## Supported Ecosystems
+
+GESF automatically detects your project's language and package manager from lockfiles:
+
+| Ecosystem | Package Managers | Dependency Auditor |
+|-----------|-----------------|-------------------|
+| Node.js | pnpm, npm, yarn, bun | `pnpm audit`, `npm audit`, `yarn audit`, `bun audit` |
+| Python | pip, poetry, pipenv, pdm, uv | `pip-audit`, `safety` |
+| Rust | cargo | `cargo audit` |
+| Go | go modules | `govulncheck` |
+| Ruby | bundler | `bundle-audit` |
+| Java | maven, gradle | `OWASP Dependency-Check` |
+| PHP | composer | `composer audit` |
+| .NET | nuget | `dotnet list package --vulnerable` |
+
+Language-agnostic scanners (Trivy, Gitleaks, Semgrep, Syft, Grype) run regardless of ecosystem.

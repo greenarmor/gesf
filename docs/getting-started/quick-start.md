@@ -1,6 +1,6 @@
 # Quick Start
 
-Get from zero to a full compliance audit in under 5 minutes.
+Get from zero to a full compliance audit in under 5 minutes. Works with **any** programming language.
 
 ## Step 1 — Create a Test Project
 
@@ -10,7 +10,7 @@ We will create a deliberately vulnerable project so you can see GESF in action.
 mkdir /tmp/gesf-demo && cd /tmp/gesf-demo
 ```
 
-Create a minimal `package.json`:
+Create a minimal `package.json` (only needed so `ges init` has a project context — GESF works with any language):
 
 ```bash
 echo '{"name":"gesf-demo","version":"1.0.0"}' > package.json
@@ -25,7 +25,7 @@ ges init -n "Demo App" -t saas -f "GDPR,OWASP"
 You should see:
 
 ```
-  Green Engineering Standard Framework (GESF) v0.1.0
+  Green Engineering Standard Framework (GESF) v0.6.0
   ─────────────────────────────────────────────
 
   ✓ Project structure created
@@ -33,7 +33,7 @@ You should see:
   ✓ Compliance documents created
   ✓ Security documents created
   ✓ Control packs installed: gdpr, owasp, cis, nist
-  ✓ GitHub Actions workflows generated
+  ✓ GitHub Actions workflows generated (5 workflows)
 
   GESF initialized for "Demo App" (saas)
 
@@ -45,59 +45,107 @@ You should see:
 
 ## Step 3 — Create Vulnerable Code
 
-Now let's create some code with intentional security issues so the audit has something to find.
+Now let's create some code with intentional security issues so the audit has something to find. You can use **any language** — here are examples in multiple languages:
 
-Create `src/config.js`:
+=== "JavaScript"
 
-```javascript title="src/config.js"
-// Deliberately vulnerable — do NOT use in production
-const DB_PASSWORD = "super-secret-password-123";
-const API_KEY = "sk-abc123def456ghi789";
-const dbUrl = "mongodb://admin:admin123@prod-db.example.com:27017/myapp";
-```
+    Create `src/config.js`:
 
-Create `src/auth.js`:
+    ```javascript title="src/config.js"
+    const DB_PASSWORD = "super-secret-password-123";
+    const API_KEY = "sk-abc123def456ghi789";
+    const dbUrl = "mongodb://admin:admin123@prod-db.example.com:27017/myapp";
+    ```
 
-```javascript title="src/auth.js"
-const crypto = require('crypto');
+    Create `src/auth.js`:
 
-function hashPassword(password) {
-  // Vulnerable: uses MD5
-  return crypto.createHash('md5').update(password).digest('hex');
-}
+    ```javascript title="src/auth.js"
+    const crypto = require('crypto');
 
-function checkPassword(input, stored) {
-  // Vulnerable: plaintext comparison
-  return input === stored;
-}
-```
+    function hashPassword(password) {
+      return crypto.createHash('md5').update(password).digest('hex');
+    }
+    ```
 
-Create `src/routes.js`:
+    Create `src/routes.js`:
 
-```javascript title="src/routes.js"
-const express = require('express');
-const app = express();
+    ```javascript title="src/routes.js"
+    const express = require('express');
+    const app = express();
 
-// Vulnerable: no auth middleware
-app.get('/api/users', (req, res) => {
-  const query = "SELECT * FROM users WHERE name = '" + req.query.name + "'";
-  db.query(query);
-});
+    app.get('/api/users', (req, res) => {
+      const query = "SELECT * FROM users WHERE name = '" + req.query.name + "'";
+      db.query(query);
+    });
+    ```
 
-// Vulnerable: XSS via innerHTML
-app.get('/profile', (req, res) => {
-  res.send(`<div>${req.query.name}</div>`);
-});
-```
+=== "Python"
 
-Create `src/server.js`:
+    Create `src/config.py`:
 
-```javascript title="src/server.js"
-const express = require('express');
-const app = express();
+    ```python title="src/config.py"
+    DB_PASSWORD = "super-secret-password-123"
+    API_KEY = "sk-abc123def456ghi789"
+    DB_URL = "postgresql://admin:admin123@prod-db:5432/myapp"
+    ```
 
-app.listen(3000, () => console.log('Server running'));
-```
+    Create `src/auth.py`:
+
+    ```python title="src/auth.py"
+    import hashlib
+
+    def hash_password(password):
+        return hashlib.md5(password.encode()).hexdigest()
+    ```
+
+    Create `src/routes.py`:
+
+    ```python title="src/routes.py"
+    from flask import Flask, request
+    app = Flask(__name__)
+
+    @app.route('/api/users')
+    def get_users():
+        name = request.args.get('name', '')
+        query = f"SELECT * FROM users WHERE name = '{name}'"
+        db.execute(query)
+    ```
+
+=== "Rust"
+
+    Create `src/config.rs`:
+
+    ```rust title="src/config.rs"
+    let db_password = "super-secret-password-123";
+    let api_key = "sk-abc123def456ghi789";
+    ```
+
+    Create `src/routes.rs`:
+
+    ```rust title="src/routes.rs"
+    fn get_users(name: &str) {
+        let query = format!("SELECT * FROM users WHERE name = '{}'", name);
+        db.execute(&query);
+    }
+    ```
+
+=== "Go"
+
+    Create `src/config.go`:
+
+    ```go title="src/config.go"
+    const dbPassword = "super-secret-password-123"
+    const apiKey = "sk-abc123def456ghi789"
+    ```
+
+    Create `src/routes.go`:
+
+    ```go title="src/routes.go"
+    func getUsers(name string) {
+        query := "SELECT * FROM users WHERE name = '" + name + "'"
+        db.Execute(query)
+    }
+    ```
 
 Create `.env`:
 
@@ -151,13 +199,26 @@ You should see findings like:
   Overall ............. 49%
 ```
 
-## Step 5 — Fix the Issues
+## Step 5 — Run External Scanners
+
+```bash
+ges scan
+```
+
+GESF auto-detects your project's ecosystem:
+
+```
+  Detected ecosystem: node (npm)
+  Running security scans...
+```
+
+## Step 6 — Fix the Issues
 
 Now fix the vulnerabilities:
 
 === "Fix secrets"
 
-    Replace `src/config.js` with:
+    Replace hardcoded values with environment variables:
 
     ```javascript title="src/config.js"
     const DB_PASSWORD = process.env.DB_PASSWORD;
@@ -174,7 +235,7 @@ Now fix the vulnerabilities:
 
 === "Fix crypto"
 
-    Replace `src/auth.js` with:
+    Replace MD5 with a strong hashing algorithm:
 
     ```javascript title="src/auth.js"
     const argon2 = require('argon2');
@@ -190,25 +251,23 @@ Now fix the vulnerabilities:
 
 === "Fix injection"
 
-    Replace `src/routes.js` with:
+    Replace string concatenation with parameterized queries:
 
     ```javascript title="src/routes.js"
     const express = require('express');
     const router = express.Router();
 
-    // Fixed: parameterized query
     router.get('/api/users', authMiddleware, (req, res) => {
       const query = "SELECT * FROM users WHERE name = $1";
       db.query(query, [req.query.name]);
     });
 
-    // Fixed: escaped output
     router.get('/profile', authMiddleware, (req, res) => {
       res.render('profile', { name: req.query.name });
     });
     ```
 
-## Step 6 — Re-Audit
+## Step 7 — Re-Audit
 
 ```bash
 ges audit
@@ -220,7 +279,7 @@ Your findings count should drop significantly. Check your new score:
 ges score
 ```
 
-## Step 7 — Generate a Report
+## Step 8 — Generate a Report
 
 ```bash
 ges report --format markdown
@@ -229,33 +288,19 @@ ges report --format html
 
 Check the output in `reports/`.
 
+## Step 9 — Generate Compliance Badge
+
+```bash
+ges badge
+```
+
+This creates `badge.svg` with your score and letter grade, and injects a score summary into your README.
+
 !!! example "Exercise: Beat 80% Compliance"
 
     1. After fixing the issues above, run `ges audit` again
     2. Run `ges score` to check your new score
-    3. Add `helmet` and `express-rate-limit` to `src/server.js`
-    4. Add `winston` logging
-    5. Re-audit and try to get your score above 80%
-
-    ```bash
-    npm install helmet express-rate-limit winston
-    ```
-
-    ```javascript title="src/server.js"
-    const express = require('express');
-    const helmet = require('helmet');
-    const rateLimit = require('express-rate-limit');
-    const winston = require('winston');
-
-    const logger = winston.createLogger({
-      transports: [new winston.transports.Console()]
-    });
-
-    const app = express();
-    app.use(helmet());
-    app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
-
-    app.listen(3000, () => logger.info('Server running'));
-    ```
+    3. Add security libraries and re-audit
+    4. Try to get your score above 80%
 
     Run `ges audit` and `ges score` again. Compare the before and after scores.

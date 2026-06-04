@@ -2,10 +2,15 @@
 
 ## Prerequisites
 
-| Requirement | Minimum Version | Check Command |
+GESF's CLI requires Node.js to run, but it scans **any** project regardless of programming language.
+
+|| Requirement | Minimum Version | Check Command |
 |-------------|----------------|---------------|
 | Node.js | 22.0.0 or higher | `node --version` |
 | npm | 8.0.0 or higher | `npm --version` |
+
+!!! info "Node.js is the CLI runtime, not a project requirement"
+    Your project can be Python, Rust, Go, Java, Ruby, PHP, .NET, or anything else. Node.js is only needed to run the `ges` command. It does not need to be part of your project's stack.
 
 Install Node.js if you don't have it:
 
@@ -101,14 +106,12 @@ After linking, `ges` is available system-wide pointing to your local build.
 ```bash
 # Check version
 ges --version
-# Output: 0.1.0
 
 # Check available commands
 ges --help
 
-# Run a quick test
+# Run a quick test (any project type works)
 mkdir /tmp/test-project && cd /tmp/test-project
-echo '{"name":"test"}' > package.json
 ges init --name "Test" --type "generic-web-application" --frameworks "GDPR,OWASP"
 ges audit
 ges doctor
@@ -116,13 +119,12 @@ ges doctor
 
 !!! example "Exercise: Verify Your Install"
 
-    1. Run `ges --version` and confirm it outputs `0.1.0` or higher
-    2. Run `ges --help` and confirm you see at least 12 commands listed
+    1. Run `ges --version` and confirm it outputs a version number
+    2. Run `ges --help` and confirm you see at least 14 commands listed
     3. Create a throwaway project and initialize it:
 
     ```bash
     mkdir /tmp/gesf-test && cd /tmp/gesf-test
-    echo '{"name":"test-project"}' > package.json
     ges init -n "My Test" -t saas -f "GDPR,OWASP"
     ls -la .ges/ compliance/ security/ controls/
     ```

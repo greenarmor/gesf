@@ -1,6 +1,6 @@
 # Engineering Standards
 
-GESF enforces specific engineering standards across authentication, encryption, secrets management, logging, databases, and storage.
+GESF enforces specific engineering standards across authentication, encryption, secrets management, logging, databases, and storage. These standards are **language-agnostic** — they apply regardless of whether your project is Node.js, Python, Rust, Go, Java, Ruby, PHP, or .NET.
 
 ## Authentication
 
@@ -96,9 +96,19 @@ For object storage (S3, MinIO, Azure Blob, Google Storage):
 
 **Restricted** data triggers the highest level of controls across all categories.
 
+## Supply Chain (SBOM)
+
+All projects must maintain a Software Bill of Materials:
+
+| Requirement | Description |
+|-------------|-------------|
+| SBOM generated | CycloneDX or SPDX format for all dependencies |
+| SBOM scanned | Automated vulnerability scanning of SBOM |
+| SBOM in CI/CD | Generated on every build, stored as artifacts |
+
 !!! example "Exercise: Audit Against Each Standard"
 
-    For each engineering standard, create a test file that violates it, then fix it:
+    For each engineering standard, create a test file that violates it, then fix it. Examples in multiple languages:
 
     === "Authentication"
 
@@ -112,23 +122,68 @@ For object storage (S3, MinIO, Azure Blob, Google Storage):
 
     === "Encryption"
 
-        ```javascript
-        // BAD
-        crypto.createHash('md5').update(data).digest('hex');
+        === "JavaScript"
 
-        // GOOD
-        crypto.createHash('sha256').update(data).digest('hex');
-        ```
+            ```javascript
+            // BAD
+            crypto.createHash('md5').update(data).digest('hex');
+
+            // GOOD
+            crypto.createHash('sha256').update(data).digest('hex');
+            ```
+
+        === "Python"
+
+            ```python
+            # BAD
+            hashlib.md5(data.encode()).hexdigest()
+
+            # GOOD
+            hashlib.sha256(data.encode()).hexdigest()
+            ```
+
+        === "Go"
+
+            ```go
+            // BAD
+            h := md5.Sum(data)
+
+            // GOOD
+            h := sha256.Sum256(data)
+            ```
 
     === "Secrets"
 
-        ```javascript
-        // BAD
-        const apiKey = "sk-abc123";
+        === "JavaScript"
 
-        // GOOD
-        const apiKey = process.env.API_KEY;
-        ```
+            ```javascript
+            // BAD
+            const apiKey = "sk-abc123";
+
+            // GOOD
+            const apiKey = process.env.API_KEY;
+            ```
+
+        === "Python"
+
+            ```python
+            # BAD
+            API_KEY = "sk-abc123"
+
+            # GOOD
+            import os
+            API_KEY = os.environ["API_KEY"]
+            ```
+
+        === "Rust"
+
+            ```rust
+            // BAD
+            let api_key = "sk-abc123";
+
+            // GOOD
+            let api_key = std::env::var("API_KEY").expect("API_KEY not set");
+            ```
 
     === "Database"
 

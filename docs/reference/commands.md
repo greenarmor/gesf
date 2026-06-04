@@ -13,7 +13,7 @@ Complete reference for all `ges` commands.
 
 ## `ges init`
 
-Initialize GESF in the current project directory.
+Initialize GESF in the current project directory. Works with any programming language.
 
 ```bash
 ges init                              # Interactive prompts
@@ -35,7 +35,7 @@ ges init -n "My App" -t saas -f "GDPR,OWASP"  # All options
 
 ## `ges audit`
 
-Scan source code for security and compliance violations.
+Scan source code for security and compliance violations. Language-agnostic — scans 20+ file types.
 
 ```bash
 ges audit                  # Full audit with findings
@@ -105,7 +105,7 @@ The badge displays your overall compliance score and letter grade with color cod
 
 ## `ges scan`
 
-Run external security scanner integrations.
+Run external security scanner integrations. **Language-agnostic** — auto-detects your project's ecosystem and package manager from lockfiles, then runs the matching dependency auditor.
 
 ```bash
 ges scan                  # Run all available scanners
@@ -115,6 +115,37 @@ ges scan --ci             # Exit with error code on failures
 | Flag | Description |
 |------|-------------|
 | `--ci` | Exit code 1 if any scanner fails |
+
+### How Ecosystem Detection Works
+
+The scan automatically detects your project's language and runs the correct tools:
+
+| Detected Ecosystem | Dependency Auditor | Language-Agnostic Scanners |
+|-------------------|-------------------|---------------------------|
+| Node.js (pnpm/npm/yarn/bun) | Matching `audit` command | Trivy, Gitleaks, Semgrep |
+| Python (pip/poetry/uv) | `pip-audit` | Trivy, Gitleaks, Semgrep |
+| Rust | `cargo audit` | Trivy, Gitleaks, Semgrep |
+| Go | `govulncheck` | Trivy, Gitleaks, Semgrep |
+| Ruby | `bundle-audit` | Trivy, Gitleaks, Semgrep |
+| Java | OWASP Dependency-Check | Trivy, Gitleaks, Semgrep |
+| PHP | `composer audit` | Trivy, Gitleaks, Semgrep |
+| .NET | `dotnet list package --vulnerable` | Trivy, Gitleaks, Semgrep |
+
+SBOM scanning (Syft, Trivy SBOM, Grype) also runs for all ecosystems.
+
+Example output:
+
+```
+  Detected ecosystem: node (pnpm)
+  Running security scans...
+
+  Security Scan Results
+  -------------------
+  pnpm audit                     PASS
+  Trivy                          N/A
+  Gitleaks                       N/A
+  Semgrep                        N/A
+```
 
 ---
 
@@ -144,7 +175,7 @@ Regenerate documentation or CI/CD workflows.
 
 ```bash
 ges generate --docs           # Regenerate compliance/security documents
-ges generate --workflows      # Regenerate GitHub Actions workflows
+ges generate --workflows      # Regenerate GitHub Actions workflows (5 workflows)
 ges generate --all            # Regenerate everything
 ```
 

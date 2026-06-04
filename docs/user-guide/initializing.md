@@ -62,9 +62,13 @@ After running `ges init`, GESF creates the following:
 | `checklists/` | Compliance checklists |
 | `docs/` | Additional documentation |
 | `reports/` | Generated reports (output directory) |
-| `.github/workflows/` | 4 CI/CD security workflows |
+| `.github/workflows/` | 5 CI/CD security workflows (compliance, security, dependency, secret, SBOM) |
 
 If you run `ges init` in a directory that already has a `.ges/` folder, it will refuse to overwrite and exit with an error.
+
+## Language-Agnostic
+
+GESF works with **any** programming language. The initialization process is the same regardless of whether your project uses Node.js, Python, Rust, Go, Java, Ruby, PHP, or .NET. Source code scanning (`ges audit`) uses pattern matching across 20+ file types, and dependency auditing (`ges scan`) auto-detects your ecosystem from lockfiles.
 
 ## Choosing a Project Type
 

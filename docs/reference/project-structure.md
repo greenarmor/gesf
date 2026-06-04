@@ -45,7 +45,8 @@ your-project/
         ├── compliance.yml       # Compliance check workflow
         ├── security.yml         # Security scan workflow
         ├── dependency-scan.yml  # Dependency vulnerability scan
-        └── secret-scan.yml      # Secret detection workflow
+        ├── secret-scan.yml      # Secret detection workflow
+        └── sbom-scan.yml        # SBOM generation and vulnerability scan
 ```
 
 ## Directory Purposes
@@ -78,3 +79,7 @@ your-project/
 **Never commit:**
 
 - `reports/` — Generated output, add to `.gitignore`
+
+## Language-Agnostic
+
+GESF works with any programming language. The project structure above is the same regardless of whether your codebase is Node.js, Python, Rust, Go, Java, Ruby, PHP, or .NET. The `ges scan` command auto-detects your ecosystem from lockfiles and runs the matching dependency auditor.

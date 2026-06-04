@@ -1,12 +1,12 @@
 # GitHub Actions (Auto-Generated)
 
-When you run `ges init`, 4 GitHub Actions workflows are generated in `.github/workflows/`:
+When you run `ges init`, 5 GitHub Actions workflows are generated in `.github/workflows/`:
 
 ## Generated Workflows
 
 ### `compliance.yml` — Compliance Check
 
-Runs `ges audit --ci` on every push to `main`, pull requests, and weekly on schedule.
+Runs `ges audit --ci` on every push to `main`, pull requests, and weekly on schedule. Also generates a compliance badge.
 
 **Fails build if:** Critical findings exist.
 
@@ -18,7 +18,7 @@ Runs Semgrep and `ges scan --ci` on pushes and PRs.
 
 ### `dependency-scan.yml` — Dependency Scan
 
-Runs Trivy and `npm audit` on pushes to `main` and weekly on schedule.
+Runs Trivy and the ecosystem-specific dependency auditor on pushes to `main` and weekly on schedule.
 
 **Fails build if:** Known vulnerabilities in dependencies.
 
@@ -27,6 +27,12 @@ Runs Trivy and `npm audit` on pushes to `main` and weekly on schedule.
 Runs Gitleaks on all pushes and pull requests.
 
 **Fails build if:** Secrets detected in git history.
+
+### `sbom-scan.yml` — SBOM Generation and Scan
+
+Generates a Software Bill of Materials (SBOM) in CycloneDX format using Syft, scans it for vulnerabilities using Grype, and generates a second SBOM via Trivy. Artifacts are uploaded with 90-day retention.
+
+**Fails build if:** High or critical vulnerabilities found in SBOM.
 
 ## Enabling the Workflows
 

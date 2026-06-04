@@ -1,6 +1,6 @@
 # Audit Scanners
 
-GESF includes 6 built-in source code scanners that run during `ges audit`. No external dependencies required.
+GESF includes 6 built-in source code scanners that run during `ges audit`. No external dependencies required. The scanners are **language-agnostic** — they use pattern matching across 20+ file types.
 
 ## Scanner Overview
 
@@ -35,22 +35,37 @@ Detects hardcoded secrets and credentials across all source files.
 
 Secrets are **masked** in output (shows first 4 + last 4 characters).
 
-**Example finding:**
+**Example findings across languages:**
 
-```javascript title="src/config.js" hl_lines="1"
-const DB_PASSWORD = "super-secret-123";
-```
+=== "JavaScript"
 
-```
-  [CRIT] Hardcoded password detected (src/config.js:1)
-        DB_PASSWORD = "supe***t-123"
-```
+    ```javascript title="src/config.js" hl_lines="1"
+    const DB_PASSWORD = "super-secret-123";
+    ```
+
+=== "Python"
+
+    ```python title="src/config.py" hl_lines="1"
+    DB_PASSWORD = "super-secret-123"
+    ```
+
+=== "Rust"
+
+    ```rust title="src/config.rs" hl_lines="1"
+    let db_password = "super-secret-123";
+    ```
+
+=== "Go"
+
+    ```go title="src/config.go" hl_lines="1"
+    const dbPassword = "super-secret-123"
+    ```
 
 ---
 
 ## 2. Cryptographic Scanner
 
-Detects weak or deprecated cryptographic algorithms.
+Detects weak or deprecated cryptographic algorithms across all languages.
 
 | Detection | Severity |
 |-----------|----------|
@@ -63,23 +78,37 @@ Detects weak or deprecated cryptographic algorithms.
 | Plaintext password comparison (`===`) | Critical |
 | TLS verification disabled (`rejectUnauthorized: false`) | Critical |
 
-**Example finding:**
+**Example findings:**
 
-```javascript title="src/hash.js" hl_lines="2"
-function hash(data) {
-  return crypto.createHash('md5').update(data).digest('hex');
-}
-```
+=== "JavaScript"
 
-```
-  [CRIT] MD5 hash algorithm detected (src/hash.js:2)
-```
+    ```javascript title="src/hash.js" hl_lines="2"
+    function hash(data) {
+      return crypto.createHash('md5').update(data).digest('hex');
+    }
+    ```
+
+=== "Python"
+
+    ```python title="src/hash.py" hl_lines="2"
+    def hash_data(data):
+        return hashlib.md5(data.encode()).hexdigest()
+    ```
+
+=== "Go"
+
+    ```go title="src/hash.go" hl_lines="2"
+    func hashData(data []byte) []byte {
+        h := md5.Sum(data)
+        return h[:]
+    }
+    ```
 
 ---
 
 ## 3. Code Security Scanner
 
-Detects injection vulnerabilities.
+Detects injection vulnerabilities across all languages.
 
 | Detection | Severity |
 |-----------|----------|
@@ -91,17 +120,33 @@ Detects injection vulnerabilities.
 | `eval()` with user input | Critical |
 | `child_process` with user input | Critical |
 
-**Example finding:**
+**Example findings:**
 
-```javascript title="src/routes.js" hl_lines="2"
-app.get('/users', (req, res) => {
-  db.query("SELECT * FROM users WHERE id = " + req.params.id);
-});
-```
+=== "JavaScript"
 
-```
-  [CRIT] SQL injection via string concatenation (src/routes.js:2)
-```
+    ```javascript title="src/routes.js" hl_lines="2"
+    app.get('/users', (req, res) => {
+      db.query("SELECT * FROM users WHERE id = " + req.params.id);
+    });
+    ```
+
+=== "Python"
+
+    ```python title="src/routes.py" hl_lines="2"
+    @app.route('/users')
+    def get_users():
+        query = f"SELECT * FROM users WHERE id = {request.args.get('id')}"
+        db.execute(query)
+    ```
+
+=== "Go"
+
+    ```go title="src/routes.go" hl_lines="2"
+    func getUsers(w http.ResponseWriter, r *http.Request) {
+        query := "SELECT * FROM users WHERE id = " + r.URL.Query().Get("id")
+        db.Execute(query)
+    }
+    ```
 
 ---
 
@@ -118,18 +163,6 @@ Checks for missing authentication and session controls.
 | No MFA implementation | High |
 
 Recognizes: Passport.js, JWT, NextAuth, Auth0, Clerk, Supabase Auth, Firebase Auth.
-
-**Example finding:**
-
-```javascript title="src/api.js" hl_lines="1"
-app.get('/api/admin', (req, res) => {   // No auth middleware
-  res.json(adminData);
-});
-```
-
-```
-  [HIGH] Route without auth middleware (src/api.js:1)
-```
 
 ---
 
@@ -163,23 +196,13 @@ Checks database schemas for compliance patterns.
 
 Works with: Prisma schemas, Sequelize models, raw SQL, TypeORM entities.
 
-**Example — missing audit columns:**
-
-```javascript title="src/models/user.js"
-// Missing: created_at, updated_at, deleted_at, created_by, updated_by
-const User = {
-  id: { type: INTEGER, primaryKey: true },
-  email: { type: STRING }
-};
-```
-
 ---
 
 ## Files Scanned
 
 GESF scans all text-based source files in your project:
 
-- **Languages:** `.js`, `.jsx`, `.ts`, `.tsx`, `.py`, `.rb`, `.go`, `.java`, `.php`, `.cs`, `.rs`
+- **Languages:** `.js`, `.jsx`, `.ts`, `.tsx`, `.py`, `.rb`, `.go`, `.java`, `.php`, `.cs`, `.rs`, `.swift`, `.kt`
 - **Config:** `.json`, `.yaml`, `.yml`, `.toml`, `.env`, `.ini`
 - **Web:** `.html`, `.css`, `.scss`
 - **SQL:** `.sql`, `.prisma`
@@ -198,33 +221,51 @@ The following are automatically excluded:
 
 !!! example "Exercise: Trigger Each Scanner"
 
-    Create a single file that triggers all 6 scanners:
+    Create a single file that triggers all 6 scanners in any language:
 
     ```bash
     mkdir /tmp/all-scanners && cd /tmp/all-scanners
-    echo '{"name":"test"}' > package.json
     ges init -n "Scanner Test" -t generic-web-application -f "GDPR,OWASP"
     ```
 
-    ```javascript title="src/all-issues.js"
-    // Secrets: hardcoded password
-    const DB_PASS = "admin123";
+    === "JavaScript"
 
-    // Crypto: MD5
-    const crypto = require('crypto');
-    const hash = crypto.createHash('md5').update(data).digest('hex');
+        ```javascript title="src/all-issues.js"
+        // Secrets: hardcoded password
+        const DB_PASS = "admin123";
 
-    // Code Security: SQL injection
-    db.query("SELECT * FROM users WHERE id = " + userId);
+        // Crypto: MD5
+        const crypto = require('crypto');
+        const hash = crypto.createHash('md5').update(data).digest('hex');
 
-    // Auth: route without middleware
-    app.get('/api/data', handler);
+        // Code Security: SQL injection
+        db.query("SELECT * FROM users WHERE id = " + userId);
 
-    // Config: no helmet, no .gitignore with .env
-    // (don't add helmet to package.json, don't create .gitignore)
+        // Auth: route without middleware
+        app.get('/api/data', handler);
 
-    // Database: missing audit columns
-    const User = { id: INTEGER, email: STRING };
-    ```
+        // Config: no helmet, no .gitignore with .env
+        // Database: missing audit columns
+        const User = { id: INTEGER, email: STRING };
+        ```
 
-    Run `ges audit` and verify you see findings from all 6 categories.
+    === "Python"
+
+        ```python title="src/all_issues.py"
+        # Secrets: hardcoded password
+        DB_PASS = "admin123"
+
+        # Crypto: MD5
+        import hashlib
+        h = hashlib.md5(data.encode()).hexdigest()
+
+        # Code Security: SQL injection
+        query = f"SELECT * FROM users WHERE id = {user_id}"
+
+        # Auth: no auth decorator
+        @app.route('/api/data')
+        def get_data():
+            pass
+        ```
+
+    Run `ges audit` and verify you see findings from all scanner categories.

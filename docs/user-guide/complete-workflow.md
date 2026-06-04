@@ -1,6 +1,6 @@
 # Complete Audit Workflow
 
-The recommended end-to-end workflow for auditing a project from initialization to CI/CD integration.
+The recommended end-to-end workflow for auditing a project from initialization to CI/CD integration. Works with **any programming language**.
 
 ## Step 1 — Initialize
 
@@ -40,10 +40,10 @@ Prioritize by severity. Fix all **critical** findings before anything else:
 | Issue | Fix |
 |-------|-----|
 | Routes without auth | Add authentication middleware to all routes |
-| No rate limiting | Install `express-rate-limit` or equivalent |
-| Missing `helmet` | `npm install helmet` and `app.use(helmet())` |
+| No rate limiting | Install rate limiting library for your framework |
+| Missing security headers | Add helmet (Node.js) or equivalent for your framework |
 | `.env` not in `.gitignore` | Add `.env` to `.gitignore` |
-| No logging library | Install `winston` or `pino` |
+| No logging library | Install a logging library (winston, pino, structlog, logrus, etc.) |
 | Wildcard CORS | Configure specific origins instead of `*` |
 
 ## Step 5 — Fix Medium/Low Issues
@@ -68,6 +68,8 @@ Track your progress. Aim for 80%+ overall before deploying.
 ```bash
 ges scan
 ```
+
+GESF auto-detects your project's ecosystem (Node.js, Python, Rust, Go, etc.) and runs the matching dependency auditor plus language-agnostic tools (Trivy, Gitleaks, Semgrep, SBOM scanners).
 
 Catch dependency vulnerabilities and git history secrets that the built-in scanners don't cover.
 
@@ -105,7 +107,7 @@ git add .github/workflows/
 git commit -m "Add GESF compliance workflows"
 ```
 
-Future commits and PRs will automatically run compliance checks and fail the build on critical issues.
+5 workflows are generated: compliance, security, dependency scan, secret scan, and SBOM scan. Future commits and PRs will automatically run compliance checks and fail the build on critical issues.
 
 ## Step 12 — Set Up MCP AI Assistant
 
@@ -114,6 +116,7 @@ Connect GESF to your code assistant for real-time compliance guidance:
 ```bash
 ges mcp setup vscode    # for VS Code Copilot
 ges mcp setup cursor    # for Cursor
+ges mcp setup claude    # for Claude Desktop
 # etc.
 ```
 
@@ -125,11 +128,11 @@ See the [MCP Integration guide](../mcp/overview.md) for full details.
 
 ```
 ges init          → Set up compliance structure
-ges audit         → Scan code for violations
+ges audit         → Scan code for violations (any language)
 ges score         → Check compliance score
 ges badge         → Generate compliance badge (SVG)
 ges report        → Generate compliance report
-ges scan          → Run external scanners
+ges scan          → Run external scanners (auto-detects ecosystem)
 ges validate      → Validate configuration
 ges doctor        → Check GESF health
 ges compliance    → View compliance status
@@ -145,9 +148,10 @@ ges mcp setup     → Connect to AI assistant
     2. Run `ges audit` and record: total findings, critical count, initial score
     3. Fix issues in order: criticals first, then highs, then mediums
     4. After each round of fixes, run `ges audit && ges score`
-    5. Generate a final report with `ges report -f html`
-    6. Generate a compliance badge with `ges badge`
-    7. Commit the `.github/workflows/` files
+    5. Run `ges scan` and note the detected ecosystem
+    6. Generate a final report with `ges report -f html`
+    7. Generate a compliance badge with `ges badge`
+    8. Commit the `.github/workflows/` files
 
     Fill in this tracker:
 
@@ -157,6 +161,7 @@ ges mcp setup     → Connect to AI assistant
     | High findings | | | | |
     | Total findings | | | | |
     | Score | | | | |
+    | Detected ecosystem | | | | |
 
 !!! example "Exercise: Team Workflow Simulation"
 
@@ -190,3 +195,32 @@ ges mcp setup     → Connect to AI assistant
     # Step 5 — Compliance generates report
     ges report -f html -o reports/quarterly-review.html
     ```
+
+!!! example "Exercise: Multi-Language Project"
+
+    GESF is language-agnostic. Try the full workflow on projects in different languages:
+
+    ```bash
+    # Python project
+    mkdir /tmp/py-project && cd /tmp/py-project
+    echo 'flask==2.0\nrequests==2.28' > requirements.txt
+    ges init -n "Python App" -t api-backend -f "GDPR,OWASP"
+    ges audit && ges scan
+
+    # Rust project
+    mkdir /tmp/rust-project && cd /tmp/rust-project
+    echo '[package]\nname="app"\nversion="0.1.0"\nedition="2021"' > Cargo.toml
+    ges init -n "Rust App" -t api-backend -f "GDPR,OWASP"
+    ges audit && ges scan
+
+    # Go project
+    mkdir /tmp/go-project && cd /tmp/go-project
+    echo 'module example.com/app\n\ngo 1.21' > go.mod
+    ges init -n "Go App" -t api-backend -f "GDPR,OWASP"
+    ges audit && ges scan
+    ```
+
+    Compare:
+    - Which ecosystem was detected for each project?
+    - Which dependency auditor ran for each?
+    - Did the language-agnostic scanners (Trivy, Gitleaks, Semgrep) behave the same across all three?
