@@ -36,6 +36,17 @@ MCP (Model Context Protocol) is a standard protocol that allows AI applications 
 3. GESF returns compliance data, generated documents, or control lists
 4. The assistant presents the results in natural language
 
+## 6 Available Tools
+
+| Tool | What It Does | When to Use It |
+|------|-------------|----------------|
+| `check_compliance` | Returns compliance score for a project type | "Are we GDPR compliant?" |
+| `list_missing_controls` | Shows failing controls for a framework | "What's missing for GDPR?" |
+| `generate_retention_policy` | Generates a data retention policy template | "We need a retention policy" |
+| `generate_incident_response` | Generates an incident response plan | "Create our incident response plan" |
+| `generate_risk_assessment` | Generates a risk assessment template | "What are our compliance risks?" |
+| `generate_dpa` | Generates a Data Processing Agreement | "Generate a DPA for our vendor" |
+
 ## Quick Setup
 
 ```bash
@@ -50,6 +61,12 @@ ges mcp setup all
 ```
 
 **Restart your AI assistant** after setup. The server loads when the assistant starts.
+
+## What to Expect
+
+After setup, GESF tools are available in your AI assistant. You do **not** need to mention "GESF" or "MCP" in your prompts — the assistant automatically calls the right tool when it detects a compliance question.
+
+You simply ask natural language questions and the assistant handles the rest.
 
 !!! example "Exercise: Test the MCP Server Manually"
 
@@ -67,3 +84,4 @@ ges mcp setup all
     !!! question "Questions"
         - How many tools are listed in the `tools/list` response?
         - What does the `check_compliance` response look like?
+        - Can you identify which tool would generate a DPA?

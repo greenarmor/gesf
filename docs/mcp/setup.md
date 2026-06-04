@@ -262,7 +262,8 @@ Or via the CLI:
 
     3. Restart your editor/assistant
     4. Verify the server is connected (check settings → MCP or tools list)
-    5. Ask it: "Are we GDPR compliant?"
+    5. Ask it: "Check our GDPR compliance for a SaaS application"
+    6. Confirm you get a compliance score back — this proves the MCP server is working
 
 !!! example "Exercise: Set Up Multiple Clients"
 
@@ -293,6 +294,38 @@ Or via the CLI:
     3. Understand the structure — the `gesf` entry under `mcpServers`
     4. Try removing the entry and adding it back manually
     5. Verify the server still works after your manual edit
+
+!!! example "Exercise: Verify MCP Server is Running"
+
+    After setup, verify the server responds correctly before relying on it in your editor:
+
+    ```bash
+    # Test with a single tool call
+    printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"check_compliance","arguments":{"project_type":"saas"}}}\n' | npx -y @greenarmor/ges-mcp-server
+    ```
+
+    You should see:
+    - An `initialize` response with protocol version `2024-11-05`
+    - A `tools/call` response with compliance scores for GDPR, OWASP, CIS, NIST
+
+    !!! question "Questions"
+        - What protocol version does the server report?
+        - How many tools are available?
+        - What happens if you send an invalid tool name?
+
+!!! example "Exercise: Test with the Local Build"
+
+    If you cloned the GESF repo:
+
+    ```bash
+    # Build the project
+    cd /path/to/gesf && pnpm -r run build
+
+    # Test the MCP server directly
+    printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n{"jsonrpc":"2.0","id":2,"method":"tools/list"}\n' | node packages/mcp-server/dist/server.js
+    ```
+
+    This is useful for debugging or developing new MCP tools.
 
 ## Troubleshooting
 
