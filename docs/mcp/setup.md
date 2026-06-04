@@ -70,9 +70,25 @@ If automatic setup doesn't work or you need custom configuration, follow the ins
 
 ### VS Code (Copilot / GitHub Copilot Chat)
 
-**Config file:** `.vscode/mcp.json` in your project root.
+GESF can be configured at two levels in VS Code:
 
-**Add to config:**
+| Scope | Available in | Config file |
+|-------|-------------|-------------|
+| **Global** (recommended) | All projects | OS-specific user config (see below) |
+| **Project** | Current project only | `.vscode/mcp.json` in project root |
+
+#### Option 1 — Global setup (recommended)
+
+This makes GESF available in **every** VS Code project without per-project configuration.
+
+**Step 1:** Open the VS Code Command Palette:
+
+- macOS: `Cmd+Shift+P`
+- Windows/Linux: `Ctrl+Shift+P`
+
+**Step 2:** Type **"MCP: Open User Configuration"** and press Enter. This opens the global `mcp.json` file.
+
+**Step 3:** Add the GESF server config:
 
 ```json
 {
@@ -86,9 +102,39 @@ If automatic setup doesn't work or you need custom configuration, follow the ins
 }
 ```
 
+If the file already has content, merge the `gesf` entry into the existing `servers` object — do not overwrite other entries.
+
+**Alternatively**, edit the global config file directly:
+
+| OS | Global config path |
+|----|--------------------|
+| macOS | `~/Library/Application Support/Code/User/mcp.json` |
+| Linux | `~/.config/Code/User/mcp.json` |
+| Windows | `%APPDATA%\Code\User\mcp.json` |
+
+#### Option 2 — Project-level setup
+
+Run inside your project directory:
+
+```bash
+ges mcp setup vscode
+```
+
+This creates `.vscode/mcp.json` in the project root. GESF will only be available when that project is open.
+
+#### Reload and verify
+
+**Reload:** `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux) → type **"Developer: Reload Window"** → press Enter.
+
+**Verify:** Open Copilot Chat → switch to **Agent mode** → click the tools icon (🔨) → `gesf` should appear in the list.
+
 !!! warning "VS Code requires `\"type\": \"stdio\"`"
 
-    VS Code is the only client that requires the `"type": "stdio"` field. Other clients do not use this field.
+    VS Code requires the `"type": "stdio"` field in server entries. Other clients (Claude Desktop, Cursor, Windsurf) do not use this field.
+
+!!! warning "Not a VS Code extension"
+
+    GESF is an **MCP server**, not a VS Code extension. You will **not** find it on the VS Code Marketplace. It connects through VS Code's built-in MCP protocol support in Copilot Chat (Agent mode).
 
 !!! danger "Do not use `${input:...}` variables or `inputs` sections"
 
@@ -96,7 +142,7 @@ If automatic setup doesn't work or you need custom configuration, follow the ins
 
     > `CodeExpectedError: Variable 'cwd' must be defined in an 'inputs' section of the debug or task configuration.`
 
-    **Invalid fields that must NOT appear in `.vscode/mcp.json`:**
+    **Invalid fields that must NOT appear in `mcp.json`:**
 
     | Field | Reason |
     |-------|--------|
@@ -106,11 +152,13 @@ If automatic setup doesn't work or you need custom configuration, follow the ins
     | `"dev"` | Not a standard MCP field |
     | `"inputs"` array | Only valid in `launch.json`/`tasks.json` |
 
-    If you see this error, delete the invalid fields and the `inputs` section from `.vscode/mcp.json`, or re-run `ges mcp setup vscode` to regenerate a clean config.
+    If you see this error, delete the invalid fields and the `inputs` section from the config file, or re-run `ges mcp setup vscode` to regenerate a clean project-level config.
 
-**Reload:** `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` → `Developer: Reload Window`.
+!!! danger "Do not use VS Code's NPM package installer"
 
-**Verify:** Open Copilot Chat, switch to **Agent mode**, click the tools icon — `gesf` should appear.
+    VS Code's built-in NPM package GUI (Command Palette → "Install NPM Package") is **not** the right way to install GESF. If you try to install `@greenarmor/ges-mcp-server` through it, you will get confusing prompts asking for a "name" and "working directory" — those are for the NPM package metadata, not MCP configuration.
+
+    **Instead, follow Option 1 or Option 2 above** to add the server to your `mcp.json` config file.
 
 ---
 
@@ -244,12 +292,22 @@ Or via the CLI:
 
 | Client | Config File | JSON Key | Needs `type` | Scope |
 |--------|------------|----------|:------------:|-------|
-| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` | `mcpServers` | No | Global |
-| VS Code | `.vscode/mcp.json` | `servers` | Yes | Project |
+| Claude Desktop | OS-specific (see below) | `mcpServers` | No | Global |
+| VS Code | `.vscode/mcp.json` or global user `mcp.json` | `servers` | Yes (`"stdio"`) | Project/Global |
 | Cursor | `.cursor/mcp.json` | `mcpServers` | No | Project |
-| OpenCode | `opencode.json` | `mcp` | No | Project/Global |
-| Crush | `~/.local/share/crush/crush.json` | `mcp` | No | Global |
+| OpenCode | `opencode.json` or `~/.config/opencode/opencode.json` | `mcp` | Yes (`"stdio"`) | Project/Global |
+| Crush | `~/.local/share/crush/crush.json` | `mcp` | Yes (`"stdio"`) | Global |
 | Windsurf | `.windsurf/mcp.json` | `mcpServers` | No | Project |
+
+**VS Code global config paths:**
+
+| OS | Path |
+|----|------|
+| macOS | `~/Library/Application Support/Code/User/mcp.json` |
+| Linux | `~/.config/Code/User/mcp.json` |
+| Windows | `%APPDATA%\Code\User\mcp.json` |
+
+Or open via Command Palette: `Cmd+Shift+P` / `Ctrl+Shift+P` → **"MCP: Open User Configuration"**.
 
 !!! example "Exercise: Set Up GESF with Your Primary Editor"
 
@@ -340,3 +398,6 @@ Or via the CLI:
 | Duplicate `gesf` entries | Ran setup twice | Manually edit config to keep only one `gesf` entry |
 | Crush loses other config | Config file overwritten | Only edit the `mcp.gesf` key, do not replace the entire file |
 | VS Code: `CodeExpectedError: Variable 'cwd' must be defined` | Invalid `${input:...}` variables or `inputs` section in `mcp.json` | Remove `cwd`, `envFile`, `sandboxEnabled`, `dev` fields and `inputs` section; or re-run `ges mcp setup vscode` to regenerate clean config |
+| VS Code: can't find GESF on the Marketplace | GESF is an MCP server, not a VS Code extension | Follow the manual setup above — add the server entry to your global or project `mcp.json` |
+| VS Code: NPM package installer asks for "name" and "working directory" | VS Code's built-in NPM package GUI is for installing NPM packages, not configuring MCP servers | Cancel the installer. Edit `mcp.json` directly (see Option 1 or 2 above) |
+| VS Code: server not found after `ges mcp setup vscode` | Setup only creates project-level `.vscode/mcp.json` | For global availability, edit the global `mcp.json` instead (see Option 1 above) |

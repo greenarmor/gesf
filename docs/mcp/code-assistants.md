@@ -100,15 +100,51 @@ Here's your retention policy:
 
 ### Setup
 
+GESF can be configured at two levels in VS Code:
+
+#### Option 1 — Global (recommended, all projects)
+
+Open Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux) → type **"MCP: Open User Configuration"** → press Enter. Add:
+
+```json
+{
+  "servers": {
+    "gesf": {
+      "command": "npx",
+      "args": ["-y", "@greenarmor/ges-mcp-server"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+Or edit the global config file directly:
+
+| OS | Path |
+|----|------|
+| macOS | `~/Library/Application Support/Code/User/mcp.json` |
+| Linux | `~/.config/Code/User/mcp.json` |
+| Windows | `%APPDATA%\Code\User\mcp.json` |
+
+#### Option 2 — Project-level (single project)
+
 ```bash
 ges mcp setup vscode
 ```
 
-This creates `.vscode/mcp.json` in your project. Then reload the VS Code window.
+This creates `.vscode/mcp.json` in your project. GESF will only be available when that project is open.
+
+#### After setup
+
+Reload the VS Code window: `Cmd+Shift+P` / `Ctrl+Shift+P` → **"Developer: Reload Window"**.
 
 !!! danger "Invalid config causes startup errors"
 
-    Do **not** add `cwd`, `envFile`, `sandboxEnabled`, `dev`, or `inputs` to `.vscode/mcp.json`. These fields are not supported in MCP configs and will cause `CodeExpectedError: Variable 'cwd' must be defined` on startup. If you see this error, re-run `ges mcp setup vscode` to regenerate a clean config.
+    Do **not** add `cwd`, `envFile`, `sandboxEnabled`, `dev`, or `inputs` to `mcp.json`. These fields are not supported in MCP configs and will cause `CodeExpectedError: Variable 'cwd' must be defined` on startup. If you see this error, re-run `ges mcp setup vscode` to regenerate a clean config.
+
+!!! warning "Not a VS Code extension"
+
+    GESF is an **MCP server**, not a VS Code extension. You will **not** find it on the VS Code Marketplace. Do not use VS Code's built-in NPM package installer — it will ask confusing questions about "name" and "working directory". Follow the setup steps above instead.
 
 ### How to Use
 

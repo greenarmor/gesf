@@ -71,8 +71,11 @@ Add this to your MCP client config:
 }
 ```
 
-For VS Code, use `"servers"` instead of `"mcpServers"` and add `"type": "stdio"`.
-For OpenCode/Crush, use `"mcp"` instead of `"mcpServers"` and add `"type": "stdio"`.
+**VS Code:** Use `"servers"` instead of `"mcpServers"` and add `"type": "stdio"`. You can configure globally (all projects) via Command Palette → "MCP: Open User Configuration", or per-project in `.vscode/mcp.json`.
+
+**OpenCode/Crush:** Use `"mcp"` instead of `"mcpServers"` and add `"type": "stdio"`.
+
+> **Note:** GESF is an MCP server, not a VS Code extension. You won't find it on the VS Code Marketplace. Use the [one-click install link](vscode:mcp/install?%7B%22name%22%3A%22gesf%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40greenarmor%2Fges-mcp-server%22%5D%7D) above or the manual config steps.
 
 ### Available Tools (17 total)
 

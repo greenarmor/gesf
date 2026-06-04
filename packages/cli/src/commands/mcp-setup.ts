@@ -52,6 +52,29 @@ const CLIENTS: ClientConfig[] = [
     name: "VS Code (Copilot)",
     configPaths: [
       path.join(".vscode", "mcp.json"),
+      path.join(
+        os.homedir(),
+        "Library",
+        "Application Support",
+        "Code",
+        "User",
+        "mcp.json",
+      ),
+      path.join(
+        os.homedir(),
+        ".config",
+        "Code",
+        "User",
+        "mcp.json",
+      ),
+      path.join(
+        os.homedir(),
+        "AppData",
+        "Roaming",
+        "Code",
+        "User",
+        "mcp.json",
+      ),
     ],
     configKey: "servers",
     format: "servers",
@@ -187,7 +210,8 @@ function printSetupInstructions(client: ClientConfig, configPath: string): void 
       console.log("  Restart Claude Desktop to load the server.");
       break;
     case "vscode":
-      console.log("  Reload the VS Code window (Cmd+Shift+P → Developer: Reload Window).");
+      console.log("  Reload the VS Code window (Cmd+Shift+P / Ctrl+Shift+P → Developer: Reload Window).");
+      console.log("  Verify: Open Copilot Chat → Agent mode → tools icon (🔨) → look for 'gesf'.");
       break;
     case "cursor":
       console.log("  Restart Cursor to load the server.");
@@ -204,15 +228,62 @@ function printSetupInstructions(client: ClientConfig, configPath: string): void 
   }
 }
 
-async function setupClient(clientId: ClientId): Promise<void> {
+async function setupClient(clientId: ClientId, defaultToGlobal = false): Promise<void> {
   const client = CLIENTS.find((c) => c.id === clientId);
   if (!client) {
     console.error(`Unknown client: ${clientId}`);
     process.exit(1);
   }
 
+  if (client.id === "vscode") {
+    await setupVsCode(client, defaultToGlobal);
+    return;
+  }
+
   const configPath = getConfigPath(client);
   const existing = readJsonFile(configPath) || {};
+  const updated = addServerToConfig(existing, client);
+  writeJsonFile(configPath, updated);
+
+  printSetupInstructions(client, configPath);
+  console.log(`  Status: configured\n`);
+
+  await showNextStepsMenu("mcp-setup");
+}
+
+async function setupVsCode(client: ClientConfig, defaultToGlobal = false): Promise<void> {
+  const globalPaths = client.configPaths.slice(1);
+  const globalPath = globalPaths.find((p) => fs.existsSync(p)) || globalPaths[0];
+  const projectPath = client.configPaths[0];
+
+  let choice: string;
+
+  if (defaultToGlobal) {
+    choice = "global";
+  } else {
+    console.log("\n  VS Code MCP Setup\n");
+    console.log("  Choose configuration scope:\n");
+    console.log(`  1) Global — available in all projects (${globalPath})`);
+    console.log(`  2) Project — current project only (${projectPath})`);
+    console.log("");
+
+    choice = await select({
+      message: "Configuration scope:",
+      choices: [
+        { name: "Global (recommended — all projects)", value: "global" },
+        { name: "Project (current project only)", value: "project" },
+      ],
+    });
+  }
+
+  const configPath = choice === "global" ? globalPath : projectPath;
+  const existing = readJsonFile(configPath) || {};
+
+  if (existing.inputs) {
+    delete existing.inputs;
+    console.log("  Removed invalid 'inputs' section from existing config.");
+  }
+
   const updated = addServerToConfig(existing, client);
   writeJsonFile(configPath, updated);
 
@@ -228,7 +299,7 @@ async function setupAll(): Promise<void> {
 
   for (const client of CLIENTS) {
     try {
-      await setupClient(client.id);
+      await setupClient(client.id, true);
     } catch (err) {
       console.log(`  ${client.name}: skipped (${err instanceof Error ? err.message : String(err)})\n`);
     }
