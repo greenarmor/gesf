@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-mcp-server",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "GESF MCP Server - AI Compliance Assistant for GDPR, OWASP, NIST, CIS. Check compliance, generate policies, assess risks via MCP protocol.",
   "keywords": [
     "ai",
