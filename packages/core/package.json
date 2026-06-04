@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-core",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "type": "module",
   "description": "GESF Core - Types, schemas, and constants",
   "main": "./dist/index.js",
