@@ -6435,7 +6435,7 @@ import * as path2 from "node:path";
 var __filename = url.fileURLToPath(import.meta.url);
 var __dirname = path2.dirname(__filename);
 var require2 = createRequire(import.meta.url);
-var pkg = {"version":"0.6.3"};
+var pkg = {"version":"1.0.0"};
 var GESF_VERSION = pkg.version;
 
 // src/server.ts

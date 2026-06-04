@@ -892,7 +892,7 @@ rm -rf .github/workflows/dependency-scan.yml .github/workflows/secret-scan.yml
 
 ## Version
 
-Current version: **0.1.0**
+Current version: **1.0.0**
 
 Check your version:
 
