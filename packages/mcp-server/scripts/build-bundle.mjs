@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const pkgJson = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
 
 const outfile = join(__dirname, "..", "bundle", "server.js");
 
@@ -30,6 +31,12 @@ if (content.startsWith("#!/usr/bin/env node\n")) {
   content = content.slice("#!/usr/bin/env node\n".length);
 }
 content = "#!/usr/bin/env node\n" + content;
+
+content = content.replace(
+  /var\s+pkg\s*=\s*require2?\([^)]*package\.json[^)]*\);/g,
+  `var pkg = ${JSON.stringify({ version: pkgJson.version })};`
+);
+
 writeFileSync(outfile, content);
 
 console.log("Bundle created: bundle/server.js");

@@ -22,7 +22,7 @@ interface ClientConfig {
   name: string;
   configPaths: string[];
   configKey: string;
-  format: "mcpServers" | "mcp" | "servers";
+  format: "mcpServers" | "mcp" | "servers" | "opencode";
 }
 
 const CLIENTS: ClientConfig[] = [
@@ -73,7 +73,7 @@ const CLIENTS: ClientConfig[] = [
       path.join(".config", "opencode", "opencode.json"),
     ],
     configKey: "mcp",
-    format: "mcp",
+    format: "opencode",
   },
   {
     id: "crush",
@@ -102,17 +102,16 @@ const CLIENTS: ClientConfig[] = [
 ];
 
 function resolveServerPath(): { command: string; args: string[] } {
-  const cliDist = path.resolve(
-    __dirname,
-    "..",
-    "..",
-    "mcp-server",
-    "dist",
-    "server.js",
-  );
+  const searchPaths = [
+    path.resolve(__dirname, "..", "..", "..", "mcp-server", "dist", "server.js"),
+    path.resolve(__dirname, "..", "..", "mcp-server", "dist", "server.js"),
+    path.resolve(__dirname, "..", "..", "mcp-server", "bundle", "server.js"),
+  ];
 
-  if (fs.existsSync(cliDist)) {
-    return { command: "node", args: [cliDist] };
+  for (const serverPath of searchPaths) {
+    if (fs.existsSync(serverPath)) {
+      return { command: "node", args: [serverPath] };
+    }
   }
 
   return { command: "npx", args: ["-y", "@greenarmor/ges-mcp-server"] };
@@ -120,6 +119,14 @@ function resolveServerPath(): { command: string; args: string[] } {
 
 function buildServerEntry(client: ClientConfig): Record<string, unknown> {
   const { command, args } = resolveServerPath();
+
+  if (client.format === "opencode") {
+    return {
+      type: "local",
+      command: [command, ...args],
+      enabled: true,
+    };
+  }
 
   const entry: Record<string, unknown> = { command, args };
 
