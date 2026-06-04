@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "GESF MCP Server - AI Compliance Assistant for GDPR, OWASP, NIST, CIS. Check compliance, generate policies, assess risks via MCP protocol.",
   "keywords": [
     "ai",
@@ -26,11 +26,10 @@
     "url": "git+https://github.com/greenarmor/gesf.git"
   },
   "bin": {
-    "ges-mcp": "bundle/server.js"
+    "ges-mcp": "dist/server.js"
   },
   "files": [
-    "dist",
-    "bundle"
+    "dist"
   ],
   "type": "module",
   "main": "./dist/index.js",
@@ -47,10 +46,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:bundle": "node scripts/build-bundle.mjs",
-    "build:all": "tsc && node scripts/build-bundle.mjs",
     "clean": "rm -rf dist bundle tsconfig.tsbuildinfo",
-    "prepublishOnly": "npm run build:all",
+    "prepublishOnly": "tsc",
     "test": "echo \"no tests yet\""
   },
   "dependencies": {

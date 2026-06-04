@@ -2,7 +2,7 @@
 
 GESF MCP Server — AI Compliance Assistant for GDPR, OWASP, NIST, and CIS frameworks.
 
-An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that provides compliance checking, policy generation, and risk assessment tools to any MCP-compatible AI code assistant.
+An MCP (Model Context Protocol) server that provides compliance checking, policy generation, and risk assessment tools to any MCP-compatible AI code assistant.
 
 ## Tools
 
@@ -33,9 +33,7 @@ Add to `.vscode/mcp.json` in your project:
 }
 ```
 
-Or use the one-click install link:
-
-[Install in VS Code](vscode:mcp/install?%7B%22name%22%3A%22gesf%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40greenarmor%2Fges-mcp-server%22%5D%7D)
+Or use the manual JSON configuration shown above.
 
 ### Claude Desktop
 

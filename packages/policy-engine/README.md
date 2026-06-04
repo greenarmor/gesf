@@ -1,6 +1,6 @@
 # @greenarmor/ges-policy-engine
 
-Policy pack management and enforcement for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+Policy pack management and enforcement for the Green Engineering Standard Framework (GESF).
 
 Manages compliance policy packs for GDPR, OWASP, NIST, CIS, AI systems, blockchain, and government projects. Each policy pack defines the controls and standards applicable to a specific compliance domain.
 
@@ -51,8 +51,8 @@ allPacks.forEach(p => console.log(`${p.id}: ${p.name}`));
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-compliance-engine`](https://www.npmjs.com/package/@greenarmor/ges-compliance-engine) — Control evaluation
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-compliance-engine` — Control evaluation
 
 ## License
 

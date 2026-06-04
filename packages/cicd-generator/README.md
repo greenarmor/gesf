@@ -1,6 +1,6 @@
 # @greenarmor/ges-cicd-generator
 
-GitHub Actions workflow generation for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+GitHub Actions workflow generation for the Green Engineering Standard Framework (GESF).
 
 Generates ready-to-use CI/CD workflow files for compliance checking, security scanning, dependency auditing, and secret detection — configured to run on pull requests and pushes.
 
@@ -51,8 +51,8 @@ workflows.forEach(w => {
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-scanner-integration`](https://www.npmjs.com/package/@greenarmor/ges-scanner-integration) — Scanner execution
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-scanner-integration` — Scanner execution
 
 ## License
 

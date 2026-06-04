@@ -1,6 +1,6 @@
 # @greenarmor/ges-report-generator
 
-Compliance and security report generation for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+Compliance and security report generation for the Green Engineering Standard Framework (GESF).
 
 Produces formatted compliance reports in Markdown and HTML, combining framework scores, evaluated controls, and audit findings into professional documents.
 
@@ -50,10 +50,10 @@ const html = generateHtmlReport(
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-scoring-engine`](https://www.npmjs.com/package/@greenarmor/ges-scoring-engine) — Score generation
-- [`@greenarmor/ges-audit-engine`](https://www.npmjs.com/package/@greenarmor/ges-audit-engine) — Source code audit findings
-- [`@greenarmor/ges-compliance-engine`](https://www.npmjs.com/package/@greenarmor/ges-compliance-engine) — Control evaluation
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-scoring-engine` — Score generation
+- `@greenarmor/ges-audit-engine` — Source code audit findings
+- `@greenarmor/ges-compliance-engine` — Control evaluation
 
 ## License
 

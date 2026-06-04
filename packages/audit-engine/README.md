@@ -1,6 +1,6 @@
 # @greenarmor/ges-audit-engine
 
-Source code audit trails and compliance finding evaluation for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+Source code audit trails and compliance finding evaluation for the Green Engineering Standard Framework (GESF).
 
 Scans project source code for security and compliance issues — detecting hardcoded secrets, weak cryptography, SQL injection patterns, missing authentication, missing security headers, and more.
 
@@ -42,8 +42,8 @@ console.log(`Scanned ${scannedFiles} files, found ${unique.length} issues`);
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-report-generator`](https://www.npmjs.com/package/@greenarmor/ges-report-generator) — Generates reports from findings
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-report-generator` — Generates reports from findings
 
 ## License
 

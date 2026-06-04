@@ -1,6 +1,6 @@
 # @greenarmor/ges-core
 
-Core types, Zod schemas, and constants for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+Core types, Zod schemas, and constants for the Green Engineering Standard Framework (GESF).
 
 This is the foundation package that all other GESF packages depend on. It provides shared TypeScript interfaces, runtime validation schemas, and compliance-related constants used across the framework.
 

@@ -1,6 +1,6 @@
 # @greenarmor/ges-rules-engine
 
-Engineering standards enforcement rules for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+Engineering standards enforcement rules for the Green Engineering Standard Framework (GESF).
 
 Defines and validates security and compliance rules for data classification, authentication, encryption, secrets management, logging, database standards, API security, and storage.
 
@@ -50,8 +50,8 @@ const approved = APPROVED_ENCRYPTION.map(r => r.algorithm);
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-compliance-engine`](https://www.npmjs.com/package/@greenarmor/ges-compliance-engine) — Control evaluation
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-compliance-engine` — Control evaluation
 
 ## License
 

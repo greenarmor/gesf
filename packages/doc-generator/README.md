@@ -1,6 +1,6 @@
 # @greenarmor/ges-doc-generator
 
-Compliance and security document template generation for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+Compliance and security document template generation for the Green Engineering Standard Framework (GESF).
 
 Generates structured Markdown documents, YAML configuration, and JSON metadata files for compliance directories including GDPR policies, security standards, threat models, and data inventories.
 
@@ -54,8 +54,8 @@ const security = generateSecurityDocs('MyApp', 'saas');
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-cicd-generator`](https://www.npmjs.com/package/@greenarmor/ges-cicd-generator) — CI/CD workflow generation
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-cicd-generator` — CI/CD workflow generation
 
 ## License
 

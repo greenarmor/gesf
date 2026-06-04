@@ -1,6 +1,6 @@
 # @greenarmor/ges-scanner-integration
 
-Security scanner integrations for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+Security scanner integrations for the Green Engineering Standard Framework (GESF).
 
 Wraps industry-standard security scanners — Trivy, Gitleaks, Semgrep, npm audit, and pnpm audit — into a unified interface with structured results.
 
@@ -53,8 +53,8 @@ Scanners that are not installed are gracefully skipped with a `not_available` st
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-cicd-generator`](https://www.npmjs.com/package/@greenarmor/ges-cicd-generator) — CI/CD workflow generation
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-cicd-generator` — CI/CD workflow generation
 
 ## License
 

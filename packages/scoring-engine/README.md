@@ -1,6 +1,6 @@
 # @greenarmor/ges-scoring-engine
 
-Compliance scoring across frameworks for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+Compliance scoring across frameworks for the Green Engineering Standard Framework (GESF).
 
 Calculates per-framework and overall compliance scores based on evaluated controls. Produces structured score files for display and reporting.
 
@@ -48,9 +48,9 @@ Scores are stored in `.ges/score.json` and include:
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-compliance-engine`](https://www.npmjs.com/package/@greenarmor/ges-compliance-engine) — Control evaluation
-- [`@greenarmor/ges-report-generator`](https://www.npmjs.com/package/@greenarmor/ges-report-generator) — Report generation from scores
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-compliance-engine` — Control evaluation
+- `@greenarmor/ges-report-generator` — Report generation from scores
 
 ## License
 

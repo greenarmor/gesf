@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-scanner-integration",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "GESF Scanner Integration - Trivy, Gitleaks, Semgrep, npm audit",
   "main": "./dist/index.js",

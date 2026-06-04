@@ -1,6 +1,6 @@
 # @greenarmor/ges-compliance-engine
 
-GDPR compliance controls, evaluation, and compliance checking for the [Green Engineering Standard Framework (GESF)](https://github.com/greenarmor/gesf).
+GDPR compliance controls, evaluation, and compliance checking for the Green Engineering Standard Framework (GESF).
 
 Evaluates GDPR controls based on Articles 5, 25, 30, 32, 33, and 34 — producing structured control objects with pass/fail/warning status.
 
@@ -36,9 +36,9 @@ const evaluated = allControls.map(c => evaluateControl(c));
 
 ## Related Packages
 
-- [`@greenarmor/ges-core`](https://www.npmjs.com/package/@greenarmor/ges-core) — Types and constants
-- [`@greenarmor/ges-scoring-engine`](https://www.npmjs.com/package/@greenarmor/ges-scoring-engine) — Scoring evaluated controls
-- [`@greenarmor/ges-policy-engine`](https://www.npmjs.com/package/@greenarmor/ges-policy-engine) — Policy pack management
+- `@greenarmor/ges-core` — Types and constants
+- `@greenarmor/ges-scoring-engine` — Scoring evaluated controls
+- `@greenarmor/ges-policy-engine` — Policy pack management
 
 ## License
 

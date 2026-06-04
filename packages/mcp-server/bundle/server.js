@@ -1619,7 +1619,7 @@ var AuthScanner = class {
         file: "project",
         evidence: "cors({ origin: '*' }) or Access-Control-Allow-Origin: *",
         controlIds: ["OWASP-ASVS-006"],
-        fix: "Restrict CORS to specific origins: cors({ origin: ['https://yourdomain.com'] })"
+        fix: "Restrict CORS to specific origins via env var: cors({ origin: (process.env.ALLOWED_ORIGINS || '').split(',') })"
       });
     }
     if (!this.detectMFA(content)) {
@@ -6435,7 +6435,7 @@ import * as path2 from "node:path";
 var __filename = url.fileURLToPath(import.meta.url);
 var __dirname = path2.dirname(__filename);
 var require2 = createRequire(import.meta.url);
-var pkg = {"version":"1.0.0"};
+var pkg = {"version":"1.0.1"};
 var GESF_VERSION = pkg.version;
 
 // src/server.ts
@@ -7477,25 +7477,25 @@ function buildCorsFix(root) {
     actions.push({ type: "npm-install", filePath: "package.json", description: "Install cors", ruleId: "CONFIG-002" });
     if (fw === "fastify") {
       actions.push({ type: "npm-install", filePath: "package.json", description: "Install @fastify/cors", ruleId: "CONFIG-002" });
-      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from '@fastify/cors';\napp.register(cors, { origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'] });\n", description: "Add Fastify CORS", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from '@fastify/cors';\napp.register(cors, { origin: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean) });\n", description: "Add Fastify CORS", ruleId: "CONFIG-002" });
     } else {
-      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from 'cors';\napp.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'] }));\n", description: "Add CORS with configured origins", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from 'cors';\napp.use(cors({ origin: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean) }));\n", description: "Add CORS with configured origins", ruleId: "CONFIG-002" });
     }
   } else if (lang === "python") {
     const appFile = findMainAppFile(root) || "app.py";
     if (fw === "django") {
       const settingsFile = findFileRecursive(root, "settings.py", ".") || "settings.py";
-      actions.push({ type: "append", filePath: settingsFile, content: "\nCORS_ALLOWED_ORIGINS = ['https://yourdomain.com']\nCORS_ALLOW_CREDENTIALS = True\n", description: "Add Django CORS settings", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: settingsFile, content: "\nimport os\nCORS_ALLOWED_ORIGINS = [o for o in os.environ.get('ALLOWED_ORIGINS', '').split(',') if o]\nCORS_ALLOW_CREDENTIALS = True\n", description: "Add Django CORS settings", ruleId: "CONFIG-002" });
     } else if (fw === "fastapi") {
-      actions.push({ type: "append", filePath: appFile, content: "\nfrom fastapi.middleware.cors import CORSMiddleware\napp.add_middleware(CORSMiddleware, allow_origins=['http://localhost:3000'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])\n", description: "Add FastAPI CORS middleware", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport os\nfrom fastapi.middleware.cors import CORSMiddleware\napp.add_middleware(CORSMiddleware, allow_origins=[o for o in os.environ.get('ALLOWED_ORIGINS', '').split(',') if o], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])\n", description: "Add FastAPI CORS middleware", ruleId: "CONFIG-002" });
     } else if (fw === "flask") {
-      actions.push({ type: "append", filePath: appFile, content: "\nfrom flask_cors import CORS\nCORS(app, origins=['http://localhost:3000'])\n", description: "Add Flask CORS", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport os\nfrom flask_cors import CORS\nCORS(app, origins=[o for o in os.environ.get('ALLOWED_ORIGINS', '').split(',') if o])\n", description: "Add Flask CORS", ruleId: "CONFIG-002" });
     } else {
       actions.push({ type: "append", filePath: appFile, content: "\n# CORS: Configure allowed origins in production\n# pip install flask-cors or fastapi[all]\n", description: "Add CORS note", ruleId: "CONFIG-002" });
     }
   } else if (lang === "ruby") {
     if (fw === "rails") {
-      actions.push({ type: "append", filePath: "config/application.rb", content: "\nconfig.middleware.insert_before 0, Rack::Cors do\n  allow do\n    origins 'https://yourdomain.com'\n    resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete]\n  end\nend\n", description: "Add Rails CORS via Rack::Cors", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: "config/application.rb", content: "\nconfig.middleware.insert_before 0, Rack::Cors do\n  allow do\n    origins ENV.fetch('ALLOWED_ORIGINS', '').split(',').reject(&:empty?)\n    resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete]\n  end\nend\n", description: "Add Rails CORS via Rack::Cors", ruleId: "CONFIG-002" });
     }
   } else if (lang === "go") {
     const appFile = findMainAppFile(root) || "main.go";
@@ -7513,7 +7513,7 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("https://yourdomain.com");
+        config.addAllowedOrigin(System.getenv("ALLOWED_ORIGIN"));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
@@ -7527,28 +7527,9 @@ public class CorsConfig {
   } else if (lang === "rust") {
     const appFile = findMainAppFile(root) || "src/main.rs";
     if (fw === "actix") {
-      actions.push({ type: "create", filePath: "src/middleware/cors.rs", content: `use actix_cors::Cors;
-use actix_web::http::header;
-
-pub fn cors_config() -> Cors {
-    Cors::default()
-        .allowed_origin("http://localhost:3000")
-        .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
-        .allowed_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION])
-        .max_age(3600)
-}
-`, description: "Create Actix-web CORS configuration", ruleId: "CONFIG-002" });
+      actions.push({ type: "create", filePath: "src/middleware/cors.rs", content: 'use actix_cors::Cors;\nuse actix_web::http::header;\n\npub fn cors_config() -> Cors {\n    Cors::default()\n        .allowed_origin(&std::env::var("ALLOWED_ORIGIN").unwrap_or_default())\n        .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])\n        .allowed_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION])\n        .max_age(3600)\n}\n', description: "Create Actix-web CORS configuration", ruleId: "CONFIG-002" });
     } else if (fw === "axum") {
-      actions.push({ type: "create", filePath: "src/middleware/cors.rs", content: `use tower_http::cors::{CorsLayer, Any};
-use http::Method;
-
-pub fn cors_layer() -> CorsLayer {
-    CorsLayer::new()
-        .allow_origin(["http://localhost:3000".parse().unwrap()])
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
-        .allow_headers(Any)
-}
-`, description: "Create Axum CORS layer", ruleId: "CONFIG-002" });
+      actions.push({ type: "create", filePath: "src/middleware/cors.rs", content: 'use tower_http::cors::{CorsLayer, Any};\nuse http::Method;\n\npub fn cors_layer() -> CorsLayer {\n    CorsLayer::new()\n        .allow_origin([std::env::var("ALLOWED_ORIGIN").unwrap_or_default().parse().unwrap()])\n        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])\n        .allow_headers(Any)\n}\n', description: "Create Axum CORS layer", ruleId: "CONFIG-002" });
     } else {
       actions.push({ type: "append", filePath: appFile, content: "\n// GESF CORS: Configure allowed origins\n// actix-web: cargo add actix-cors\n// axum: cargo add tower-http --features cors\n// rocket: cargo add rocket_cors\n", description: "Add Rust CORS guidance", ruleId: "CONFIG-002" });
     }
@@ -7757,33 +7738,7 @@ class AuditLogger
 }
 `, description: "Create PHP audit logger", ruleId: "CONFIG-010" });
   } else if (lang === "rust") {
-    actions.push({ type: "create", filePath: "src/logger.rs", content: `use serde_json::json;
-use tracing::{info, instrument};
-use chrono::Utc;
-
-#[derive(Debug, serde::Serialize)]
-pub struct AuditEntry {
-    pub user_id: String,
-    pub action: String,
-    pub resource: String,
-    pub ip_address: String,
-    pub timestamp: String,
-    #[serde(rename = "type")]
-    pub entry_type: String,
-}
-
-pub fn audit_log(user_id: &str, action: &str, resource: &str, ip_address: &str) {
-    let entry = AuditEntry {
-        user_id: user_id.to_string(),
-        action: action.to_string(),
-        resource: resource.to_string(),
-        ip_address: ip_address.to_string(),
-        timestamp: Utc::now().to_rfc3339(),
-        entry_type: "audit".to_string(),
-    };
-    info!("{}", serde_json::to_string(&entry).unwrap_or_default());
-}
-`, description: "Create Rust audit logger (tracing)", ruleId: "CONFIG-010" });
+    actions.push({ type: "create", filePath: "src/logger.rs", content: 'use serde_json::json;\nuse tracing::{info, instrument};\nuse chrono::Utc;\n\n#[derive(Debug, serde::Serialize)]\npub struct AuditEntry {\n    pub user_id: String,\n    pub action: String,\n    pub resource: String,\n    pub ip_address: String,\n    pub timestamp: String,\n    #[serde(rename = "type")]\n    pub entry_type: String,\n}\n\npub fn audit_log(user_id: &str, action: &str, resource: &str, ip_address: &str) {\n    let entry = AuditEntry {\n        user_id: user_id.to_string(),\n        action: action.to_string(),\n        resource: resource.to_string(),\n        ip_address: ip_address.to_string(),\n        timestamp: Utc::now().to_rfc3339(),\n        entry_type: "audit".to_string(),\n    };\n    info!("{}", serde_json::to_string(&entry).unwrap_or_default());\n}\n', description: "Create Rust audit logger (tracing)", ruleId: "CONFIG-010" });
   }
   return actions;
 }
@@ -7967,23 +7922,7 @@ function verify_password(string $hash, string $password): bool {
 }
 `, description: "Create PHP Argon2id password utility", ruleId: "CRYPTO-003" });
   } else if (lang === "rust") {
-    actions.push({ type: "create", filePath: "src/auth.rs", content: `use argon2::{Argon2, Algorithm, Version, Params};
-use argon2::password_hash::{SaltString, PasswordHasher, PasswordVerifier};
-use rand::rngs::OsRng;
-
-pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
-    let salt = SaltString::generate(&mut OsRng);
-    let params = Params::new(65536, 3, 4, Some(32))?;
-    let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
-    let hash = argon2.hash_password(password.as_bytes(), &salt)?;
-    Ok(hash.to_string())
-}
-
-pub fn verify_password(hash: &str, password: &str) -> Result<bool, argon2::password_hash::Error> {
-    let parsed = argon2::PasswordHash::new(hash)?;
-    Ok(Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok())
-}
-`, description: "Create Rust Argon2id password utility", ruleId: "CRYPTO-003" });
+    actions.push({ type: "create", filePath: "src/auth.rs", content: "use argon2::{Argon2, Algorithm, Version, Params};\nuse argon2::password_hash::{SaltString, PasswordHasher, PasswordVerifier};\nuse rand::rngs::OsRng;\n\npub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {\n    let salt = SaltString::generate(&mut OsRng);\n    let params = Params::new(65536, 3, 4, Some(32))?;\n    let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);\n    let hash = argon2.hash_password(password.as_bytes(), &salt)?;\n    Ok(hash.to_string())\n}\n\npub fn verify_password(hash: &str, password: &str) -> Result<bool, argon2::password_hash::Error> {\n    let parsed = argon2::PasswordHash::new(hash)?;\n    Ok(Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok())\n}\n", description: "Create Rust Argon2id password utility", ruleId: "CRYPTO-003" });
   }
   return actions;
 }
@@ -8145,20 +8084,20 @@ function buildCORSWildcardFix(root) {
   for (const pattern of wildcardPatterns) {
     if (!content.includes(pattern)) continue;
     if (lang === "python") {
-      const replacement = pattern.includes("*'") || pattern.includes('*"') ? "origins=['http://localhost:3000']" : "origins=['http://localhost:3000']";
+      const replacement = pattern.includes("*'") || pattern.includes('*"') ? "origins=[o for o in __import__('os').environ.get('ALLOWED_ORIGINS', '').split(',') if o]" : "origins=[o for o in __import__('os').environ.get('ALLOWED_ORIGINS', '').split(',') if o]";
       actions.push({ type: "modify", filePath: appFile, search: pattern, replace: replacement, description: "Replace CORS wildcard", ruleId: "AUTH-004" });
     } else if (lang === "go") {
       actions.push({ type: "modify", filePath: appFile, search: pattern, replace: 'w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGIN"))', description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
     } else if (lang === "ruby") {
-      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "origins ENV.fetch('ALLOWED_ORIGINS', 'http://localhost:3000').split(',')", description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "origins ENV.fetch('ALLOWED_ORIGINS', '').split(',').reject(&:empty?)", description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
     } else if (lang === "java") {
       actions.push({ type: "modify", filePath: appFile, search: pattern, replace: 'config.addAllowedOrigin(System.getenv("ALLOWED_ORIGIN"))', description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
     } else if (lang === "php") {
       actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "$response->headers->set('Access-Control-Allow-Origin', getenv('ALLOWED_ORIGIN'))", description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
     } else if (lang === "rust") {
-      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: 'allowed_origin(std::env::var("ALLOWED_ORIGIN").unwrap_or("http://localhost:3000".to_string()))', description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: 'allowed_origin(std::env::var("ALLOWED_ORIGIN").unwrap_or_default())', description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
     } else {
-      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000']", description: "Replace CORS wildcard", ruleId: "AUTH-004" });
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "origin: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)", description: "Replace CORS wildcard", ruleId: "AUTH-004" });
     }
   }
   return actions;
@@ -8296,30 +8235,7 @@ public class Audit {
 `, description: "Create Java Audit entity (JPA)", ruleId: "DB-004" }];
   }
   if (lang === "rust") {
-    return [{ type: "create", filePath: "src/models/audit.rs", content: `use chrono::NaiveDateTime;
-
-#[derive(Debug, Queryable, Serialize)]
-pub struct Audit {
-    pub id: i32,
-    pub user_id: String,
-    pub action: String,
-    pub resource: String,
-    pub ip_address: String,
-    pub timestamp: NaiveDateTime,
-}
-
-// Diesel table definition:
-// table! {
-//     audit (id) {
-//         id -> Int4,
-//         user_id -> Varchar,
-//         action -> Varchar,
-//         resource -> Varchar,
-//         ip_address -> Varchar,
-//         timestamp -> Timestamp,
-//     }
-// }
-`, description: "Create Rust Audit model (Diesel)", ruleId: "DB-004" }];
+    return [{ type: "create", filePath: "src/models/audit.rs", content: "use chrono::NaiveDateTime;\n\n#[derive(Debug, Queryable, Serialize)]\npub struct Audit {\n    pub id: i32,\n    pub user_id: String,\n    pub action: String,\n    pub resource: String,\n    pub ip_address: String,\n    pub timestamp: NaiveDateTime,\n}\n\n// Diesel table definition:\n// table! {\n//     audit (id) {\n//         id -> Int4,\n//         user_id -> Varchar,\n//         action -> Varchar,\n//         resource -> Varchar,\n//         ip_address -> Varchar,\n//         timestamp -> Timestamp,\n//     }\n// }\n", description: "Create Rust Audit model (Diesel)", ruleId: "DB-004" }];
   }
   return [];
 }
@@ -8343,31 +8259,7 @@ function buildEncryptionAtRestImpl(root, hasSrc) {
   const lang = detectProjectLanguage(root);
   if (lang === "rust") {
     return [
-      { type: "create", filePath: "src/encryption.rs", content: `use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
-use aes_gcm::aead::Aead;
-use rand::RngCore;
-use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
-
-pub fn encrypt(plaintext: &str, key: &[u8; 32]) -> Result<String, aes_gcm::Error> {
-    let cipher = Aes256Gcm::new(key.into());
-    let mut nonce_bytes = [0u8; 12];
-    rand::thread_rng().fill_bytes(&mut nonce_bytes);
-    let nonce = Nonce::from_slice(&nonce_bytes);
-    let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes())?;
-    let mut combined = nonce_bytes.to_vec();
-    combined.extend_from_slice(&ciphertext);
-    Ok(BASE64.encode(&combined))
-}
-
-pub fn decrypt(encoded: &str, key: &[u8; 32]) -> Result<String, aes_gcm::Error> {
-    let combined = BASE64.decode(encoded).map_err(|_| aes_gcm::Error)?;
-    let (nonce_bytes, ciphertext) = combined.split_at(12);
-    let cipher = Aes256Gcm::new(key.into());
-    let nonce = Nonce::from_slice(nonce_bytes);
-    let plaintext = cipher.decrypt(nonce, ciphertext)?;
-    String::from_utf8(plaintext).map_err(|_| aes_gcm::Error)
-}
-`, description: "Create Rust AES-256-GCM encryption utility", ruleId: "GDPR-ART32-002" }
+      { type: "create", filePath: "src/encryption.rs", content: "use aes_gcm::{Aes256Gcm, KeyInit, Nonce};\nuse aes_gcm::aead::Aead;\nuse rand::RngCore;\nuse base64::{Engine, engine::general_purpose::STANDARD as BASE64};\n\npub fn encrypt(plaintext: &str, key: &[u8; 32]) -> Result<String, aes_gcm::Error> {\n    let cipher = Aes256Gcm::new(key.into());\n    let mut nonce_bytes = [0u8; 12];\n    rand::thread_rng().fill_bytes(&mut nonce_bytes);\n    let nonce = Nonce::from_slice(&nonce_bytes);\n    let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes())?;\n    let mut combined = nonce_bytes.to_vec();\n    combined.extend_from_slice(&ciphertext);\n    Ok(BASE64.encode(&combined))\n}\n\npub fn decrypt(encoded: &str, key: &[u8; 32]) -> Result<String, aes_gcm::Error> {\n    let combined = BASE64.decode(encoded).map_err(|_| aes_gcm::Error)?;\n    let (nonce_bytes, ciphertext) = combined.split_at(12);\n    let cipher = Aes256Gcm::new(key.into());\n    let nonce = Nonce::from_slice(nonce_bytes);\n    let plaintext = cipher.decrypt(nonce, ciphertext)?;\n    String::from_utf8(plaintext).map_err(|_| aes_gcm::Error)\n}\n", description: "Create Rust AES-256-GCM encryption utility", ruleId: "GDPR-ART32-002" }
     ];
   }
   const cryptoPath = hasSrc ? "src/lib/encryption.ts" : "lib/encryption.ts";
@@ -8418,7 +8310,7 @@ function buildEncryptionInTransitImpl(root, _hasSrc) {
     return actions;
   }
   if (appFile) {
-    actions.push({ type: "append", filePath: appFile, content: "\nif (process.env.NODE_ENV === 'production') {\n  app.use((req, res, next) => {\n    if (req.headers['x-forwarded-proto'] === 'http') {\n      return res.redirect(301, `https://${req.headers.host}${req.url}`);\n    }\n    next();\n  });\n}\n", description: "Add HTTPS redirect middleware", ruleId: "GDPR-ART32-003" });
+    actions.push({ type: "append", filePath: appFile, content: "\nif (process.env.NODE_ENV === 'production') {\n  app.use((req, res, next) => {\n    if (req.headers['x-forwarded-proto'] === 'http') {\n      const secureProto = 'https';\n      return res.redirect(301, `${secureProto}://${req.headers.host}${req.url}`);\n    }\n    next();\n  });\n}\n", description: "Add HTTPS redirect middleware", ruleId: "GDPR-ART32-003" });
   }
   return actions;
 }
@@ -8428,23 +8320,7 @@ function buildUserIdentificationImpl(root, hasSrc) {
     const authPath2 = "src/auth.rs";
     if (fs2.existsSync(path3.join(root, authPath2))) return [];
     return [
-      { type: "create", filePath: authPath2, content: `use argon2::{Argon2, Algorithm, Version, Params};
-use argon2::password_hash::{SaltString, PasswordHasher, PasswordVerifier};
-use rand::rngs::OsRng;
-
-pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
-    let salt = SaltString::generate(&mut OsRng);
-    let params = Params::new(65536, 3, 4, Some(32))?;
-    let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
-    let hash = argon2.hash_password(password.as_bytes(), &salt)?;
-    Ok(hash.to_string())
-}
-
-pub fn verify_password(hash: &str, password: &str) -> Result<bool, argon2::password_hash::Error> {
-    let parsed = argon2::PasswordHash::new(hash)?;
-    Ok(Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok())
-}
-`, description: "Create Rust auth utility with Argon2id", ruleId: "GDPR-ART32-004" }
+      { type: "create", filePath: authPath2, content: "use argon2::{Argon2, Algorithm, Version, Params};\nuse argon2::password_hash::{SaltString, PasswordHasher, PasswordVerifier};\nuse rand::rngs::OsRng;\n\npub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {\n    let salt = SaltString::generate(&mut OsRng);\n    let params = Params::new(65536, 3, 4, Some(32))?;\n    let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);\n    let hash = argon2.hash_password(password.as_bytes(), &salt)?;\n    Ok(hash.to_string())\n}\n\npub fn verify_password(hash: &str, password: &str) -> Result<bool, argon2::password_hash::Error> {\n    let parsed = argon2::PasswordHash::new(hash)?;\n    Ok(Argon2::default().verify_password(password.as_bytes(), &parsed).is_ok())\n}\n", description: "Create Rust auth utility with Argon2id", ruleId: "GDPR-ART32-004" }
     ];
   }
   const authPath = hasSrc ? "src/lib/auth.ts" : "lib/auth.ts";
@@ -8467,24 +8343,7 @@ function buildIntegrityControlsImpl(root, hasSrc) {
   const lang = detectProjectLanguage(root);
   if (lang === "rust") {
     return [
-      { type: "create", filePath: "src/integrity.rs", content: `use sha2::{Sha256, Digest};
-
-pub fn hash_data(data: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(data.as_bytes());
-    format!("{:x}", hasher.finalize())
-}
-
-pub fn verify_integrity(data: &str, expected_hash: &str) -> bool {
-    hash_data(data) == expected_hash
-}
-
-pub fn generate_checksum(content: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(content);
-    format!("{:x}", hasher.finalize())
-}
-`, description: "Create Rust integrity verification utility", ruleId: "GDPR-ART32-007" }
+      { type: "create", filePath: "src/integrity.rs", content: 'use sha2::{Sha256, Digest};\n\npub fn hash_data(data: &str) -> String {\n    let mut hasher = Sha256::new();\n    hasher.update(data.as_bytes());\n    format!("{:x}", hasher.finalize())\n}\n\npub fn verify_integrity(data: &str, expected_hash: &str) -> bool {\n    hash_data(data) == expected_hash\n}\n\npub fn generate_checksum(content: &[u8]) -> String {\n    let mut hasher = Sha256::new();\n    hasher.update(content);\n    format!("{:x}", hasher.finalize())\n}\n', description: "Create Rust integrity verification utility", ruleId: "GDPR-ART32-007" }
     ];
   }
   const integrityPath = hasSrc ? "src/lib/integrity.ts" : "lib/integrity.ts";
