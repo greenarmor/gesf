@@ -27,25 +27,48 @@ MCP (Model Context Protocol) is a standard protocol that allows AI applications 
 ```
 ┌─────────────────┐     MCP (JSON-RPC)     ┌──────────────────┐
 │  AI Assistant   │ ◄──────────────────────► │  GESF MCP Server │
-│  (Claude, etc.) │    stdin / stdout        │  (6 tools)       │
+│  (Claude, etc.) │    stdin / stdout        │  (17 tools)       │
 └─────────────────┘                          └──────────────────┘
 ```
 
 1. You configure GESF as an MCP server in your AI assistant's settings
 2. When you ask a compliance question, the assistant calls GESF tools
-3. GESF returns compliance data, generated documents, or control lists
+3. GESF scans your code, generates files, or returns compliance data
 4. The assistant presents the results in natural language
 
-## 6 Available Tools
+## 17 Available Tools
+
+### Compliance Assessment
 
 | Tool | What It Does | When to Use It |
 |------|-------------|----------------|
 | `check_compliance` | Returns compliance score for a project type | "Are we GDPR compliant?" |
+| `check_project_status` | Reads real-time status from `.ges/` directory | "What's our current score?" |
 | `list_missing_controls` | Shows failing controls for a framework | "What's missing for GDPR?" |
-| `generate_retention_policy` | Generates a data retention policy template | "We need a retention policy" |
+| `list_framework_controls` | Lists all controls with status | "Show all OWASP controls" |
+| `run_audit` | Runs a 6-scanner source code audit | "Scan my project for issues" |
+| `generate_compliance_report` | Full report with executive summary | "Generate a compliance report" |
+| `generate_audit_report` | Audit findings + compliance scoring | "Audit and report my project" |
+
+### Fix & Implement
+
+| Tool | What It Does | When to Use It |
+|------|-------------|----------------|
+| `auto_fix` | Auto-fixes security findings in source code | "Fix all security issues" |
+| `implement_control` | Generates implementation files for a control | "Implement encryption" |
+| `apply_control_override` | Marks a control as not-applicable or pass | "This control doesn't apply" |
+| `fix_recommendation` | Step-by-step remediation guidance | "How do I fix CONFIG-001?" |
+
+### Document Generation
+
+| Tool | What It Does | When to Use It |
+|------|-------------|----------------|
+| `generate_retention_policy` | Generates a data retention policy | "We need a retention policy" |
 | `generate_incident_response` | Generates an incident response plan | "Create our incident response plan" |
-| `generate_risk_assessment` | Generates a risk assessment template | "What are our compliance risks?" |
+| `generate_risk_assessment` | Generates a risk assessment | "What are our compliance risks?" |
 | `generate_dpa` | Generates a Data Processing Agreement | "Generate a DPA for our vendor" |
+| `generate_data_inventory` | Generates a data inventory | "Inventory our data categories" |
+| `generate_processing_records` | Generates Article 30 ROPA | "Generate processing records" |
 
 ## Quick Setup
 
@@ -78,10 +101,10 @@ You simply ask natural language questions and the assistant handles the rest.
 
     You should see JSON responses for:
     - `initialize` — server capabilities and protocol version
-    - `tools/list` — 6 tool definitions
+    - `tools/list` — 17 tool definitions
     - `tools/call` — compliance status for a SaaS project
 
     !!! question "Questions"
         - How many tools are listed in the `tools/list` response?
         - What does the `check_compliance` response look like?
-        - Can you identify which tool would generate a DPA?
+        - Can you identify which tools can auto-fix code vs generate documents?

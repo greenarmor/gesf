@@ -74,24 +74,88 @@ Add this to your MCP client config:
 For VS Code, use `"servers"` instead of `"mcpServers"` and add `"type": "stdio"`.
 For OpenCode/Crush, use `"mcp"` instead of `"mcpServers"` and add `"type": "stdio"`.
 
-### Available Tools
+### Available Tools (17 total)
+
+#### Compliance Assessment
 
 | Tool | Description |
-|------|-------------|
-| `check_compliance` | Check GDPR compliance status for a project |
-| `list_missing_controls` | Show missing compliance controls |
-| `generate_retention_policy` | Generate a data retention policy template |
-| `generate_incident_response` | Generate an incident response plan template |
-| `generate_risk_assessment` | Generate a risk assessment template |
-| `generate_dpa` | Generate a Data Processing Agreement template |
+|------|------------|
+| `check_compliance` | Check GDPR compliance status for a project type |
+| `check_project_status` | Read actual `.ges/` directory for real-time project status |
+| `list_missing_controls` | Show compliance controls that are not passing |
+| `list_framework_controls` | List all controls for a framework with status |
+| `run_audit` | Run a full 6-scanner source code audit |
+| `generate_compliance_report` | Generate a full compliance report with scoring |
+| `generate_audit_report` | Combine real audit findings with compliance scoring |
+
+#### Fix & Implement
+
+| Tool | Description |
+|------|------------|
+| `auto_fix` | Automatically fix security findings in source code |
+| `implement_control` | Generate implementation files for a specific control |
+| `apply_control_override` | Mark a control as not-applicable or pass |
+| `fix_recommendation` | Get step-by-step remediation guidance for a control |
+
+#### Document Generation
+
+| Tool | Description |
+|------|------------|
+| `generate_retention_policy` | Generate a data retention policy |
+| `generate_incident_response` | Generate an incident response plan |
+| `generate_risk_assessment` | Generate a risk assessment |
+| `generate_dpa` | Generate a Data Processing Agreement |
+| `generate_data_inventory` | Generate a data inventory with classifications |
+| `generate_processing_records` | Generate Article 30 Records of Processing Activities |
+
+### Supported Languages (7)
+
+JavaScript/TypeScript, Python, Go, Java, Ruby, PHP, Rust — with framework-specific detection for Express, Django, Gin, Spring, Rails, Laravel, Actix-web, and more.
 
 ### Example Prompts
 
+#### Compliance Checks
+
 - "Are we GDPR compliant?"
 - "Show missing controls for GDPR"
+- "List all CIS controls and their status"
+- "Check the real-time project status from .ges/"
+
+#### Auto-Fix & Implementation
+
+- "Scan my project at /path/to/project and auto-fix all security issues"
+- "Run a dry-run auto-fix first — show me what would change"
+- "Implement encryption at rest for GDPR-ART32-002"
+- "Generate an audit logging module for my project"
+- "Add rate limiting to my Express app automatically"
+- "Fix all findings you can and tell me what needs manual review"
+- "How do I fix CONFIG-001?"
+
+#### Audit & Reports
+
+- "Run a security audit on my project and generate a report"
+- "Generate a full compliance report for my SaaS application"
+- "Audit my codebase and show me all findings with severity levels"
+
+#### Document Generation
+
 - "Generate a retention policy for MyApp"
 - "Generate an incident response plan"
 - "Generate a risk assessment"
+- "Generate a DPA for our vendor relationship"
+- "Generate a data inventory for our AI application"
+- "Generate Article 30 processing records"
+
+#### Control Overrides
+
+- "Mark GDPR-ART32-001 as not-applicable — we don't process EU data"
+- "Mark OWASP-ASVS-003 as pass — we verified it manually"
+
+#### Compound Workflows
+
+- "Audit my project, auto-fix what you can, then generate a compliance report"
+- "Check compliance, show missing GDPR controls, fix them, and generate a risk assessment"
+- "Scan /path/to/project, apply auto-fix, and tell me what still needs manual review"
 
 ## Architecture
 
