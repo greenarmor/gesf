@@ -106,6 +106,8 @@ GESF can be configured at two levels in VS Code:
 
 Open Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux) → type **"MCP: Open User Configuration"** → press Enter. Add:
 
+**macOS / Linux:**
+
 ```json
 {
   "servers": {
@@ -117,6 +119,29 @@ Open Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux) �
   }
 }
 ```
+
+**Windows:**
+
+On Windows, VS Code may not find `npx` in its PATH. Use the absolute path:
+
+```powershell
+where.exe npx
+# Typical: C:\Program Files\nodejs\npx.cmd
+```
+
+```json
+{
+  "servers": {
+    "gesf": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["-y", "@greenarmor/ges-mcp-server"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+Or just run `ges mcp setup vscode` — it detects the absolute path automatically.
 
 Or edit the global config file directly:
 
@@ -231,9 +256,10 @@ OWASP compliance improved and show any remaining issues.
 ### Tips
 
 - **Agent mode is required** — tools won't work in standard chat mode
-- The config is project-level (`.vscode/mcp.json`), so each project needs its own setup
+- Use global config (`ges mcp setup vscode` → choose Global) for all-project availability, or project-level (`.vscode/mcp.json`) for single projects
 - Use `@workspace` to give Copilot context about your full codebase
 - Combine tool results with Copilot's code analysis for best results
+- **Windows:** `ges mcp setup vscode` writes absolute paths to `npx.cmd`/`node.exe` automatically — no manual path lookup needed
 
 ---
 

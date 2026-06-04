@@ -30,9 +30,9 @@ Complete technical guide for installing and using the Green Engineering Standard
 
 | Requirement | Minimum Version | Check Command |
 |-------------|----------------|---------------|
-| Node.js | 18.0.0 or higher | `node --version` |
-| npm | 8.0.0 or higher | `npm --version` |
-| pnpm (contributors only) | 9.0.0 or higher | `pnpm --version` |
+| Node.js | 20.0.0 or higher | `node --version` |
+| npm | 10.0.0 or higher | `npm --version` |
+| pnpm (contributors only) | 11.0.0 or higher | `pnpm --version` |
 
 Install Node.js if you don't have it:
 
@@ -50,6 +50,10 @@ sudo apt install -y nodejs
 
 # Using winget (Windows)
 winget install OpenJS.NodeJS.LTS
+
+# Using fnm (Windows/macOS/Linux — fast alternative to nvm)
+fnm install 22
+fnm use 22
 ```
 
 ---
@@ -698,6 +702,8 @@ requirements:
 
 The CLI is not installed or not in your PATH.
 
+**macOS / Linux:**
+
 ```bash
 # Reinstall globally
 npm install -g @greenarmor/ges
@@ -708,6 +714,67 @@ which ges
 # If using nvm, make sure you're on the right version
 nvm use default
 npm install -g @greenarmor/ges
+```
+
+**Windows (PowerShell):**
+
+The npm global bin directory may not be in your PATH. This is the most common issue on Windows.
+
+```powershell
+# Check where npm installs global packages
+npm config get prefix
+
+# The command lives in the npm prefix directory
+# Usually: C:\Users\<your-user>\AppData\Roaming\npm
+# Verify the file exists
+dir "$(npm config get prefix)\ges.cmd"
+
+# If the file exists but ges isn't found, add npm's prefix to your PATH:
+$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+$npmPrefix = "$(npm config get prefix)"
+[Environment]::SetEnvironmentVariable("PATH", "$currentPath;$npmPrefix", "User")
+
+# Then restart PowerShell and test:
+ges --version
+```
+
+**Windows alternative — use npx (no PATH setup needed):**
+
+```powershell
+npx @greenarmor/ges --version
+npx @greenarmor/ges init
+npx @greenarmor/ges audit
+```
+
+!!! warning "Windows + nvm-windows"
+
+    If you use [nvm-windows](https://github.com/coreybutler/nvm-windows), switching Node versions does **not** carry over globally installed packages. After `nvm use 22`, you must re-run `npm install -g @greenarmor/ges`. Alternatively, use `npx @greenarmor/ges` which works regardless of which Node version is active.
+
+!!! tip "Windows + fnm (recommended)"
+
+    [fnm](https://github.com/Schniz/fnm) is a faster alternative to nvm-windows that **does** carry over global packages. Install with `winget install Schniz.fnm`, then:
+    ```powershell
+    fnm install 22
+    fnm use 22
+    fnm env --use-on-cd | Out-String | Invoke-Expression
+    npm install -g @greenarmor/ges
+    ges --version
+    ```
+
+### `EBADENGINE` warning during install
+
+GESF requires Node.js >= 20.0.0. The install succeeds (it's a warning, not an error), but some features may not work on older versions.
+
+```bash
+# Check your version
+node --version
+
+# Upgrade using nvm
+nvm install 22
+nvm use 22
+
+# Or using winget (Windows)
+winget install OpenJS.NodeJS.LTS
 ```
 
 ### `Error: Cannot find module '@greenarmor/ges-core'`
@@ -758,6 +825,8 @@ npm config get prefix
 
 ### Permission denied on global install
 
+**macOS / Linux:**
+
 ```bash
 # Don't use sudo with npm. Use nvm instead:
 nvm install 22
@@ -768,6 +837,21 @@ npm install -g @greenarmor/ges
 mkdir ~/.npm-global
 npm config set prefix '~/.npm-global'
 export PATH=~/.npm-global/bin:$PATH
+npm install -g @greenarmor/ges
+```
+
+**Windows:**
+
+Permission errors on Windows usually mean the npm global directory is not writable. Run PowerShell as Administrator and reinstall:
+
+```powershell
+npm install -g @greenarmor/ges
+```
+
+Or change npm's default prefix to a user-writable location:
+
+```powershell
+npm config set prefix "$env:APPDATA\npm"
 npm install -g @greenarmor/ges
 ```
 
@@ -795,14 +879,14 @@ rm -rf .github/workflows/dependency-scan.yml .github/workflows/secret-scan.yml
 
 | OS | Node.js | Status |
 |----|---------|--------|
-| macOS (Intel) | 18+ | Supported |
-| macOS (Apple Silicon) | 18+ | Supported |
-| Ubuntu / Debian | 18+ | Supported |
-| Fedora / RHEL | 18+ | Supported |
-| Windows 10/11 | 18+ | Supported |
-| Windows (WSL2) | 18+ | Supported |
-| Alpine Linux | 18+ | Supported |
-| FreeBSD | 18+ | Community |
+| macOS (Intel) | 20+ | Supported |
+| macOS (Apple Silicon) | 20+ | Supported |
+| Ubuntu / Debian | 20+ | Supported |
+| Fedora / RHEL | 20+ | Supported |
+| Windows 10/11 | 20+ | Supported |
+| Windows (WSL2) | 20+ | Supported |
+| Alpine Linux | 20+ | Supported |
+| FreeBSD | 20+ | Community |
 
 ---
 

@@ -140,8 +140,40 @@ function resolveServerPath(): { command: string; args: string[] } {
   return { command: "npx", args: ["-y", "@greenarmor/ges-mcp-server"] };
 }
 
+function resolveAbsoluteCommand(command: string): string {
+  if (command === "node") {
+    return process.execPath;
+  }
+  if (command === "npx") {
+    const nodeDir = path.dirname(process.execPath);
+    const ext = process.platform === "win32" ? ".cmd" : "";
+    const npxPath = path.join(nodeDir, `npx${ext}`);
+    if (fs.existsSync(npxPath)) return npxPath;
+  }
+  return command;
+}
+
+function resolveServerPathAbsolute(): { command: string; args: string[] } {
+  const resolved = resolveServerPath();
+
+  if (resolved.command === "node") {
+    return { command: process.execPath, args: resolved.args };
+  }
+
+  if (resolved.command === "npx") {
+    const nodeDir = path.dirname(process.execPath);
+    const ext = process.platform === "win32" ? ".cmd" : "";
+    const npxPath = path.join(nodeDir, `npx${ext}`);
+    if (fs.existsSync(npxPath)) {
+      return { command: npxPath, args: resolved.args };
+    }
+  }
+
+  return resolved;
+}
+
 function buildServerEntry(client: ClientConfig): Record<string, unknown> {
-  const { command, args } = resolveServerPath();
+  const { command, args } = resolveServerPathAbsolute();
 
   if (client.format === "opencode") {
     return {

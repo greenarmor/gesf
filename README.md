@@ -23,6 +23,32 @@ Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and 
 npm install -g @greenarmor/ges
 ```
 
+Requires Node.js >= 20.
+
+<details>
+<summary>Windows troubleshooting</summary>
+
+If `ges` is not recognized after install, the npm global bin directory is not in your PATH:
+
+```powershell
+# Check where npm installs globals
+npm config get prefix
+
+# Use npx as a quick alternative (no PATH needed)
+npx @greenarmor/ges --version
+
+# Or add npm's prefix to PATH permanently
+$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+$npmPrefix = "$(npm config get prefix)"
+[Environment]::SetEnvironmentVariable("PATH", "$currentPath;$npmPrefix", "User")
+# Restart PowerShell, then:
+ges --version
+```
+
+If you use nvm-windows, global packages don't carry over between Node versions — re-run `npm install -g @greenarmor/ges` after `nvm use`.
+
+</details>
+
 ## Usage
 
 ```bash

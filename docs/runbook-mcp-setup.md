@@ -6,9 +6,13 @@ Install the GESF MCP AI Compliance Assistant into any MCP-compatible client.
 
 ## Prerequisites
 
-- [ ] Node.js >= 18.0.0 installed
+- [ ] Node.js >= 20.0.0 installed (`node --version`)
 - [ ] GESF installed globally (`npm install -g @greenarmor/ges`) **or** available via `npx`
 - [ ] At least one MCP-compatible client installed (see below)
+
+!!! info "Windows users"
+
+    On Windows, `ges mcp setup` automatically writes **absolute paths** to `node.exe` and `npx.cmd` in the config. This avoids the common issue where VS Code can't find `npx` because it doesn't inherit your PowerShell PATH. No manual path lookup is needed when using `ges mcp setup`.
 
 ---
 
@@ -104,6 +108,8 @@ GESF can be configured at two levels in VS Code:
 
 **Step 3:** Add the server entry:
 
+**macOS / Linux:**
+
 ```json
 {
   "servers": {
@@ -115,6 +121,32 @@ GESF can be configured at two levels in VS Code:
   }
 }
 ```
+
+**Windows:**
+
+VS Code may not find `npx` in its process PATH. Use the absolute path to `npx.cmd`:
+
+```powershell
+# Find your npx path in PowerShell
+where.exe npx
+# Typical: C:\Program Files\nodejs\npx.cmd
+```
+
+```json
+{
+  "servers": {
+    "gesf": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["-y", "@greenarmor/ges-mcp-server"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+!!! tip "Use `ges mcp setup vscode` on Windows"
+
+    Running `ges mcp setup vscode` (or `npx @greenarmor/ges mcp setup vscode`) **automatically detects the absolute path** to `npx.cmd` or `node.exe` and writes it into the config. No manual path lookup needed.
 
 If the file already has content, merge the `gesf` entry into the existing `servers` object.
 
@@ -291,6 +323,33 @@ If the file already exists, merge the `gesf` entry into the existing `mcpServers
 
 ---
 
+## Windows Absolute Path Reference
+
+When manually editing MCP config files on Windows, use absolute paths instead of bare `npx` or `node`. Find them in PowerShell:
+
+```powershell
+where.exe npx
+where.exe node
+```
+
+| How Node was installed | `npx.cmd` path | `node.exe` path |
+|------------------------|----------------|-----------------|
+| Official installer | `C:\Program Files\nodejs\npx.cmd` | `C:\Program Files\nodejs\node.exe` |
+| nvm-windows | `C:\Users\<user>\AppData\Roaming\nvm\v<version>\npx.cmd` | `C:\Users\<user>\AppData\Roaming\nvm\v<version>\node.exe` |
+| fnm | `%LOCALAPPDATA%\fnm_multishells\<version>\npx.cmd` | `%LOCALAPPDATA%\fnm_multishells\<version>\node.exe` |
+
+In JSON, double the backslashes:
+
+```json
+"command": "C:\\Program Files\\nodejs\\npx.cmd"
+```
+
+!!! tip "Skip the manual work"
+
+    Running `ges mcp setup <client>` (or `npx @greenarmor/ges mcp setup <client>`) detects the absolute paths automatically. Use it instead of editing config files by hand.
+
+---
+
 ## Advanced — Custom Server Path (Source Build)
 
 If you are developing GESF locally or installed from source, replace the `npx` command with a direct path to the built server:
@@ -323,18 +382,41 @@ Adapt the JSON key (`mcpServers`, `servers`, or `mcp`) and `type` field for your
 
 ---
 
-## Available Tools
+## Available Tools (17 total)
 
 Once configured, the GESF MCP server provides these tools to the AI assistant:
+
+### Compliance Assessment
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `check_compliance` | Check GDPR compliance status for a project | `project_type` (string) |
-| `list_missing_controls` | Show missing compliance controls for a framework | `framework` (string, e.g. `GDPR`, `OWASP`) |
-| `generate_retention_policy` | Generate a data retention policy template | `project_name` (string) |
-| `generate_incident_response` | Generate an incident response plan template | `project_name` (string) |
-| `generate_risk_assessment` | Generate a risk assessment template | `project_name` (string) |
-| `generate_dpa` | Generate a Data Processing Agreement template | `project_name` (string) |
+| `check_project_status` | Read `.ges/` for real-time project status | `project_path` (string) |
+| `list_missing_controls` | Show missing compliance controls for a framework | `framework` (string) |
+| `list_framework_controls` | List all controls for a framework with status | `framework` (string) |
+| `run_audit` | Run a full 6-scanner source code audit | `project_path` (string) |
+| `generate_compliance_report` | Generate a full compliance report | `project_type`, `project_name` |
+| `generate_audit_report` | Combine real audit findings with scoring | `project_path`, `project_name` |
+
+### Fix & Implement
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `auto_fix` | Automatically fix security findings in source code | `project_path`, `dry_run?`, `rule_ids?` |
+| `implement_control` | Generate implementation files for a control | `project_path`, `control_id` |
+| `apply_control_override` | Mark a control as not-applicable or pass | `project_path`, `control_id`, `status`, `reason` |
+| `fix_recommendation` | Get step-by-step remediation guidance | `control_id` or `finding_title` |
+
+### Document Generation
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `generate_retention_policy` | Generate a data retention policy | `project_name` |
+| `generate_incident_response` | Generate an incident response plan | `project_name` |
+| `generate_risk_assessment` | Generate a risk assessment | `project_name` |
+| `generate_dpa` | Generate a Data Processing Agreement | `project_name` |
+| `generate_data_inventory` | Generate a data inventory with classifications | `project_name`, `project_type` |
+| `generate_processing_records` | Generate Article 30 ROPA | `project_name`, `controller_name` |
 
 ---
 
@@ -354,13 +436,20 @@ After installing the MCP server, try these prompts in your AI client:
 
 ## Verify the Server Works (Manual Test)
 
-Run the server directly and send a test request:
+**macOS / Linux:**
 
 ```bash
 printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n{"jsonrpc":"2.0","id":2,"method":"tools/list"}\n{"jsonrpc":"2.0","id":3,"method":"ping"}\n' | npx -y @greenarmor/ges-mcp-server
 ```
 
-Expected: JSON responses for `initialize`, `tools/list`, and `ping`. No output for the notification.
+**Windows (PowerShell):**
+
+```powershell
+$input = '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' + "`n" + '{"jsonrpc":"2.0","method":"notifications/initialized"}' + "`n" + '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' + "`n"
+$input | npx -y @greenarmor/ges-mcp-server
+```
+
+Expected: JSON responses for `initialize` and `tools/list` (17 tools listed). No output for the notification.
 
 ---
 
@@ -372,10 +461,14 @@ Expected: JSON responses for `initialize`, `tools/list`, and `ping`. No output f
 | `npx` fails or hangs | Stale cache or no network | Run `npx clear-npx-cache` then retry; or use `npm install -g @greenarmor/ges-mcp-server` and change command to `ges-mcp-server` |
 | Tools not appearing | Client not reloaded | Restart the client completely (quit, not just close window) |
 | `EACCES` permission error | Config directory not writable | Create the directory first: `mkdir -p <config-dir>` |
-| Server crashes on start | Node.js too old | Verify `node --version` is >= 18.0.0 |
+| Server crashes on start | Node.js too old | Verify `node --version` is >= 20.0.0 |
 | `Cannot find module` | Package not installed | Run `npm install -g @greenarmor/ges-mcp-server` or use `npx -y` |
 | Multiple `gesf` entries | Re-ran setup | Manually edit config to keep only one `gesf` entry |
 | Crush loses other config | Config overwritten | Only edit the `mcp.gesf` key, do not replace the entire file |
+| Windows: `ges` not recognized after global install | npm global bin not in PATH | Run `npm config get prefix`, add that directory to PATH, or use `npx @greenarmor/ges` instead |
+| Windows: `EBADENGINE` warning | Node.js < 20 | Upgrade to Node 20+ via `winget install OpenJS.NodeJS.LTS` |
+| Windows: MCP server fails to start in VS Code | VS Code can't find `npx` in its process PATH | Use absolute path to `npx.cmd` (see Windows section above), or run `ges mcp setup vscode` which auto-detects the path |
+| Windows: MCP server silently fails (no error, no tools) | `node.exe` or `npx.cmd` not in VS Code's inherited PATH | Use `where.exe npx` in PowerShell to find the absolute path, put it in the `"command"` field |
 | VS Code: `CodeExpectedError: Variable 'cwd' must be defined` | Invalid `${input:...}` variables or `inputs` section in `mcp.json` | Remove `cwd`, `envFile`, `sandboxEnabled`, `dev` fields and `inputs` section; or re-run `ges mcp setup vscode` to regenerate clean config |
 | VS Code: can't find GESF on the Marketplace | GESF is an MCP server, not a VS Code extension | Add the server entry to your global or project `mcp.json` (see VS Code section above) |
 | VS Code: NPM installer asks for "name" and "working directory" | VS Code's NPM package GUI is for NPM packages, not MCP servers | Cancel the installer and edit `mcp.json` directly (see VS Code section above) |
