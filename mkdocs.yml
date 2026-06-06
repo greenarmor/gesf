@@ -1,5 +1,5 @@
 site_name: GESF Documentation
-site_description: Green Engineering Standard Framework — Compliance-as-Code for GDPR, OWASP, NIST, and CIS
+site_description: 'GESF (pronounced "Gessf") — the framework that helps you "get safe." Compliance-as-Code for GDPR, OWASP, NIST, and CIS.'
 site_url: https://greenarmor.github.io/gesf
 repo_url: https://github.com/greenarmor/gesf
 repo_name: greenarmor/gesf

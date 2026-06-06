@@ -4,6 +4,8 @@
 
 # GESF — Green Engineering Standard Framework
 
+<p class="tagline">GESF (pronounced <em>"Gessf"</em>) — the framework that helps you <em>"get safe."</em></p>
+
 Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and CIS engineering standards in any software project — regardless of programming language.
 
 ## What GESF Does
