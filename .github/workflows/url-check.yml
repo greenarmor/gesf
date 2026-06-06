@@ -1,0 +1,43 @@
+name: URL Strings Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  url-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded URL strings in source
+        run: |
+          echo "Scanning for hardcoded URLs in TypeScript/JavaScript source files..."
+          EXIT_CODE=0
+
+          # Search for http:// and https:// in source files (not docs, not node_modules, not dist)
+          RESULTS=$(grep -rn --include="*.ts" --include="*.js" \
+            --exclude-dir=node_modules \
+            --exclude-dir=dist \
+            --exclude-dir=build \
+            --exclude-dir=.dev-logs \
+            --exclude="*.test.ts" \
+            --exclude="*.md" \
+            -E "https?://[^'\"\` )" + "]" \
+            packages/ 2>/dev/null || true)
+
+          # Filter out allowed URLs
+          ALLOWED_PATTERNS="(www\.w3\.org|json-schema\.org|schema\.org)"
+          FILTERED=$(echo "$RESULTS" | grep -vE "$ALLOWED_PATTERNS" || true)
+
+          if [ -n "$FILTERED" ]; then
+            echo "::error::Hardcoded URL strings found in source code. Use environment variables instead."
+            echo "$FILTERED"
+            EXIT_CODE=1
+          else
+            echo "No hardcoded URL strings found."
+          fi
+
+          exit $EXIT_CODE

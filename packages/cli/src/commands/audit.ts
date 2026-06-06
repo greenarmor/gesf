@@ -3,8 +3,8 @@ import { ensureGESInitialized, readJsonFile, writeJsonFile } from "../utils/proj
 import type { ProjectConfig, ScoreFile, FrameworkName, Control, ControlOverride } from "@greenarmor/ges-core";
 import { getPacksForProjectType, getAllPacks } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile, formatScoreOutput } from "@greenarmor/ges-scoring-engine";
-import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
-import type { Finding } from "@greenarmor/ges-audit-engine";
+import { runAudit, runAuditIncremental, deduplicateFindings } from "@greenarmor/ges-audit-engine";
+import type { Finding, AuditCache } from "@greenarmor/ges-audit-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -13,6 +13,7 @@ export const auditCommand = new Command("audit")
   .description("Run a compliance audit on the project")
   .option("--ci", "CI mode - exit with error code on failures")
   .option("--json", "Output findings as JSON")
+  .option("--incremental", "Only rescan changed files since last audit")
   .action(async (options) => {
     const root = ensureGESInitialized();
     const config = readJsonFile<ProjectConfig>(path.join(root, ".ges", "config.json"));
@@ -21,10 +22,27 @@ export const auditCommand = new Command("audit")
     console.log("  ────────────────────\n");
 
     console.log("  Scanning project files...");
-    const { findings: rawFindings, scannedFiles } = runAudit(root);
-    const findings = deduplicateFindings(rawFindings);
 
-    console.log(`  Scanned ${scannedFiles} files\n`);
+    let rawFindings: Finding[];
+    let scannedFiles: number;
+
+    if (options.incremental) {
+      const cachePath = path.join(root, ".ges", "audit-cache.json");
+      const existingCache = readJsonFile<AuditCache>(cachePath) || {};
+      const result = runAuditIncremental(root, existingCache);
+      writeJsonFile(cachePath, result.newCache);
+      rawFindings = result.findings;
+      scannedFiles = result.scannedFiles;
+      console.log(`  Scanned ${scannedFiles} files (${result.changedFiles} changed)`);
+    } else {
+      const result = runAudit(root);
+      rawFindings = result.findings;
+      scannedFiles = result.scannedFiles;
+      console.log(`  Scanned ${scannedFiles} files`);
+    }
+
+    const findings = deduplicateFindings(rawFindings);
+    console.log("");
 
     const frameworks = (config?.frameworks || ["GDPR", "OWASP"]) as FrameworkName[];
 
@@ -124,12 +142,41 @@ function applyControlOverrides(controls: Control[], overrides: ControlOverride[]
   });
 }
 
+const SCANNABLE_CATEGORIES = new Set([
+  "encryption",
+  "authentication",
+  "audit",
+  "security",
+  "database",
+  "secrets",
+  "injection",
+  "xss",
+  "infrastructure",
+  "dependencies",
+]);
+
 function updateControlsFromFindings(controls: Control[], findings: Finding[]): Control[] {
+  const controlsWithFindings = new Set(
+    findings.flatMap(f => f.controlIds)
+  );
+
   return controls.map(control => {
     if (control.status === "pass" || control.status === "not-applicable") return control;
 
     const relevantFindings = findings.filter(f => f.controlIds.includes(control.id));
-    if (relevantFindings.length === 0) return control;
+    if (relevantFindings.length === 0) {
+      if (
+        SCANNABLE_CATEGORIES.has(control.category) &&
+        !controlsWithFindings.has(control.id)
+      ) {
+        return {
+          ...control,
+          checks: control.checks.map(check => ({ ...check, status: "pass" as const })),
+          status: "pass" as const,
+        };
+      }
+      return control;
+    }
 
     const hasCritical = relevantFindings.some(f => f.severity === "critical" || f.severity === "high");
 

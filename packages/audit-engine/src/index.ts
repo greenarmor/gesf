@@ -13,7 +13,7 @@ export type { Finding } from "./scanners/types.js";
 const IGNORE_DIRS = new Set([
   "node_modules", ".git", "dist", "build", ".next", ".nuxt", "coverage",
   ".ges", "vendor", "__pycache__", ".venv", "venv", ".turbo", ".cache",
-  "reports", "compliance", "security", "controls", "policies", "checklists", "docs",
+  "reports",
   "bundle", ".crush", ".vscode", ".idea",
 ]);
 
@@ -27,8 +27,41 @@ const IGNORE_EXTENSIONS = new Set([
   ".lock", ".map", ".wasm",
 ]);
 
+function loadGesIgnore(root: string): string[] {
+  const ignorePath = path.join(root, ".gesignore");
+  if (!fs.existsSync(ignorePath)) return [];
+  try {
+    const content = fs.readFileSync(ignorePath, "utf-8");
+    return content
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0 && !line.startsWith("#"));
+  } catch {
+    return [];
+  }
+}
+
+function isIgnored(filePath: string, patterns: string[]): boolean {
+  for (const pattern of patterns) {
+    if (pattern.endsWith("/")) {
+      const dir = pattern.slice(0, -1);
+      if (filePath === dir || filePath.startsWith(dir + "/")) return true;
+    } else if (pattern.startsWith("*.")) {
+      const ext = pattern.slice(1);
+      if (filePath.endsWith(ext)) return true;
+    } else if (pattern.includes("*")) {
+      const regex = new RegExp("^" + pattern.replace(/\./g, "\\.").replace(/\*/g, ".*") + "$");
+      if (regex.test(filePath)) return true;
+    } else {
+      if (filePath === pattern || filePath.startsWith(pattern + "/")) return true;
+    }
+  }
+  return false;
+}
+
 function collectFiles(root: string): string[] {
   const files: string[] = [];
+  const ignorePatterns = loadGesIgnore(root);
 
   function walk(dir: string) {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -42,7 +75,9 @@ function collectFiles(root: string): string[] {
         if (!IGNORE_EXTENSIONS.has(ext)) {
           const rel = path.relative(root, fullPath).replace(/\\/g, "/");
           if (!SKIP_PATHS.some(skip => rel.includes(skip))) {
-            files.push(rel);
+            if (!isIgnored(rel, ignorePatterns)) {
+              files.push(rel);
+            }
           }
         }
       }
@@ -170,6 +205,106 @@ export function runAudit(root: string): { findings: Finding[]; scannedFiles: num
   }
 
   return { findings: allFindings, scannedFiles: files.length };
+}
+
+export interface AuditCache {
+  [filePath: string]: { hash: string; findings: Finding[] };
+}
+
+export function runAuditIncremental(
+  root: string,
+  cache?: AuditCache,
+): { findings: Finding[]; scannedFiles: number; newCache: AuditCache; changedFiles: number } {
+  const files = collectFiles(root);
+  const fileContents = readFiles(root, files);
+  const oldCache = cache || {};
+  const newCache: AuditCache = {};
+  const changedFiles: string[] = [];
+
+  for (const file of files) {
+    const content = fileContents.get(file) || "";
+    const hash = simpleHash(content);
+
+    if (oldCache[file] && oldCache[file].hash === hash) {
+      newCache[file] = oldCache[file];
+    } else {
+      changedFiles.push(file);
+      newCache[file] = { hash, findings: [] };
+    }
+  }
+
+  const isWebProject = detectWebProject(fileContents);
+  const changedContents = new Map<string, string>();
+  for (const file of changedFiles) {
+    changedContents.set(file, fileContents.get(file) || "");
+  }
+
+  const ctx: ScanContext = {
+    root,
+    files: changedFiles,
+    fileContents: changedContents,
+    isWebProject,
+  };
+
+  const fullCtx: ScanContext = {
+    root,
+    files,
+    fileContents,
+    isWebProject,
+  };
+
+  const perFileScanners = [
+    new SecretsScanner(),
+    new CryptoScanner(),
+    new CodeSecurityScanner(),
+    new DatabaseScanner(),
+  ];
+
+  const projectScanners = [
+    new AuthScanner(),
+    new ConfigScanner(),
+  ];
+
+  const changedFindings: Finding[] = [];
+  for (const scanner of perFileScanners) {
+    changedFindings.push(...scanner.scan(ctx));
+  }
+
+  for (const finding of changedFindings) {
+    if (newCache[finding.file]) {
+      newCache[finding.file].findings.push(finding);
+    }
+  }
+
+  const projectFindings: Finding[] = [];
+  for (const scanner of projectScanners) {
+    projectFindings.push(...scanner.scan(fullCtx));
+  }
+
+  const allFindings: Finding[] = [];
+  for (const file of files) {
+    if (newCache[file]) {
+      allFindings.push(...newCache[file].findings);
+    }
+  }
+  allFindings.push(...projectFindings);
+
+  return {
+    findings: allFindings,
+    scannedFiles: files.length,
+    newCache,
+    changedFiles: changedFiles.length,
+  };
+}
+
+function simpleHash(content: string): string {
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return hash.toString(36);
 }
 
 export function deduplicateFindings(findings: Finding[]): Finding[] {

@@ -6,6 +6,7 @@ import { createBlockchainPolicyPack } from "./packs/blockchain.js";
 import { createGovernmentPolicyPack } from "./packs/government.js";
 import { createCISPolicyPack } from "./packs/cis.js";
 import { createNISTPolicyPack } from "./packs/nist.js";
+import { createISO27001PolicyPack } from "./packs/iso27001.js";
 
 const ALL_PACKS: (() => PolicyPack)[] = [
   createGDPRPolicyPack,
@@ -15,6 +16,7 @@ const ALL_PACKS: (() => PolicyPack)[] = [
   createGovernmentPolicyPack,
   createCISPolicyPack,
   createNISTPolicyPack,
+  createISO27001PolicyPack,
 ];
 
 const PACK_MAP: Record<string, () => PolicyPack> = {
@@ -25,6 +27,7 @@ const PACK_MAP: Record<string, () => PolicyPack> = {
   government: createGovernmentPolicyPack,
   cis: createCISPolicyPack,
   nist: createNISTPolicyPack,
+  iso27001: createISO27001PolicyPack,
 };
 
 export function getAllPacks(): PolicyPack[] {
@@ -51,3 +54,4 @@ export { createBlockchainPolicyPack } from "./packs/blockchain.js";
 export { createGovernmentPolicyPack } from "./packs/government.js";
 export { createCISPolicyPack } from "./packs/cis.js";
 export { createNISTPolicyPack } from "./packs/nist.js";
+export { createISO27001PolicyPack } from "./packs/iso27001.js";

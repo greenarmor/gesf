@@ -19,7 +19,6 @@ import { getPacksForProjectType } from "@greenarmor/ges-policy-engine";
 import {
   generateComplianceDocs,
   generateSecurityDocs,
-  generateConfigYaml,
   generateConfigJson,
   generateMetadataJson,
   generateFrameworkVersionJson,
@@ -108,9 +107,6 @@ export const initCommand = new Command("init")
       fs.mkdirSync(path.join(process.cwd(), dir), { recursive: true });
     }
 
-    const configYaml = generateConfigYaml(config);
-    writeFileSync(path.join(process.cwd(), configYaml.filePath), configYaml.content);
-
     const configJson = generateConfigJson(config);
     writeFileSync(path.join(process.cwd(), configJson.filePath), configJson.content);
 
@@ -133,7 +129,12 @@ export const initCommand = new Command("init")
       writeFileSync(path.join(process.cwd(), doc.filePath), doc.content);
     }
 
-    const packs = getPacksForProjectType(projectType);
+    const allProjectPacks = getPacksForProjectType(projectType);
+    const fwLower = new Set(selectedFrameworks.map((f: string) => f.toLowerCase()));
+    const DOMAIN_PACKS = new Set(["ai", "blockchain", "government"]);
+    const packs = allProjectPacks.filter(pack =>
+      DOMAIN_PACKS.has(pack.id.toLowerCase()) || fwLower.has(pack.id.toLowerCase())
+    );
     for (const pack of packs) {
       const packDir = path.join(process.cwd(), CONTROLS_DIR, pack.id);
       fs.mkdirSync(packDir, { recursive: true });

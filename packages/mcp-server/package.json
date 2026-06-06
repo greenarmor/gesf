@@ -48,7 +48,7 @@
     "build": "tsc",
     "clean": "rm -rf dist bundle tsconfig.tsbuildinfo",
     "prepublishOnly": "tsc",
-    "test": "echo \"no tests yet\""
+    "test": "vitest run"
   },
   "dependencies": {
     "@greenarmor/ges-audit-engine": "workspace:*",
@@ -63,7 +63,8 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "esbuild": "^0.28.0",
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { ensureGESInitialized, readJsonFile, writeFileSync } from "../utils/project.js";
 import type { ProjectConfig, ScoreFile, ReportOptions } from "@greenarmor/ges-core";
 import { getAllPacks } from "@greenarmor/ges-policy-engine";
-import { generateMarkdownReport, generateHtmlReport } from "@greenarmor/ges-report-generator";
+import { generateMarkdownReport, generateHtmlReport, generatePdfReport } from "@greenarmor/ges-report-generator";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as path from "node:path";
@@ -43,6 +43,9 @@ export const reportCommand = new Command("report")
     if (options.format === "html") {
       content = generateHtmlReport(reportOptions, score, controls, findings);
       ext = "html";
+    } else if (options.format === "pdf") {
+      content = generatePdfReport(reportOptions, score, controls, findings);
+      ext = "pdf";
     } else {
       content = generateMarkdownReport(reportOptions, score, controls, findings);
       ext = "md";
@@ -55,11 +58,6 @@ export const reportCommand = new Command("report")
 
     console.log(`  Report generated: ${outputPath}`);
     console.log(`  ${findings.length} security findings included\n`);
-
-    if (options.format === "pdf") {
-      console.log("  Note: PDF generation requires pandoc:");
-      console.log(`    pandoc ${outputPath} -o ${outputPath.replace(".md", ".pdf")}\n`);
-    }
 
     await showNextStepsMenu("report");
   });

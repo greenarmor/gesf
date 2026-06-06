@@ -6,7 +6,10 @@ export const GES_DIR = ".ges";
 export function findProjectRoot(startDir: string = process.cwd()): string | null {
   let dir = startDir;
   while (dir !== path.dirname(dir)) {
-    if (fs.existsSync(path.join(dir, GES_DIR, "config.yaml"))) {
+    if (
+      fs.existsSync(path.join(dir, GES_DIR, "config.json")) ||
+      fs.existsSync(path.join(dir, GES_DIR, "config.yaml"))
+    ) {
       return dir;
     }
     dir = path.dirname(dir);

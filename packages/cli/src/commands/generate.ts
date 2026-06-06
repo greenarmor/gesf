@@ -13,7 +13,7 @@ export const generateCommand = new Command("generate")
   .option("--all", "Regenerate everything")
   .action(async (options) => {
     const root = ensureGESInitialized();
-    const config = readJsonFile<ProjectConfig>(path.join(".ges", "config.json"));
+    const config = readJsonFile<ProjectConfig>(path.join(root, ".ges", "config.json"));
 
     if (!config) {
       console.error("  Error: Could not read configuration.");

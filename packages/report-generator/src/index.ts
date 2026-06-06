@@ -248,6 +248,133 @@ function generateRecommendationsSection(score: ScoreFile, controls: Control[], f
   return lines.join("\n");
 }
 
+export function generatePdfReport(
+  options: ReportOptions,
+  score: ScoreFile,
+  controls: Control[],
+  findings?: Finding[],
+): string {
+  const md = generateMarkdownReport(options, score, controls, findings);
+  return markdownToPdf(md, options.title);
+}
+
+function escapePdfText(text: string): string {
+  return text
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+}
+
+function markdownToPdf(markdown: string, title: string): string {
+  const lines = markdown.split("\n");
+  const pageWidth = 515;
+  const pageHeight = 757;
+  const marginLeft = 50;
+  const marginTop = 50;
+  const fontSize = 10;
+  const lineHeight = 14;
+  const maxWidth = pageWidth - marginLeft * 2;
+
+  const contentLines: string[] = [];
+  let y = pageHeight - marginTop;
+
+  for (const rawLine of lines) {
+    if (rawLine.trim() === "") {
+      y -= lineHeight / 2;
+      continue;
+    }
+
+    const isHeader = rawLine.startsWith("#");
+    let text = rawLine;
+    let currentFontSize = fontSize;
+
+    if (rawLine.startsWith("### ")) {
+      text = rawLine.slice(4);
+      currentFontSize = 12;
+    } else if (rawLine.startsWith("## ")) {
+      text = rawLine.slice(3);
+      currentFontSize = 14;
+    } else if (rawLine.startsWith("# ")) {
+      text = rawLine.slice(2);
+      currentFontSize = 18;
+    }
+
+    text = text.replace(/\*\*/g, "").replace(/\*/g, "").replace(/`/g, "");
+
+    const approxCharWidth = currentFontSize * 0.55;
+    const maxChars = Math.floor(maxWidth / approxCharWidth);
+
+    const words = text.split(" ");
+    let currentLine = "";
+
+    for (const word of words) {
+      const testLine = currentLine ? currentLine + " " + word : word;
+      if (testLine.length > maxChars && currentLine) {
+        if (y < marginTop + lineHeight) {
+          contentLines.push("BT");
+          contentLines.push(`/F${isHeader ? 2 : 1} ${currentFontSize} Tf`);
+          contentLines.push(`${marginLeft} ${y} Td`);
+          contentLines.push(`(${escapePdfText(currentLine)}) Tj`);
+          contentLines.push("ET");
+          y = pageHeight - marginTop;
+        } else {
+          contentLines.push("BT");
+          contentLines.push(`/F${isHeader ? 2 : 1} ${currentFontSize} Tf`);
+          contentLines.push(`${marginLeft} ${y} Td`);
+          contentLines.push(`(${escapePdfText(currentLine)}) Tj`);
+          contentLines.push("ET");
+          y -= lineHeight + (isHeader ? 4 : 0);
+        }
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+
+    if (currentLine) {
+      if (y < marginTop + lineHeight) {
+        y = pageHeight - marginTop;
+      }
+      contentLines.push("BT");
+      contentLines.push(`/F${isHeader ? 2 : 1} ${currentFontSize} Tf`);
+      contentLines.push(`${marginLeft} ${y} Td`);
+      contentLines.push(`(${escapePdfText(currentLine)}) Tj`);
+      contentLines.push("ET");
+      y -= lineHeight + (isHeader ? 4 : 0);
+    }
+  }
+
+  const contentStream = contentLines.join("\n");
+
+  const objects: string[] = [];
+  objects.push("<< /Type /Catalog /Pages 2 0 R >>");
+  objects.push("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+  objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth + marginLeft * 2} ${pageHeight + marginTop * 2}] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>`);
+  objects.push(`<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`);
+  objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+
+  let pdf = "%PDF-1.4\n";
+  const offsets: number[] = [];
+
+  for (let i = 0; i < objects.length; i++) {
+    offsets.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+
+  const xrefOffset = pdf.length;
+  pdf += "xref\n";
+  pdf += `0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  for (const offset of offsets) {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  }
+
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return pdf;
+}
+
 export function generateHtmlReport(
   options: ReportOptions,
   score: ScoreFile,

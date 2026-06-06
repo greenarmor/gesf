@@ -22,11 +22,11 @@ export const doctorCommand = new Command("doctor")
     }
 
     if (root) {
-      const configPath = path.join(root, GES_DIR, "config.yaml");
+      const configPath = path.join(root, GES_DIR, "config.json");
       checks.push({
         name: "Config file",
         status: fs.existsSync(configPath) ? "OK" : "WARN",
-        detail: fs.existsSync(configPath) ? configPath : "config.yaml not found",
+        detail: fs.existsSync(configPath) ? configPath : "config.json not found",
       });
 
       const scorePath = path.join(root, GES_DIR, "score.json");

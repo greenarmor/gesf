@@ -14,6 +14,7 @@ import { policyCommand } from "./commands/policy.js";
 import { updateCommand } from "./commands/update.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { badgeCommand } from "./commands/badge.js";
+import { controlCommand } from "./commands/control.js";
 import { GESF_VERSION } from "@greenarmor/ges-core";
 
 const program = new Command();
@@ -36,5 +37,6 @@ program.addCommand(policyCommand);
 program.addCommand(updateCommand);
 program.addCommand(mcpCommand);
 program.addCommand(badgeCommand);
+program.addCommand(controlCommand);
 
 program.parse();

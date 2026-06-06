@@ -90,7 +90,7 @@ function computeWeightedScore(controls: Control[]): {
 
 function countCriticalFailures(controls: Control[]): number {
   return controls.filter(
-    (c) => c.severity === "critical" && (c.status === "fail" || c.status === "not-implemented"),
+    (c) => c.severity === "critical" && c.status === "fail",
   ).length;
 }
 

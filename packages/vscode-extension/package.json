@@ -1,0 +1,48 @@
+{
+  "name": "gesf-vscode",
+  "displayName": "GESF - Green Engineering Standard Framework",
+  "description": "Real-time GDPR, security, and compliance warnings for your project",
+  "version": "1.0.1",
+  "publisher": "greenarmor",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Linters", "Security"],
+  "activationEvents": [
+    "workspaceContains:.ges/config.json"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gesf.runAudit",
+        "title": "GESF: Run Compliance Audit"
+      },
+      {
+        "command": "gesf.showScore",
+        "title": "GESF: Show Compliance Score"
+      },
+      {
+        "command": "gesf.generateReport",
+        "title": "GESF: Generate Report"
+      }
+    ],
+    "jsonValidation": [
+      {
+        "fileMatch": ".ges/config.json",
+        "url": "https://raw.githubusercontent.com/greenarmor/gesf/main/packages/core/src/schemas/config.schema.json"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node build.js",
+    "test": "echo \"no tests yet\""
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.0"
+  },
+  "license": "MIT"
+}
