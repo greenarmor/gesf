@@ -29,6 +29,7 @@
     "@greenarmor/ges-scanner-integration": "workspace:*",
     "@greenarmor/ges-scoring-engine": "workspace:*",
     "@greenarmor/ges-mcp-server": "workspace:*",
+    "@greenarmor/ges-git-hooks": "workspace:*",
     "commander": "^13.0.0"
   },
   "devDependencies": {

@@ -11,7 +11,7 @@ import type { Finding } from "@greenarmor/ges-audit-engine";
 import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, ControlStatus } from "@greenarmor/ges-core";
 import { GESF_VERSION } from "@greenarmor/ges-core";
 
-type AutoFixAction = {
+export type AutoFixAction = {
   type: "create" | "modify" | "append" | "npm-install";
   filePath: string;
   content?: string;
@@ -21,7 +21,7 @@ type AutoFixAction = {
   ruleId: string;
 };
 
-type AutoFixResult = {
+export type AutoFixResult = {
   applied: boolean;
   action: AutoFixAction;
   error?: string;
@@ -652,7 +652,7 @@ function generateImplementationSteps(control: Control): string[] {
   return steps;
 }
 
-function createAutoFixPlan(root: string, findings: Finding[], filterRuleIds?: Set<string>): { actions: AutoFixAction[]; warnings: string[] } {
+export function createAutoFixPlan(root: string, findings: Finding[], filterRuleIds?: Set<string>): { actions: AutoFixAction[]; warnings: string[] } {
   const actions: AutoFixAction[] = [];
   const warnings: string[] = [];
   const processedRules = new Set<string>();
@@ -728,7 +728,7 @@ function createAutoFixPlan(root: string, findings: Finding[], filterRuleIds?: Se
   return { actions, warnings };
 }
 
-function applyAutoFixAction(root: string, action: AutoFixAction): AutoFixResult {
+export function applyAutoFixAction(root: string, action: AutoFixAction): AutoFixResult {
   const fullPath = path.join(root, action.filePath);
 
   try {
@@ -1490,7 +1490,7 @@ function buildAuditModelFix(root: string): AutoFixAction[] {
   return [];
 }
 
-function getNpmInstallsFromActions(actions: AutoFixAction[]): string[] {
+export function getNpmInstallsFromActions(actions: AutoFixAction[]): string[] {
   const installs = new Set<string>();
   for (const a of actions) {
     if (a.type !== "npm-install") continue;

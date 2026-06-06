@@ -1,0 +1,43 @@
+{
+  "name": "@greenarmor/ges-git-hooks",
+  "version": "1.0.1",
+  "type": "module",
+  "description": "GESF Git Hooks - Pre-commit compliance enforcement",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@greenarmor/ges-core": "workspace:*",
+    "@greenarmor/ges-audit-engine": "workspace:*"
+  },
+  "keywords": [
+    "gdpr",
+    "compliance",
+    "security",
+    "git-hooks",
+    "pre-commit",
+    "gesf",
+    "green-armor"
+  ],
+  "devDependencies": {
+    "typescript": "^6.0.0",
+    "@types/node": "^22.0.0",
+    "vitest": "^4.1.8"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/greenarmor/gesf"
+  },
+  "homepage": "https://github.com/greenarmor/gesf"
+}

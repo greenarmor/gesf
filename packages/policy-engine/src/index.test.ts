@@ -7,12 +7,12 @@ import {
 } from "./index.js";
 
 describe("getAllPacks", () => {
-  it("returns all 8 packs", () => {
+  it("returns all 9 packs", () => {
     const packs = getAllPacks();
-    expect(packs.length).toBe(8);
+    expect(packs.length).toBe(9);
   });
 
-  it("includes GDPR, OWASP, CIS, NIST, AI, blockchain, government", () => {
+  it("includes GDPR, OWASP, CIS, NIST, AI, blockchain, government, ISO 27001, ISO 27701", () => {
     const packs = getAllPacks();
     const ids = packs.map(p => p.id);
     expect(ids).toContain("gdpr");
@@ -22,6 +22,8 @@ describe("getAllPacks", () => {
     expect(ids).toContain("ai");
     expect(ids).toContain("blockchain");
     expect(ids).toContain("government");
+    expect(ids).toContain("iso27001");
+    expect(ids).toContain("iso27701");
   });
 
   it("each pack has controls", () => {
@@ -86,12 +88,13 @@ describe("getPacksForProjectType", () => {
 });
 
 describe("listPackIds", () => {
-  it("returns all 8 pack ids", () => {
+  it("returns all 9 pack ids", () => {
     const ids = listPackIds();
-    expect(ids.length).toBe(8);
+    expect(ids.length).toBe(9);
     expect(ids).toContain("gdpr");
     expect(ids).toContain("owasp");
     expect(ids).toContain("iso27001");
+    expect(ids).toContain("iso27701");
   });
 });
 
@@ -119,6 +122,39 @@ describe("GDPR pack controls", () => {
   it("all controls have checks", () => {
     const pack = getPack("gdpr")!;
     for (const control of pack.controls) {
+      expect(control.checks.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("ISO 27701 pack", () => {
+  it("exists and is loadable", () => {
+    const pack = getPack("iso27701");
+    expect(pack).toBeDefined();
+  });
+
+  it("has 11 controls covering privacy management clauses", () => {
+    const pack = getPack("iso27701")!;
+    expect(pack!.controls.length).toBe(11);
+  });
+
+  it("all control IDs are unique", () => {
+    const pack = getPack("iso27701")!;
+    const ids = pack!.controls.map(c => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("all controls reference ISO27701 framework", () => {
+    const pack = getPack("iso27701")!;
+    for (const control of pack!.controls) {
+      expect(control.framework).toBe("ISO27701");
+    }
+  });
+
+  it("all controls have implementation guidance and checks", () => {
+    const pack = getPack("iso27701")!;
+    for (const control of pack!.controls) {
+      expect(control.implementation_guidance).toBeTruthy();
       expect(control.checks.length).toBeGreaterThan(0);
     }
   });
