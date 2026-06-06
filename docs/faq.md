@@ -8,7 +8,19 @@ No. You can use `npx @greenarmor/ges` to run any command without a global instal
 
 ### Does GESF modify my source code?
 
-No. GESF only **reads** your source code for scanning. It never modifies your application files. It creates its own files in `.ges/`, `compliance/`, `security/`, `controls/`, and `.github/workflows/`.
+**The CLI does not. The MCP server can, if you ask it to.**
+
+**Read-only by default** — The `ges` CLI commands (`ges init`, `ges audit`, `ges score`, `ges scan`, `ges report`, `ges validate`, `ges doctor`) only **read** your source code for scanning. They never modify your application files. They create their own files in `.ges/`, `compliance/`, `security/`, `controls/`, and `.github/workflows/`.
+
+**Opt-in write via MCP** — The MCP server exposes three tools that *do* modify the target project when invoked:
+
+| Tool | What it does | Default behavior |
+|------|--------------|------------------|
+| `auto_fix` | Runs an audit and applies fixes to source code (15 rule types across 7 languages — adds security headers, extracts secrets to env vars, replaces weak crypto, adds rate limiting, creates audit models, etc.) | **Requires explicit invocation.** Supports `dry_run: true` to preview changes without writing. |
+| `implement_control` | Generates real implementation files for a specific control (encryption utilities, auth middleware, logging scaffolding) | Creates new files; does not modify existing application code. |
+| `apply_control_override` | Marks a control as `pass` or `not-applicable` in `.ges/control-overrides.json` | Writes only to `.ges/`, not to application code. |
+
+None of these run automatically. They are triggered only when an AI assistant (or a human via direct MCP call) explicitly invokes them, and `auto_fix` supports a `dry_run` mode that returns a diff without touching the filesystem. `ges audit` itself is always read-only — it scans and reports, never writes to your source.
 
 ### Does GESF work with languages other than JavaScript/TypeScript?
 
