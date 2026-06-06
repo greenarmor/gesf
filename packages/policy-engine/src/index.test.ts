@@ -7,12 +7,12 @@ import {
 } from "./index.js";
 
 describe("getAllPacks", () => {
-  it("returns all 9 packs", () => {
+  it("returns all 10 packs", () => {
     const packs = getAllPacks();
-    expect(packs.length).toBe(9);
+    expect(packs.length).toBe(10);
   });
 
-  it("includes GDPR, OWASP, CIS, NIST, AI, blockchain, government, ISO 27001, ISO 27701", () => {
+  it("includes GDPR, OWASP, CIS, NIST, AI, blockchain, government, ISO 27001, ISO 27701, HIPAA", () => {
     const packs = getAllPacks();
     const ids = packs.map(p => p.id);
     expect(ids).toContain("gdpr");
@@ -24,6 +24,7 @@ describe("getAllPacks", () => {
     expect(ids).toContain("government");
     expect(ids).toContain("iso27001");
     expect(ids).toContain("iso27701");
+    expect(ids).toContain("hipaa");
   });
 
   it("each pack has controls", () => {
@@ -88,13 +89,14 @@ describe("getPacksForProjectType", () => {
 });
 
 describe("listPackIds", () => {
-  it("returns all 9 pack ids", () => {
+  it("returns all 10 pack ids", () => {
     const ids = listPackIds();
-    expect(ids.length).toBe(9);
+    expect(ids.length).toBe(10);
     expect(ids).toContain("gdpr");
     expect(ids).toContain("owasp");
     expect(ids).toContain("iso27001");
     expect(ids).toContain("iso27701");
+    expect(ids).toContain("hipaa");
   });
 });
 
@@ -153,6 +155,49 @@ describe("ISO 27701 pack", () => {
 
   it("all controls have implementation guidance and checks", () => {
     const pack = getPack("iso27701")!;
+    for (const control of pack!.controls) {
+      expect(control.implementation_guidance).toBeTruthy();
+      expect(control.checks.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("HIPAA pack", () => {
+  it("exists and is loadable", () => {
+    const pack = getPack("hipaa");
+    expect(pack).toBeDefined();
+  });
+
+  it("has 10 controls covering HIPAA Security and Privacy Rules", () => {
+    const pack = getPack("hipaa");
+    expect(pack!.controls.length).toBe(10);
+  });
+
+  it("all control IDs are unique", () => {
+    const pack = getPack("hipaa");
+    const ids = pack!.controls.map(c => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("all controls reference HIPAA framework", () => {
+    const pack = getPack("hipaa");
+    for (const control of pack!.controls) {
+      expect(control.framework).toBe("HIPAA");
+    }
+  });
+
+  it("covers 164.312 technical safeguards", () => {
+    const pack = getPack("hipaa");
+    const ids = pack!.controls.map(c => c.id);
+    expect(ids).toContain("HIPAA-164.312-a");
+    expect(ids).toContain("HIPAA-164.312-b");
+    expect(ids).toContain("HIPAA-164.312-c");
+    expect(ids).toContain("HIPAA-164.312-d");
+    expect(ids).toContain("HIPAA-164.312-e");
+  });
+
+  it("all controls have implementation guidance and checks", () => {
+    const pack = getPack("hipaa");
     for (const control of pack!.controls) {
       expect(control.implementation_guidance).toBeTruthy();
       expect(control.checks.length).toBeGreaterThan(0);

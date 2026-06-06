@@ -8,6 +8,7 @@ import { createCISPolicyPack } from "./packs/cis.js";
 import { createNISTPolicyPack } from "./packs/nist.js";
 import { createISO27001PolicyPack } from "./packs/iso27001.js";
 import { createISO27701PolicyPack } from "./packs/iso27701.js";
+import { createHIPAAPolicyPack } from "./packs/hipaa.js";
 
 const ALL_PACKS: (() => PolicyPack)[] = [
   createGDPRPolicyPack,
@@ -19,6 +20,7 @@ const ALL_PACKS: (() => PolicyPack)[] = [
   createNISTPolicyPack,
   createISO27001PolicyPack,
   createISO27701PolicyPack,
+  createHIPAAPolicyPack,
 ];
 
 const PACK_MAP: Record<string, () => PolicyPack> = {
@@ -31,6 +33,7 @@ const PACK_MAP: Record<string, () => PolicyPack> = {
   nist: createNISTPolicyPack,
   iso27001: createISO27001PolicyPack,
   iso27701: createISO27701PolicyPack,
+  hipaa: createHIPAAPolicyPack,
 };
 
 export function getAllPacks(): PolicyPack[] {
@@ -59,3 +62,4 @@ export { createCISPolicyPack } from "./packs/cis.js";
 export { createNISTPolicyPack } from "./packs/nist.js";
 export { createISO27001PolicyPack } from "./packs/iso27001.js";
 export { createISO27701PolicyPack } from "./packs/iso27701.js";
+export { createHIPAAPolicyPack } from "./packs/hipaa.js";

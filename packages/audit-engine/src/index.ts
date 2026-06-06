@@ -7,6 +7,7 @@ import { CodeSecurityScanner } from "./scanners/code-security-scanner.js";
 import { AuthScanner } from "./scanners/auth-scanner.js";
 import { ConfigScanner } from "./scanners/config-scanner.js";
 import { DatabaseScanner } from "./scanners/database-scanner.js";
+import { IaCScanner } from "./scanners/iac-scanner.js";
 
 export type { Finding } from "./scanners/types.js";
 
@@ -197,6 +198,7 @@ export function runAudit(root: string): { findings: Finding[]; scannedFiles: num
     new AuthScanner(),
     new ConfigScanner(),
     new DatabaseScanner(),
+    new IaCScanner(),
   ];
 
   const allFindings: Finding[] = [];
@@ -258,6 +260,7 @@ export function runAuditIncremental(
     new CryptoScanner(),
     new CodeSecurityScanner(),
     new DatabaseScanner(),
+    new IaCScanner(),
   ];
 
   const projectScanners = [

@@ -19,7 +19,8 @@ export type FrameworkName =
   | "CIS"
   | "NIST"
   | "ISO27001"
-  | "ISO27701";
+  | "ISO27701"
+  | "HIPAA";
 
 export type DataClassification = "public" | "internal" | "confidential" | "restricted";
 

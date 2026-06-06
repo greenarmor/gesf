@@ -8,6 +8,13 @@ const WEAK_HASH_PATTERNS = [
   { pattern: /\.digest\s*\(\s*['"]md5['"]\s*\)/gi, algo: "MD5 digest" },
   { pattern: /hashlib\.md5\(/gi, algo: "MD5 (Python)" },
   { pattern: /hashlib\.sha1\(/gi, algo: "SHA1 (Python)" },
+  { pattern: /crypto\/md5\.New\(|md5\.New\(/gi, algo: "MD5 (Go)" },
+  { pattern: /crypto\/sha1\.New\(|sha1\.New\(/gi, algo: "SHA1 (Go)" },
+  { pattern: /MessageDigest\.getInstance\s*\(\s*['"]MD5['"]\s*\)/gi, algo: "MD5 (Java)" },
+  { pattern: /MessageDigest\.getInstance\s*\(\s*['"]SHA-?1['"]\s*\)/gi, algo: "SHA1 (Java)" },
+  { pattern: /md5::compute\(/gi, algo: "MD5 (Rust)" },
+  { pattern: /sha1::Sha1/gi, algo: "SHA1 (Rust)" },
+  { pattern: /Digest::new\s*\(\s*\)/gi, algo: "Potential weak digest (Rust)" },
 ];
 
 const WEAK_CRYPTO_PATTERNS = [
@@ -16,9 +23,16 @@ const WEAK_CRYPTO_PATTERNS = [
   { pattern: /\bcreateCipher\b\s*\(/g, algo: "Deprecated createCipher (use createCipheriv)" },
   { pattern: /\btc_aes_encrypt\b/gi, algo: "AES-128 (use AES-256)" },
   { pattern: /\bAES.*ECB\b/gi, algo: "AES ECB mode (use GCM or CBC)" },
-  { pattern: /Cipher\s*\(\s*['"]des/gi, algo: "DES cipher (deprecated)" },
+  { pattern: /Cipher\.getInstance\s*\(\s*['"]DES/gi, algo: "DES cipher (Java, deprecated)" },
+  { pattern: /des\.new\s*\(/gi, algo: "DES cipher (Rust, deprecated)" },
+  { pattern: /crypto\/des\.NewCipher\s*\(/gi, algo: "DES cipher (Go, deprecated)" },
+  { pattern: /Crypto\.Cipher\.DES/gi, algo: "DES cipher (Python, deprecated)" },
   { pattern: /\btls\.connect\s*\([^)]*rejectUnauthorized\s*:\s*false/gi, algo: "TLS with certificate verification disabled" },
   { pattern: /process\.env\.NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]0['"]/gi, algo: "TLS verification globally disabled" },
+  { pattern: /InsecureSkipVerify\s*:\s*true/gi, algo: "TLS verification disabled (Go)" },
+  { pattern: /verify_mode\s*=\s*ssl\.CERT_NONE/gi, algo: "TLS verification disabled (Python)" },
+  { pattern: /TrustAllCerts|TrustManager.*X509TrustManager/gi, algo: "TLS verification disabled (Java)" },
+  { pattern: /danger_accept_invalid_certs\s*\(\s*true/gi, algo: "TLS verification disabled (Rust)" },
 ];
 
 const INSECURE_PASSWORD_PATTERNS = [
@@ -27,7 +41,7 @@ const INSECURE_PASSWORD_PATTERNS = [
   { pattern: /(?:password|pw)\s*===?\s*['"][^'"]{2,}['"]/gi, check: true, desc: "Hardcoded password comparison (use Argon2id/bcrypt)" },
 ];
 
-const SCAN_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".py", ".rb", ".go", ".java", ".php", ".cs"]);
+const SCAN_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".py", ".rb", ".go", ".java", ".php", ".cs", ".rs"]);
 
 export class CryptoScanner implements Scanner {
   name = "crypto";

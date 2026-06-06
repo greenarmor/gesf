@@ -23,6 +23,7 @@ export const FrameworkNameSchema = z.enum([
   "NIST",
   "ISO27001",
   "ISO27701",
+  "HIPAA",
 ]);
 
 export const DataClassificationSchema = z.enum([

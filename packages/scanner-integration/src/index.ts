@@ -1,6 +1,9 @@
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
+export { analyzeDependencies, formatDependencyReport } from "./dependency-analysis.js";
+export type { DependencyFinding, DependencyReport } from "./dependency-analysis.js";
+
 export interface ScanResult {
   scanner: string;
   status: "pass" | "fail" | "error" | "not-available";
