@@ -36,7 +36,7 @@ describe("web-dashboard", () => {
           frameworks: ["GDPR", "OWASP"],
           requirements: {},
           created_at: "2026-01-01T00:00:00Z",
-          version: "1.0.1",
+          version: "1.1.1",
         }),
       );
 
@@ -79,7 +79,7 @@ describe("web-dashboard", () => {
           frameworks: ["GDPR"],
           requirements: {},
           created_at: "2026-01-01T00:00:00Z",
-          version: "1.0.1",
+          version: "1.1.1",
         }),
       );
       fs.writeFileSync(

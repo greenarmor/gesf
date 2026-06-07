@@ -18,7 +18,7 @@ The GESF VS Code extension provides real-time compliance warnings, inline diagno
 ### From VSIX
 
 ```bash
-code --install-extension gesf-vscode-1.0.1.vsix
+code --install-extension gesf-vscode-1.1.1.vsix
 ```
 
 ### From Source

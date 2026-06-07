@@ -5,7 +5,7 @@ All notable changes to the Green Engineering Standard Framework (GESF) will be d
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2026-06-04
+## [1.1.1] - 2026-06-04
 
 ### Summary
 
@@ -130,8 +130,8 @@ The URL cleanup had a positive security side effect: auto-fix now generates **mo
 
 | File | Change |
 |------|--------|
-| `package.json` | Version bump 1.0.0 → 1.0.1 |
-| `packages/*/package.json` (12 files) | Version bump 1.0.0 → 1.0.1 |
+| `package.json` | Version bump 1.0.0 → 1.1.1 |
+| `packages/*/package.json` (12 files) | Version bump 1.0.0 → 1.1.1 |
 | `packages/mcp-server/package.json` | bin: bundle→dist, files: removed bundle, removed build:bundle/build:all scripts |
 | `packages/mcp-server/src/server.ts` | 16 URLs removed, 10 template literals converted to single-line |
 | `packages/audit-engine/src/scanners/auth-scanner.ts` | 1 URL removed from fix message |
@@ -143,17 +143,17 @@ The URL cleanup had a positive security side effect: auto-fix now generates **mo
 - **MCP server:** All 17 tools respond correctly via stdio
 - **Auto-fix:** Tested on Rust/Actix-web project — 4 actions generated correctly
 - **Auto-fix:** Tested on JavaScript/Express project — 9 actions generated correctly
-- **CLI:** `ges --version` reports `1.0.1`
+- **CLI:** `ges --version` reports `1.1.1`
 - **Published package scan:** 0 URL strings in source, 0 fake imports, 0 obfuscated code indicators
 
 ### Upgrade Guide
 
 ```bash
 # Update globally
-npm install -g @greenarmor/ges@1.0.1
+npm install -g @greenarmor/ges@1.1.1
 
 # Or use without installing
-npx @greenarmor/ges@1.0.1 init
+npx @greenarmor/ges@1.1.1 init
 ```
 
 **No migration required.** This is a drop-in replacement for v1.0.0.
@@ -320,7 +320,7 @@ First stable release of the Green Engineering Standard Framework. See [v1.0.0 re
   - Shared `tsconfig.base.json`
   - esbuild bundling for MCP server
 
-[1.0.1]: https://github.com/greenarmor/gesf/compare/v1.0.0...v1.0.1
+[1.1.1]: https://github.com/greenarmor/gesf/compare/v1.0.0...v1.1.1
 [1.0.0]: https://github.com/greenarmor/gesf/releases/tag/v1.0.0
 [0.3.3]: https://github.com/greenarmor/gesf/compare/v0.3.1...v0.3.3
 [0.3.1]: https://github.com/greenarmor/gesf/compare/v0.2.2...v0.3.1

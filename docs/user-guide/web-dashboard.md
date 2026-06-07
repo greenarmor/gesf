@@ -61,7 +61,7 @@ Returns the full dashboard data as JSON:
   "projectName": "My App",
   "projectType": "saas",
   "frameworks": ["GDPR", "OWASP"],
-  "gesfVersion": "1.0.1",
+  "gesfVersion": "1.1.1",
   "score": {
     "overall": 72,
     "letter": "C",

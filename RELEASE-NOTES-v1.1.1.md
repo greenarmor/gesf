@@ -1,4 +1,4 @@
-# GESF v1.0.1 — Socket.dev Supply-Chain Hardening
+# GESF v1.1.1 — Socket.dev Supply-Chain Hardening
 
 **Green Engineering Standard Framework** — Compliance-as-Code for GDPR, OWASP, NIST, and CIS.
 
@@ -161,7 +161,7 @@ Runtime behavior is identical — the string values contain the same characters.
 | Check | Result |
 |-------|--------|
 | Build (all 12 packages) | ✅ Clean |
-| CLI version | ✅ `1.0.1` |
+| CLI version | ✅ `1.1.1` |
 | MCP initialize + tools/list | ✅ 17 tools |
 | Auto-fix (Rust/Actix project) | ✅ 4 actions generated |
 | Auto-fix (JavaScript/Express project) | ✅ 9 actions generated |
@@ -175,22 +175,22 @@ Runtime behavior is identical — the string values contain the same characters.
 
 ## Packages
 
-All 12 packages updated to v1.0.1:
+All 12 packages updated to v1.1.1:
 
 | Package | Version |
 |---------|---------|
-| `@greenarmor/ges` | 1.0.1 |
-| `@greenarmor/ges-core` | 1.0.1 |
-| `@greenarmor/ges-compliance-engine` | 1.0.1 |
-| `@greenarmor/ges-audit-engine` | 1.0.1 |
-| `@greenarmor/ges-policy-engine` | 1.0.1 |
-| `@greenarmor/ges-rules-engine` | 1.0.1 |
-| `@greenarmor/ges-scoring-engine` | 1.0.1 |
-| `@greenarmor/ges-scanner-integration` | 1.0.1 |
-| `@greenarmor/ges-doc-generator` | 1.0.1 |
-| `@greenarmor/ges-cicd-generator` | 1.0.1 |
-| `@greenarmor/ges-report-generator` | 1.0.1 |
-| `@greenarmor/ges-mcp-server` | 1.0.1 |
+| `@greenarmor/ges` | 1.1.1 |
+| `@greenarmor/ges-core` | 1.1.1 |
+| `@greenarmor/ges-compliance-engine` | 1.1.1 |
+| `@greenarmor/ges-audit-engine` | 1.1.1 |
+| `@greenarmor/ges-policy-engine` | 1.1.1 |
+| `@greenarmor/ges-rules-engine` | 1.1.1 |
+| `@greenarmor/ges-scoring-engine` | 1.1.1 |
+| `@greenarmor/ges-scanner-integration` | 1.1.1 |
+| `@greenarmor/ges-doc-generator` | 1.1.1 |
+| `@greenarmor/ges-cicd-generator` | 1.1.1 |
+| `@greenarmor/ges-report-generator` | 1.1.1 |
+| `@greenarmor/ges-mcp-server` | 1.1.1 |
 
 ---
 
@@ -198,10 +198,10 @@ All 12 packages updated to v1.0.1:
 
 ```bash
 # Update globally
-npm install -g @greenarmor/ges@1.0.1
+npm install -g @greenarmor/ges@1.1.1
 
 # Or use without installing
-npx @greenarmor/ges@1.0.1 init
+npx @greenarmor/ges@1.1.1 init
 
 # Update MCP server in your AI assistant
 # The MCP server auto-updates when npx fetches the latest version
@@ -213,4 +213,4 @@ npx @greenarmor/ges@1.0.1 init
 
 ## Full Changelog
 
-https://github.com/greenarmor/gesf/compare/v1.0.0...v1.0.1
+https://github.com/greenarmor/gesf/compare/v1.0.0...v1.1.1
