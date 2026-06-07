@@ -30,6 +30,7 @@
     "@greenarmor/ges-scoring-engine": "workspace:*",
     "@greenarmor/ges-mcp-server": "workspace:*",
     "@greenarmor/ges-git-hooks": "workspace:*",
+    "@greenarmor/ges-web-dashboard": "workspace:*",
     "commander": "^13.0.0"
   },
   "devDependencies": {

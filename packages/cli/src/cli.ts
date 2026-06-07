@@ -17,6 +17,7 @@ import { badgeCommand } from "./commands/badge.js";
 import { controlCommand } from "./commands/control.js";
 import { fixCommand } from "./commands/fix.js";
 import { hooksCommand } from "./commands/hooks.js";
+import { dashboardCommand } from "./commands/dashboard.js";
 import { GESF_VERSION } from "@greenarmor/ges-core";
 
 const program = new Command();
@@ -42,5 +43,6 @@ program.addCommand(badgeCommand);
 program.addCommand(controlCommand);
 program.addCommand(fixCommand);
 program.addCommand(hooksCommand);
+program.addCommand(dashboardCommand);
 
 program.parse();
