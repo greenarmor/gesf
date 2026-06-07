@@ -2,12 +2,15 @@
   "name": "gesf-vscode",
   "displayName": "GESF - Green Engineering Standard Framework",
   "description": "Real-time GDPR, security, and compliance warnings for your project",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "greenarmor",
   "engines": {
     "vscode": "^1.80.0"
   },
-  "categories": ["Linters", "Security"],
+  "categories": [
+    "Linters",
+    "Security"
+  ],
   "activationEvents": [
     "workspaceContains:.ges/config.json"
   ],
