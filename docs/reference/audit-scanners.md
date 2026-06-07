@@ -1,6 +1,6 @@
 # Audit Scanners
 
-GESF includes 6 built-in source code scanners that run during `ges audit`. No external dependencies required. The scanners are **language-agnostic** — they use pattern matching across 20+ file types.
+GESF includes 8 built-in source code scanners that run during `ges audit`. No external dependencies required. The scanners are **language-agnostic** — they use pattern matching across 20+ file types.
 
 ## Scanner Overview
 
@@ -12,6 +12,8 @@ GESF includes 6 built-in source code scanners that run during `ges audit`. No ex
 | Auth | `authentication` | Routes without auth, missing rate limiting, wildcard CORS |
 | Config | `config`, `security` | Missing helmet/cors, .env secrets, Docker issues |
 | Database | `database` | Missing audit columns, missing soft delete |
+| IaC | `infrastructure` | Terraform/CloudFormation misconfigurations, open ports, public S3 |
+| Dependency | `dependency` | Vulnerabilities, deprecated packages, license issues |
 
 ---
 
@@ -78,6 +80,16 @@ Detects weak or deprecated cryptographic algorithms across all languages.
 | Plaintext password comparison (`===`) | Critical |
 | TLS verification disabled (`rejectUnauthorized: false`) | Critical |
 
+The crypto scanner detects patterns across **5 languages**:
+
+| Language | Patterns Detected |
+|----------|------------------|
+| Node.js | `createHash('md5')`, `createHash('sha1')`, `createCipher`, `rejectUnauthorized: false` |
+| Python | `hashlib.md5()`, `hashlib.sha1()`, `Crypto.Cipher.DES`, `verify_mode = ssl.CERT_NONE` |
+| Go | `md5.New()`, `sha1.New()`, `crypto/des.NewCipher()`, `InsecureSkipVerify: true` |
+| Java | `MessageDigest.getInstance("MD5")`, `Cipher.getInstance("DES")`, `TrustAllCerts` |
+| Rust | `md5::compute()`, `sha1::Sha1`, `des::new()`, `danger_accept_invalid_certs(true)` |
+
 **Example findings:**
 
 === "JavaScript"
@@ -114,11 +126,24 @@ Detects injection vulnerabilities across all languages.
 |-----------|----------|
 | SQL injection via string concatenation | Critical |
 | SQL injection via template literals | Critical |
+| SQL injection via Python f-strings | Critical |
+| SQL injection via Go `fmt.Sprintf` | Critical |
+| Command injection via `child_process` | Critical |
+| Command injection via Rust `Command::new` | Critical |
 | XSS via `innerHTML` | Critical |
 | XSS via `document.write` | Critical |
 | XSS via `v-html` / `dangerouslySetInnerHTML` | Critical |
 | `eval()` with user input | Critical |
-| `child_process` with user input | Critical |
+
+The injection scanner detects SQL injection patterns in **5 languages**:
+
+| Language | Pattern Example |
+|----------|----------------|
+| JavaScript | `db.query("SELECT * FROM users WHERE id = " + req.params.id)` |
+| JavaScript | `` db.query(`SELECT * FROM users WHERE id = ${req.params.id}`) `` |
+| Python | `cursor.execute(f"SELECT * FROM users WHERE id = {request.args['id']}")` |
+| Go | `db.Query(fmt.Sprintf("SELECT * FROM users WHERE id = %s", r.URL.Query().Get("id")))` |
+| Rust | `Command::new("sh").arg("-c").arg(user_input)` |
 
 **Example findings:**
 
@@ -198,6 +223,53 @@ Works with: Prisma schemas, Sequelize models, raw SQL, TypeORM entities.
 
 ---
 
+## 7. Infrastructure-as-Code Scanner
+
+Scans Terraform (`.tf`), CloudFormation (`.yaml`/`.yml`/`.json`), and Docker files for infrastructure security misconfigurations. See the [IaC Scanner reference](iac-scanner.md) for the full 15-rule catalog.
+
+| Detection | Severity |
+|-----------|----------|
+| S3 bucket public-read ACL | Critical |
+| S3 bucket without encryption | High |
+| S3 bucket without versioning | Medium |
+| Security group open to 0.0.0.0/0 | Critical |
+| SSH (port 22) open to internet | Critical |
+| Database ports (3306, 5432) open to internet | Critical |
+| RDS publicly accessible | Critical |
+| RDS without encryption at rest | High |
+| RDS without deletion protection | Medium |
+| IAM policy with wildcard action (`*`) | High |
+| IAM policy with wildcard resource (`*`) | Medium |
+| KMS key without rotation | Medium |
+| `force_destroy = true` on S3 | Medium |
+| SSL/TLS disabled | High |
+
+Example finding:
+
+```hcl title="main.tf" hl_lines="3"
+resource "aws_s3_bucket" "data" {
+  bucket = "sensitive-data"
+  acl    = "public-read"
+}
+```
+
+---
+
+## 8. Dependency Analysis
+
+Analyzes project dependencies for vulnerabilities, deprecated packages, license issues, and outdated versions. See the [Dependency Analysis reference](dependency-analysis.md) for details.
+
+| Detection | Type | Severity |
+|-----------|------|----------|
+| Known vulnerability in dependency | `vulnerability` | Varies (from advisory) |
+| Deprecated package | `deprecated` | Medium |
+| Copyleft license (GPL, AGPL) | `license` | Medium |
+| Package behind latest version | `outdated` | Low |
+
+Supports: **Node.js** (`npm audit`), **Python** (`pip-audit`), **Rust** (`cargo audit`), **Go** (`govulncheck`).
+
+---
+
 ## Files Scanned
 
 GESF scans all text-based source files in your project:
@@ -206,7 +278,7 @@ GESF scans all text-based source files in your project:
 - **Config:** `.json`, `.yaml`, `.yml`, `.toml`, `.env`, `.ini`
 - **Web:** `.html`, `.css`, `.scss`
 - **SQL:** `.sql`, `.prisma`
-- **Docker:** `Dockerfile`, `docker-compose.yml`
+- **Infrastructure:** `.tf`, `.tfvars`, `Dockerfile`, `docker-compose.yml`
 - **Max file size:** 1MB per file
 
 ## Files Skipped
@@ -221,7 +293,7 @@ The following are automatically excluded:
 
 !!! example "Exercise: Trigger Each Scanner"
 
-    Create a single file that triggers all 6 scanners in any language:
+    Create a single file that triggers all 8 scanners in any language:
 
     ```bash
     mkdir /tmp/all-scanners && cd /tmp/all-scanners
@@ -231,41 +303,54 @@ The following are automatically excluded:
     === "JavaScript"
 
         ```javascript title="src/all-issues.js"
-        // Secrets: hardcoded password
+        // 1. Secrets: hardcoded password
         const DB_PASS = "admin123";
 
-        // Crypto: MD5
+        // 2. Crypto: MD5
         const crypto = require('crypto');
         const hash = crypto.createHash('md5').update(data).digest('hex');
 
-        // Code Security: SQL injection
+        // 3. Code Security: SQL injection
         db.query("SELECT * FROM users WHERE id = " + userId);
 
-        // Auth: route without middleware
+        // 4. Auth: route without middleware
         app.get('/api/data', handler);
 
-        // Config: no helmet, no .gitignore with .env
-        // Database: missing audit columns
+        // 5. Config: no helmet, no .gitignore with .env
+        // 6. Database: missing audit columns
         const User = { id: INTEGER, email: STRING };
+        ```
+
+        ```hcl title="main.tf"
+        # 7. IaC: public S3 bucket without encryption
+        resource "aws_s3_bucket" "data" {
+          bucket = "sensitive"
+          acl    = "public-read"
+        }
+        ```
+
+        ```bash
+        # 8. Dependency: install a vulnerable package
+        npm install lodash@4.17.20
         ```
 
     === "Python"
 
         ```python title="src/all_issues.py"
-        # Secrets: hardcoded password
+        # 1. Secrets: hardcoded password
         DB_PASS = "admin123"
 
-        # Crypto: MD5
+        # 2. Crypto: MD5
         import hashlib
         h = hashlib.md5(data.encode()).hexdigest()
 
-        # Code Security: SQL injection
+        # 3. Code Security: SQL injection
         query = f"SELECT * FROM users WHERE id = {user_id}"
 
-        # Auth: no auth decorator
+        # 4. Auth: no auth decorator
         @app.route('/api/data')
         def get_data():
             pass
         ```
 
-    Run `ges audit` and verify you see findings from all scanner categories.
+    Run `ges audit` and verify you see findings from all scanner categories. Then run `ges scan` to trigger the dependency analysis.

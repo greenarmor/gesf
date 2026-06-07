@@ -214,7 +214,23 @@ GESF auto-detects your project's ecosystem:
 
 ## Step 6 — Fix the Issues
 
-Now fix the vulnerabilities:
+Now fix the vulnerabilities. You can fix them manually or use `ges fix`:
+
+### Option A: Auto-Fix
+
+Preview what can be auto-fixed:
+
+```bash
+ges fix --dry-run
+```
+
+Apply the fixes:
+
+```bash
+ges fix
+```
+
+### Option B: Manual Fix
 
 === "Fix secrets"
 
@@ -295,6 +311,26 @@ ges badge
 ```
 
 This creates `badge.svg` with your score and letter grade, and injects a score summary into your README.
+
+## Step 10 — Set Up Git Hooks (Optional)
+
+Install a pre-commit hook that blocks commits with security findings:
+
+```bash
+ges hooks install
+```
+
+Now every `git commit` will run `ges audit` automatically. If critical findings exist, the commit is blocked. See the [Git Hooks guide](../user-guide/git-hooks.md) for details.
+
+## Step 11 — Launch the Web Dashboard (Optional)
+
+View your compliance posture in a browser:
+
+```bash
+ges dashboard
+```
+
+Open `http://localhost:3001` to see live scores, findings, and control status. See the [Web Dashboard guide](../user-guide/web-dashboard.md) for details.
 
 !!! example "Exercise: Beat 80% Compliance"
 

@@ -19,11 +19,20 @@ ges report --format html
 ges report --format html --output ./reports/compliance.html
 ```
 
+### PDF Report
+
+```bash
+ges report --format pdf
+ges report --format pdf --output ./reports/compliance.pdf
+```
+
+PDF reports are generated natively (no external dependencies like Puppeteer or wkhtmltopkm required). The report includes styled headers, formatted tables, and page breaks.
+
 ## Options
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-f, --format <format>` | Report format: `markdown` or `html` | `markdown` |
+| `-f, --format <format>` | Report format: `markdown`, `html`, or `pdf` | `markdown` |
 | `-o, --output <path>` | Custom output file path | `reports/compliance-report.<ext>` |
 
 ## Report Sections
@@ -86,15 +95,18 @@ ls -la reports/
     1. Run `ges audit` on a project with some findings
     2. Generate a Markdown report and read the Executive Summary section
     3. Generate an HTML report and open it in a browser
+    4. Generate a PDF report for sharing with stakeholders
 
     ```bash
     ges report -f markdown -o reports/for-developers.md
     ges report -f html -o reports/for-management.html
+    ges report -f pdf -o reports/for-auditors.pdf
     ```
 
     !!! question "Questions"
         - Which format is better for sharing with a technical team?
         - Which format is better for sharing with non-technical stakeholders?
+        - Which format would a GDPR auditor prefer?
         - What information in the report would a GDPR auditor want to see?
 
 !!! example "Exercise: Create a Compliance Timeline"

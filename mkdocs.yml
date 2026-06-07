@@ -80,17 +80,23 @@ nav:
   - User Guide:
       - Initializing Your Project: user-guide/initializing.md
       - Running an Audit: user-guide/running-an-audit.md
+      - Auto-Fix Findings: user-guide/auto-fix.md
       - Compliance Score: user-guide/compliance-score.md
       - Compliance Badge: user-guide/compliance-badge.md
       - Generating Reports: user-guide/generating-reports.md
       - External Scanners: user-guide/external-scanners.md
       - Policy Packs: user-guide/policy-packs.md
+      - Git Hooks: user-guide/git-hooks.md
+      - Web Dashboard: user-guide/web-dashboard.md
       - Complete Audit Workflow: user-guide/complete-workflow.md
   - MCP Integration:
       - Overview: mcp/overview.md
       - Setup Guide: mcp/setup.md
       - Tools Reference: mcp/tools-reference.md
       - Using with Code Assistants: mcp/code-assistants.md
+  - Integrations:
+      - ESLint Plugin: integrations/eslint-plugin.md
+      - VS Code Extension: integrations/vscode-extension.md
   - CI/CD:
       - GitHub Actions: cicd/github-actions.md
       - Manual Setup: cicd/manual-setup.md
@@ -99,6 +105,8 @@ nav:
       - Project Structure: reference/project-structure.md
       - Configuration: reference/configuration.md
       - Audit Scanners: reference/audit-scanners.md
+      - IaC Scanner: reference/iac-scanner.md
+      - Dependency Analysis: reference/dependency-analysis.md
       - GDPR Controls: reference/gdpr-controls.md
       - Engineering Standards: reference/engineering-standards.md
   - FAQ: faq.md

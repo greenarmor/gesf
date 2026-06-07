@@ -1,6 +1,6 @@
 # Running an Audit
 
-The `ges audit` command is the core of GESF. It scans your actual source code with 6 independent scanners and produces actionable findings linked to compliance controls.
+The `ges audit` command is the core of GESF. It scans your actual source code with 8 independent scanners and produces actionable findings linked to compliance controls.
 
 ## Basic Usage
 
@@ -12,13 +12,15 @@ ges audit
 
 1. Walks your project directory (skipping `node_modules`, `.git`, `dist`, `build`, `.ges`)
 2. Reads source files (up to 1MB each, all text-based languages)
-3. Runs 6 scanners:
+3. Runs 8 scanners:
     - **Secrets Scanner** — Hardcoded passwords, API keys, tokens, private keys
-    - **Crypto Scanner** — MD5, SHA1, weak encryption, disabled TLS
-    - **Code Security Scanner** — SQL injection, XSS, eval/code injection
+    - **Crypto Scanner** — MD5, SHA1, weak encryption, disabled TLS (JavaScript, Python, Go, Java, Rust)
+    - **Code Security Scanner** — SQL injection, XSS, eval/code injection (JavaScript, Python, Go, Rust)
     - **Auth Scanner** — Routes without auth, missing rate limiting, wildcard CORS
     - **Config Scanner** — Missing helmet/cors, .env secrets, Docker issues
     - **Database Scanner** — Missing audit columns, missing soft delete
+    - **IaC Scanner** — Terraform/CloudFormation misconfigurations, open ports, public S3 (see [IaC Scanner](../reference/iac-scanner.md))
+    - **Dependency Analysis** — Vulnerabilities, deprecated packages, license issues (see [Dependency Analysis](../reference/dependency-analysis.md))
 4. Deduplicates findings
 5. Maps findings to compliance control IDs (e.g., `GDPR-ART32-002`)
 6. Updates your compliance score in `.ges/score.json`
@@ -169,7 +171,7 @@ Each finding contains:
 |-------|-------------|
 | `title` | Human-readable description of the issue |
 | `severity` | `critical`, `high`, `medium`, or `low` |
-| `category` | `secrets`, `encryption`, `injection`, `xss`, `authentication`, `config`, `database` |
+| `category` | `secrets`, `encryption`, `injection`, `xss`, `authentication`, `config`, `database`, `infrastructure`, `dependency` |
 | `file` | File path relative to project root |
 | `line` | Line number where the issue was detected |
 | `evidence` | The actual code snippet that triggered the finding (secrets are masked) |
@@ -185,6 +187,57 @@ Each finding contains:
 | **Medium** | Notable concern | Should fix soon |
 | **Low** | Minor improvement | Fix when convenient |
 
+## Excluding Files with `.gesignore`
+
+Create a `.gesignore` file in your project root to exclude specific files and directories from the audit. It uses the same syntax as `.gitignore`:
+
+```bash title=".gesignore"
+# Exclude test fixtures with intentional vulnerabilities
+test/fixtures/
+tests/
+
+# Exclude generated code
+generated/
+*.generated.js
+
+# Exclude vendor directories
+vendor/
+third-party/
+
+# Exclude specific files
+config/legacy.js
+```
+
+### Pattern Types
+
+| Pattern | Matches |
+|---------|---------|
+| `dir/` | Entire directory and all contents |
+| `*.ext` | All files with the extension |
+| `*pattern*` | Wildcard matching |
+| `path/to/file` | Specific file |
+| `# comment` | Comment line (ignored) |
+
+The `.gesignore` file is useful for:
+
+- **Test fixtures** that intentionally contain vulnerabilities
+- **Generated/vendored code** you do not control
+- **Legacy code** under separate remediation plans
+- **Third-party libraries** bundled into your repo
+
+## Incremental Audit
+
+For large projects, GESF supports incremental auditing — only re-scanning files that have changed since the last audit. This is used internally by the [git hooks](git-hooks.md) and [auto-fix](auto-fix.md) features for faster feedback.
+
+The incremental audit:
+
+1. Computes a hash of each file's content
+2. Compares against the cached hash from the previous run
+3. Only re-scans files whose hash has changed
+4. Merges new findings with cached findings from unchanged files
+
+This significantly reduces scan time for projects with many files where only a few change between commits.
+
 !!! example "Exercise: Audit a Real Project"
 
     1. Go to one of your existing projects (or use the vulnerable demo from [Quick Start](../getting-started/quick-start.md))
@@ -197,6 +250,25 @@ Each finding contains:
         - Which scanner found the most issues?
         - Are there any findings you disagree with (false positives)?
         - Which finding would be the most dangerous if exploited?
+
+!!! example "Exercise: Use .gesignore to Exclude False Positives"
+
+    1. Using the project from the previous exercise, identify any false positives or test fixtures with intentional vulnerabilities
+    2. Create a `.gesignore` file:
+
+    ```bash
+    echo "# Exclude test fixtures" > .gesignore
+    echo "test/fixtures/" >> .gesignore
+    echo "tests/" >> .gesignore
+    ```
+
+    3. Re-run `ges audit` — the excluded files should no longer generate findings
+    4. Compare the finding count before and after
+
+    !!! question "Questions"
+        - How many findings were eliminated by the `.gesignore` file?
+        - When would it be inappropriate to use `.gesignore` to suppress findings?
+        - What is the risk of over-using `.gesignore`?
 
 !!! example "Exercise: Test Each Scanner Individually"
 

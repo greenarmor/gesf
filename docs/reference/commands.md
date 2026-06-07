@@ -72,12 +72,13 @@ Generate compliance reports.
 ```bash
 ges report                           # Markdown report
 ges report --format html             # HTML report
+ges report --format pdf              # PDF report
 ges report --output ./my-report.md   # Custom output path
 ```
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--format <format>` | `-f` | `markdown` or `html` |
+| `--format <format>` | `-f` | `markdown`, `html`, or `pdf` |
 | `--output <path>` | `-o` | Custom output file path |
 
 ---
@@ -234,3 +235,74 @@ Check for GESF updates.
 ```bash
 ges update
 ```
+
+---
+
+## `ges fix`
+
+Automatically fix security and compliance findings detected by the audit engine. See the [Auto-Fix guide](../user-guide/auto-fix.md) for details.
+
+```bash
+ges fix                  # Apply all auto-fixable issues
+ges fix --dry-run        # Preview without making changes
+ges fix --rules CONFIG-001,SECRETS-001  # Fix only specific rules
+ges fix --ci             # Exit non-zero if findings remain
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--dry-run` | `-d` | Show what would be fixed without modifying files |
+| `--rules <ids>` | `-r` | Comma-separated rule IDs to fix |
+| `--ci` | | Exit with code 1 if findings remain |
+
+---
+
+## `ges hooks`
+
+Manage Git pre-commit hooks that enforce compliance checks before commits. See the [Git Hooks guide](../user-guide/git-hooks.md) for details.
+
+```bash
+ges hooks install       # Install the pre-commit hook
+ges hooks uninstall     # Remove the pre-commit hook
+```
+
+The pre-commit hook runs `ges audit --ci` and blocks commits with critical findings.
+
+---
+
+## `ges dashboard`
+
+Start a local web dashboard showing real-time compliance posture. See the [Web Dashboard guide](../user-guide/web-dashboard.md) for details.
+
+```bash
+ges dashboard                  # Default: http://localhost:3001
+ges dashboard --port 8080      # Custom port
+ges dashboard --host 0.0.0.0   # Allow network access
+```
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--port <port>` | `-p` | Port number | `3001` |
+| `--host <host>` | `-h` | Host to bind to | `localhost` |
+
+---
+
+## `ges control`
+
+Manually mark a compliance control's status. Useful for controls that cannot be detected by source code scanning.
+
+```bash
+ges control GDPR-ART32-001 pass                           # Mark as passing
+ges control GDPR-ART32-001 not-applicable -r "Not using AWS"  # Mark as not applicable
+ges control OWASP-ASVS-003 fail -r "RBAC not yet implemented"  # Mark as failing
+```
+
+| Argument/Flag | Description |
+|---------------|-------------|
+| `<controlId>` | Control ID (e.g., `GDPR-ART32-001`) |
+| `<status>` | `pass`, `fail`, `warning`, `not-applicable`, or `not-implemented` |
+| `-r, --reason <reason>` | Reason for the override |
+
+Overrides are saved to `.ges/control-overrides.json` and affect your compliance score on the next audit.
+
+---
