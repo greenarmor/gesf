@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.tsbuildinfo
+site/
 
 docs/runbook-publish-npm.md
 
