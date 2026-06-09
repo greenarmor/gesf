@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/eslint-plugin-ges",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "type": "module",
   "description": "GESF ESLint Plugin - Real-time security and compliance rules for GESF standards",
   "main": "./dist/index.js",
