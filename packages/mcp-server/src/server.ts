@@ -3,13 +3,17 @@
 import * as readline from "node:readline";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getAllPacks, getPacksForProjectType, getPack } from "@greenarmor/ges-policy-engine";
+import { getAllPacks, getPacksForProjectType, getPack, listPackIds } from "@greenarmor/ges-policy-engine";
 import { createGDPRControls } from "@greenarmor/ges-compliance-engine";
-import { generateScoreFile, formatScoreOutput, computeGrade } from "@greenarmor/ges-scoring-engine";
+import { generateScoreFile, formatScoreOutput, computeGrade, generateBadgeSvg, injectBadgeIntoReadme, generateScoreExplainer } from "@greenarmor/ges-scoring-engine";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding } from "@greenarmor/ges-audit-engine";
-import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, ControlStatus } from "@greenarmor/ges-core";
-import { GESF_VERSION } from "@greenarmor/ges-core";
+import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, ControlStatus, ProjectConfig } from "@greenarmor/ges-core";
+import { GESF_VERSION, GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, PROJECT_TYPES, FRAMEWORKS, DEFAULT_FRAMEWORKS, PROJECT_TYPE_PACKS } from "@greenarmor/ges-core";
+import { ProjectConfigSchema } from "@greenarmor/ges-core";
+import { generateComplianceDocs, generateSecurityDocs, generateConfigJson, generateMetadataJson, generateFrameworkVersionJson, generateScoreJson } from "@greenarmor/ges-doc-generator";
+import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
+import { detectProject, runAllScansWithSbom, formatScanResults, formatSbomResults } from "@greenarmor/ges-scanner-integration";
 
 export type AutoFixAction = {
   type: "create" | "modify" | "append" | "npm-install";
@@ -235,6 +239,137 @@ const TOOLS = [
       properties: {
         project_path: { type: "string", description: "Absolute path to the project root." },
         control_id: { type: "string", description: "Control ID to implement (e.g. GDPR-ART32-002, GDPR-ART32-006, AUTH-002)" },
+      },
+    },
+  },
+  {
+    name: "generate_badge",
+    description: "Generate an SVG compliance score badge for a project's README. Reads the project's .ges/score.json and produces a shields.io-style SVG badge with the compliance score and grade. Optionally injects into README.md.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        output: { type: "string", description: "Output filename for the SVG badge (default: badge.svg)." },
+        readme: { type: "string", description: "Path to README file to inject badge into (default: README.md). Set to empty string to skip injection." },
+      },
+    },
+  },
+  {
+    name: "get_score",
+    description: "Read and display the compliance score from a project's .ges/score.json. Shows per-framework scores, grades, and overall compliance percentage.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+      },
+    },
+  },
+  {
+    name: "init_project",
+    description: "Initialize GESF in a project directory. Creates the .ges/ directory structure, compliance/security documentation, controls, CI/CD workflows, and configuration files.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        project_name: { type: "string", description: "Project name (defaults to directory name)." },
+        project_type: { type: "string", description: "Project type (saas, ai-application, mcp-server, blockchain, wallet, government-system, healthcare-system, event-platform, photo-storage-platform, vulnerability-scanner, generic-web-application, api-backend, mobile-application)." },
+        frameworks: { type: "string", description: "Comma-separated framework names (default: GDPR,OWASP,CIS,NIST)." },
+        force: { type: "boolean", description: "Re-initialize even if GESF is already set up (default: false)." },
+      },
+      required: ["project_path"],
+    },
+  },
+  {
+    name: "run_scans",
+    description: "Run security scanner integrations on a project. Detects the ecosystem (Node.js, Python, etc.) and runs available scanners (npm audit, Trivy, Gitleaks, Semgrep, etc.) plus SBOM generation.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+      },
+    },
+  },
+  {
+    name: "doctor",
+    description: "Diagnose GESF project health. Checks if the project is initialized, config files exist, score is available, required directories are present, and GitHub Actions are configured.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+      },
+    },
+  },
+  {
+    name: "validate_project",
+    description: "Validate GESF project configuration and controls. Checks config.json against the schema, validates control files, and verifies required directories exist.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+      },
+    },
+  },
+  {
+    name: "policy_list",
+    description: "List all available policy packs with their IDs, names, control counts, and supported project types.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "policy_install",
+    description: "Install a policy pack into a project. Writes the pack's controls as a JSON file in the controls/ directory.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        pack_id: { type: "string", description: "Policy pack ID to install (e.g. gdpr, owasp, cis, nist, ai, blockchain, government). Use policy_list to see available packs." },
+      },
+      required: ["project_path", "pack_id"],
+    },
+  },
+  {
+    name: "policy_remove",
+    description: "Remove an installed policy pack from a project. Deletes the pack's directory from controls/.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        pack_id: { type: "string", description: "Policy pack ID to remove." },
+      },
+      required: ["project_path", "pack_id"],
+    },
+  },
+  {
+    name: "update_check",
+    description: "Check the current GESF version and get update instructions.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "install_hooks",
+    description: "Install GESF git hooks (pre-commit) that run compliance checks before allowing commits. Also supports uninstalling hooks.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        action: { type: "string", description: "Action to perform: 'install' or 'uninstall' (default: install)." },
+      },
+      required: ["project_path"],
+    },
+  },
+  {
+    name: "start_dashboard",
+    description: "Get instructions and configuration for starting the GESF compliance web dashboard. The dashboard provides a browser-based view of compliance status, scores, and findings. Note: the actual server must be started via the CLI 'ges dashboard' command.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        port: { type: "number", description: "Port number for the dashboard (default: 3001)." },
+        host: { type: "string", description: "Host to bind to (default: localhost)." },
       },
     },
   },
@@ -2349,6 +2484,522 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           lines.push("2. Import and integrate the generated files into your app");
           lines.push("3. Run `ges audit` to verify the control is now passing");
           lines.push(`4. Or use \`apply_control_override\` with control_id="${controlId}" if verified manually`);
+
+          resultText = lines.join("\n");
+          break;
+        }
+        case "generate_badge": {
+          const projectPath = resolveProjectPath(args.project_path);
+
+          if (!fs.existsSync(path.join(projectPath, ".ges"))) {
+            resultText = `GESF not initialized at ${projectPath}. Run 'ges init' first.`;
+            break;
+          }
+
+          const score = readJsonFileSafe<ScoreFile>(path.join(projectPath, ".ges", "score.json"));
+          if (!score || !score.frameworks || Object.keys(score.frameworks).length === 0) {
+            resultText = `No compliance score available at ${projectPath}. Run 'ges audit' then 'ges score' first.`;
+            break;
+          }
+
+          const svg = generateBadgeSvg(score);
+          const outputName = args.output || "badge.svg";
+          const outputPath = path.resolve(projectPath, outputName);
+          fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+          fs.writeFileSync(outputPath, svg);
+
+          const explainer = generateScoreExplainer(score);
+          const lines: string[] = [];
+          lines.push(`# Compliance Badge Generated\n`);
+          lines.push(`**File**: ${outputPath}`);
+          lines.push(`**Score**: ${score.overall}% (${score.overall_grade ?? computeGrade(score.overall)})\n`);
+
+          if (args.readme !== "") {
+            const readmeName = args.readme || "README.md";
+            const readmePath = path.resolve(projectPath, readmeName);
+            if (fs.existsSync(readmePath)) {
+              const readmeContent = fs.readFileSync(readmePath, "utf-8");
+              const relativeBadgePath = path.relative(path.dirname(readmePath), outputPath);
+              const updated = injectBadgeIntoReadme(readmeContent, relativeBadgePath, explainer);
+              fs.writeFileSync(readmePath, updated);
+              lines.push(`Badge injected into ${readmeName}`);
+            } else {
+              lines.push(`${readmeName} not found — badge SVG saved but not injected into README.`);
+              lines.push(`Manually add: ![GESF Compliance](${outputName})`);
+            }
+          } else {
+            lines.push(`Badge SVG saved to ${outputName}. Add to README manually if desired.`);
+          }
+
+          lines.push(`\n### Badge Preview\n`);
+          lines.push(`![compliance ${score.overall}% ${score.overall_grade ?? computeGrade(score.overall)}]`);
+          lines.push(`\n### Per-Framework Scores\n`);
+          for (const [fw, data] of Object.entries(score.frameworks)) {
+            lines.push(`- ${fw}: ${data.score}% (${data.grade})`);
+          }
+
+          resultText = lines.join("\n");
+          break;
+        }
+        case "get_score": {
+          const projectPath = resolveProjectPath(args.project_path);
+
+          const score = readJsonFileSafe<ScoreFile>(path.join(projectPath, ".ges", "score.json"));
+          if (!score || !score.frameworks || Object.keys(score.frameworks).length === 0) {
+            resultText = `No compliance score available at ${projectPath}. Run 'ges audit' then 'ges score' first.`;
+            break;
+          }
+
+          resultText = formatScoreOutput(score) + `\nLast evaluated: ${score.evaluated_at}`;
+          break;
+        }
+        case "init_project": {
+          const projectPath = resolveProjectPath(args.project_path);
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const gesDir = path.join(projectPath, GES_DIR);
+          if (fs.existsSync(gesDir) && args.force !== "true") {
+            resultText = `GESF is already initialized at ${projectPath}. Use force: true to re-initialize.`;
+            break;
+          }
+
+          if (fs.existsSync(gesDir)) {
+            fs.rmSync(gesDir, { recursive: true, force: true });
+          }
+
+          const projectName = args.project_name || path.basename(projectPath);
+          const projectType = (args.project_type || "generic-web-application") as ProjectType;
+          const frameworksStr = args.frameworks || DEFAULT_FRAMEWORKS.join(",");
+          const frameworks = frameworksStr.split(",").map(f => f.trim() as import("@greenarmor/ges-core").FrameworkName);
+          const now = new Date().toISOString();
+
+          const config: ProjectConfig = {
+            project_name: projectName,
+            project_type: projectType,
+            frameworks,
+            requirements: {
+              encryption: { required: true },
+              mfa: { required: true },
+              audit_logs: { required: true },
+              backups: { required: true },
+              retention_policy: { required: true },
+              vulnerability_scanning: { required: true },
+              authentication: { required: true },
+              authorization: { required: true },
+              secrets_management: { required: true },
+              logging: { required: true },
+              monitoring: { required: true },
+              data_classification: { required: true },
+              disaster_recovery: { required: true },
+              incident_response: { required: true },
+              privacy_controls: { required: true },
+            },
+            created_at: now,
+            version: GESF_VERSION,
+          };
+
+          fs.mkdirSync(gesDir, { recursive: true });
+
+          const configJson = generateConfigJson(config);
+          fs.writeFileSync(path.join(gesDir, "config.json"), configJson.content);
+
+          const metadataJson = generateMetadataJson(config);
+          fs.writeFileSync(path.join(gesDir, "metadata.json"), metadataJson.content);
+
+          const frameworkVersionJson = generateFrameworkVersionJson();
+          fs.writeFileSync(path.join(gesDir, "framework-version.json"), frameworkVersionJson.content);
+
+          const scoreJson = generateScoreJson();
+          fs.writeFileSync(path.join(gesDir, "score.json"), scoreJson.content);
+
+          const dirs = [COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR];
+          for (const dir of dirs) {
+            fs.mkdirSync(path.join(projectPath, dir), { recursive: true });
+          }
+
+          const complianceDocs = generateComplianceDocs(projectName, projectType);
+          for (const doc of complianceDocs) {
+            const filePath = path.join(projectPath, COMPLIANCE_DIR, doc.filePath);
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            fs.writeFileSync(filePath, doc.content);
+          }
+
+          const securityDocs = generateSecurityDocs(projectName, projectType);
+          for (const doc of securityDocs) {
+            const filePath = path.join(projectPath, SECURITY_DIR, doc.filePath);
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            fs.writeFileSync(filePath, doc.content);
+          }
+
+          const packs = getPacksForProjectType(projectType);
+          for (const pack of packs) {
+            const packDir = path.join(projectPath, CONTROLS_DIR, pack.id);
+            fs.mkdirSync(packDir, { recursive: true });
+            fs.writeFileSync(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
+          }
+
+          const workflows = generateAllWorkflows(config);
+          const workflowsDir = path.join(projectPath, ".github", "workflows");
+          fs.mkdirSync(workflowsDir, { recursive: true });
+          for (const wf of workflows) {
+            fs.writeFileSync(path.join(workflowsDir, wf.filePath.replace(/^\.github\/workflows\//, "")), wf.content);
+          }
+
+          const lines: string[] = [];
+          lines.push(`# GESF Project Initialized\n`);
+          lines.push(`**Project**: ${projectName}`);
+          lines.push(`**Type**: ${projectType}`);
+          lines.push(`**Frameworks**: ${frameworks.join(", ")}`);
+          lines.push(`**Path**: ${projectPath}\n`);
+          lines.push(`## Created Structure`);
+          lines.push(`- \`.ges/\` — Configuration and score files`);
+          lines.push(`- \`compliance/\` — ${complianceDocs.length} compliance documents`);
+          lines.push(`- \`security/\` — ${securityDocs.length} security documents`);
+          lines.push(`- \`controls/\` — ${packs.length} control packs`);
+          lines.push(`- \`.github/workflows/\` — ${workflows.length} CI/CD workflows`);
+          lines.push(`- \`policies/\`, \`checklists/\`, \`docs/\`, \`reports/\`\n`);
+          lines.push(`## Next Steps`);
+          lines.push(`1. Run \`ges audit\` to scan the project for security issues`);
+          lines.push(`2. Run \`ges score\` to calculate compliance score`);
+          lines.push(`3. Run \`ges badge\` to generate a compliance badge for README`);
+          lines.push(`4. Review and customize documents in compliance/ and security/`);
+
+          resultText = lines.join("\n");
+          break;
+        }
+        case "run_scans": {
+          const projectPath = resolveProjectPath(args.project_path);
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          if (!fs.existsSync(path.join(projectPath, ".ges"))) {
+            resultText = `GESF not initialized at ${projectPath}. Run 'ges init' first.`;
+            break;
+          }
+
+          const detection = detectProject(projectPath);
+          const ecosystemDetail = detection.ecosystem === "node" && detection.nodePackageManager
+            ? `node (${detection.nodePackageManager})`
+            : detection.ecosystem === "python" && detection.pythonToolchain
+              ? `python (${detection.pythonToolchain})`
+              : detection.ecosystem;
+
+          const results = runAllScansWithSbom(detection);
+          const lines: string[] = [];
+          lines.push(`# Security Scan Results\n`);
+          lines.push(`**Project**: ${projectPath}`);
+          lines.push(`**Ecosystem**: ${ecosystemDetail}\n`);
+          lines.push(formatScanResults(results));
+          lines.push(formatSbomResults(results));
+
+          const failed = results.filter(r => r.status === "fail");
+          if (failed.length > 0) {
+            lines.push(`\n**${failed.length} scanner(s) reported failures.** Review findings above.`);
+          }
+
+          resultText = lines.join("\n");
+          break;
+        }
+        case "doctor": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const checks: { name: string; status: string; detail?: string }[] = [];
+
+          const gesDir = path.join(projectPath, GES_DIR);
+          if (fs.existsSync(gesDir)) {
+            checks.push({ name: "GESF initialized", status: "OK", detail: projectPath });
+          } else {
+            checks.push({ name: "GESF initialized", status: "FAIL", detail: "Run 'init_project' first" });
+          }
+
+          if (fs.existsSync(gesDir)) {
+            const configPath = path.join(gesDir, "config.json");
+            checks.push({
+              name: "Config file",
+              status: fs.existsSync(configPath) ? "OK" : "WARN",
+              detail: fs.existsSync(configPath) ? configPath : "config.json not found",
+            });
+
+            const score = readJsonFileSafe<ScoreFile>(path.join(gesDir, "score.json"));
+            checks.push({
+              name: "Score file",
+              status: score ? "OK" : "WARN",
+              detail: score ? `Overall: ${score.overall}%` : "Run audit then score",
+            });
+
+            const config = readJsonFileSafe<ProjectConfig>(configPath);
+            if (config) {
+              checks.push({ name: "Project", status: "OK", detail: `${config.project_name} (${config.project_type})` });
+              checks.push({ name: "Frameworks", status: "OK", detail: config.frameworks.join(", ") });
+            }
+
+            const dirs = [COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR];
+            for (const dir of dirs) {
+              const exists = fs.existsSync(path.join(projectPath, dir));
+              checks.push({ name: `${dir}/ directory`, status: exists ? "OK" : "MISSING" });
+            }
+
+            const ghWorkflows = path.join(projectPath, ".github", "workflows");
+            if (fs.existsSync(ghWorkflows)) {
+              const workflows = fs.readdirSync(ghWorkflows).filter(f => f.endsWith(".yml"));
+              checks.push({ name: "GitHub Actions", status: "OK", detail: `${workflows.length} workflow(s)` });
+            } else {
+              checks.push({ name: "GitHub Actions", status: "WARN", detail: "No .github/workflows found" });
+            }
+          }
+
+          checks.push({ name: "GESF Version", status: "OK", detail: GESF_VERSION });
+
+          const lines: string[] = [];
+          lines.push(`# GESF Doctor - Diagnostic Report\n`);
+          lines.push(`**Project**: ${projectPath}\n`);
+
+          const ok = checks.filter(c => c.status === "OK").length;
+          const warns = checks.filter(c => c.status === "WARN").length;
+          const fails = checks.filter(c => c.status === "FAIL" || c.status === "MISSING").length;
+
+          lines.push(`**Summary**: ${ok} OK, ${warns} warnings, ${fails} issues\n`);
+          lines.push("| Check | Status | Detail |");
+          lines.push("|-------|--------|--------|");
+          for (const check of checks) {
+            lines.push(`| ${check.name} | ${check.status} | ${check.detail || "—"} |`);
+          }
+
+          if (fails > 0) {
+            lines.push(`\n**Action Required**: Fix the issues marked as FAIL or MISSING above.`);
+          } else if (warns > 0) {
+            lines.push(`\n**Note**: Some warnings detected. Review the items above.`);
+          } else {
+            lines.push(`\n**All checks passed.** Project is healthy.`);
+          }
+
+          resultText = lines.join("\n");
+          break;
+        }
+        case "validate_project": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const lines: string[] = [];
+          let hasErrors = false;
+
+          lines.push(`# GESF Validation Report\n`);
+          lines.push(`**Project**: ${projectPath}\n`);
+
+          const configPath = path.join(projectPath, GES_DIR, "config.json");
+          const config = readJsonFileSafe<ProjectConfig>(configPath);
+
+          if (!config) {
+            lines.push("❌ **config.json** not found or invalid");
+            hasErrors = true;
+          } else {
+            const result = ProjectConfigSchema.safeParse(config);
+            if (result.success) {
+              lines.push("✅ **Configuration** is valid");
+            } else {
+              lines.push("❌ **Configuration** validation errors:");
+              for (const error of result.error.errors) {
+                lines.push(`  - ${error.path.join(".")}: ${error.message}`);
+              }
+              hasErrors = true;
+            }
+          }
+
+          const controlsDir = path.join(projectPath, CONTROLS_DIR);
+          if (fs.existsSync(controlsDir)) {
+            const packDirs = fs.readdirSync(controlsDir);
+            for (const packDir of packDirs) {
+              const controlsFile = path.join(controlsDir, packDir, "controls.json");
+              if (fs.existsSync(controlsFile)) {
+                const raw = readJsonFileSafe<Control[] | { controls: Control[] }>(controlsFile);
+                const controls = Array.isArray(raw) ? raw : Array.isArray(raw?.controls) ? raw.controls : null;
+                if (controls && Array.isArray(controls)) {
+                  lines.push(`✅ **${packDir}**: ${controls.length} controls`);
+                } else {
+                  lines.push(`❌ **${packDir}**: Invalid controls.json`);
+                  hasErrors = true;
+                }
+              }
+            }
+          } else {
+            lines.push(`⚠️  No controls/ directory found`);
+          }
+
+          const requiredDirs = [COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR];
+          for (const dir of requiredDirs) {
+            if (fs.existsSync(path.join(projectPath, dir))) {
+              lines.push(`✅ **${dir}/** directory exists`);
+            } else {
+              lines.push(`❌ **${dir}/** directory missing`);
+              hasErrors = true;
+            }
+          }
+
+          const score = readJsonFileSafe<ScoreFile>(path.join(projectPath, GES_DIR, "score.json"));
+          if (score) {
+            lines.push(`✅ **Score file** exists (${score.overall}%)`);
+          } else {
+            lines.push(`⚠️  **Score file** not found — run audit then score`);
+          }
+
+          lines.push(hasErrors ? "\n❌ **Validation failed.** Fix the issues above." : "\n✅ **All validations passed.**");
+
+          resultText = lines.join("\n");
+          break;
+        }
+        case "policy_list": {
+          const packs = getAllPacks();
+          const lines: string[] = [];
+          lines.push(`# Available Policy Packs (${packs.length} total)\n`);
+          lines.push("| ID | Name | Controls | Project Types |");
+          lines.push("|----|------|----------|---------------|");
+          for (const pack of packs) {
+            lines.push(`| ${pack.id} | ${pack.name} | ${pack.controls.length} | ${pack.project_types.join(", ")} |`);
+          }
+          lines.push(`\nUse \`policy_install\` with a pack_id to install a pack into your project.`);
+          resultText = lines.join("\n");
+          break;
+        }
+        case "policy_install": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const packId = args.pack_id || "";
+
+          if (!fs.existsSync(path.join(projectPath, ".ges"))) {
+            resultText = `GESF not initialized at ${projectPath}. Run 'init_project' first.`;
+            break;
+          }
+
+          if (!packId) {
+            resultText = `Error: pack_id is required. Available packs: ${listPackIds().join(", ")}`;
+            break;
+          }
+
+          const packs = getAllPacks();
+          const pack = packs.find(p => p.id === packId);
+
+          if (!pack) {
+            resultText = `Error: Pack '${packId}' not found. Available: ${listPackIds().join(", ")}`;
+            break;
+          }
+
+          const packDir = path.join(projectPath, CONTROLS_DIR, pack.id);
+          fs.mkdirSync(packDir, { recursive: true });
+          fs.writeFileSync(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
+
+          resultText = `✅ Installed policy pack: **${pack.id}** (${pack.name})\n${pack.controls.length} controls written to ${CONTROLS_DIR}/${pack.id}/controls.json`;
+          break;
+        }
+        case "policy_remove": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const packId = args.pack_id || "";
+
+          if (!packId) {
+            resultText = `Error: pack_id is required.`;
+            break;
+          }
+
+          const packDir = path.join(projectPath, CONTROLS_DIR, packId);
+
+          if (!fs.existsSync(packDir)) {
+            resultText = `Error: Pack '${packId}' is not installed at ${projectPath}.`;
+            break;
+          }
+
+          fs.rmSync(packDir, { recursive: true, force: true });
+          resultText = `✅ Removed policy pack: **${packId}** from ${projectPath}`;
+          break;
+        }
+        case "update_check": {
+          resultText = `# GESF Update Check\n\n**Current Version**: ${GESF_VERSION}\n\nTo update:\n\`\`\`bash\nnpm update -g @greenarmor/ges\n# or\npnpm update -g @greenarmor/ges\n\`\`\`\nFor project-local installs:\n\`\`\`bash\nnpm update @greenarmor/ges\n# or\npnpm update @greenarmor/ges\n\`\`\``;
+          break;
+        }
+        case "install_hooks": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const action = args.action || "install";
+
+          if (!fs.existsSync(path.join(projectPath, ".ges"))) {
+            resultText = `GESF not initialized at ${projectPath}. Run 'init_project' first.`;
+            break;
+          }
+
+          const gitDir = path.join(projectPath, ".git");
+          if (!fs.existsSync(gitDir)) {
+            resultText = `No Git repository found at ${projectPath}. Git hooks require a .git directory. Run 'git init' first.`;
+            break;
+          }
+
+          const hooksDir = path.join(gitDir, "hooks");
+          const hookPath = path.join(hooksDir, "pre-commit");
+
+          if (action === "uninstall") {
+            if (fs.existsSync(hookPath)) {
+              const content = fs.readFileSync(hookPath, "utf-8");
+              if (content.includes("ges audit")) {
+                fs.unlinkSync(hookPath);
+                resultText = `✅ Uninstalled pre-commit hook from ${hookPath}`;
+              } else {
+                resultText = `Pre-commit hook exists but was not installed by GESF. Not removing it.`;
+              }
+            } else {
+              resultText = `No pre-commit hook found at ${hookPath}. Nothing to uninstall.`;
+            }
+            break;
+          }
+
+          const hookContent = `#!/bin/sh\n# GESF pre-commit hook - runs compliance audit before allowing commits\nnpx ges audit --ci\nif [ $? -ne 0 ]; then\n  echo "GESF audit failed. Fix issues or use --no-verify to bypass."\n  exit 1\nfi\n`;
+          fs.mkdirSync(hooksDir, { recursive: true });
+
+          if (fs.existsSync(hookPath)) {
+            const existing = fs.readFileSync(hookPath, "utf-8");
+            if (existing.includes("ges audit")) {
+              resultText = `Pre-commit hook already installed at ${hookPath}`;
+              break;
+            }
+            resultText = `A pre-commit hook already exists at ${hookPath}. Not overwriting.\nManually add 'npx ges audit --ci' to your pre-commit hook.`;
+            break;
+          }
+
+          fs.writeFileSync(hookPath, hookContent);
+          fs.chmodSync(hookPath, 0o755);
+
+          resultText = `✅ Installed pre-commit hook at ${hookPath}\n\nThe hook will run 'ges audit --ci' before allowing commits.\n- To bypass: \`git commit --no-verify\`\n- To remove: use \`install_hooks\` with action: "uninstall"`;
+          break;
+        }
+        case "start_dashboard": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const port = args.port || 3001;
+          const host = args.host || "localhost";
+
+          if (!fs.existsSync(path.join(projectPath, ".ges"))) {
+            resultText = `GESF not initialized at ${projectPath}. Run 'init_project' first.`;
+            break;
+          }
+
+          const lines: string[] = [];
+          lines.push(`# GESF Web Dashboard\n`);
+          lines.push(`**Project**: ${projectPath}`);
+          lines.push(`**Host**: ${host}`);
+          lines.push(`**Port**: ${port}\n`);
+          lines.push(`## Starting the Dashboard\n`);
+          lines.push(`The dashboard must be started via the GESF CLI. Run:\n`);
+          lines.push(`\`\`\`bash`);
+          lines.push(`cd ${projectPath}`);
+          lines.push(`ges dashboard --port ${port} --host ${host}`);
+          lines.push(`\`\`\`\n`);
+          lines.push(`## Available Endpoints\n`);
+          lines.push(`- **Dashboard UI**: http://${host}:${port}`);
+          lines.push(`- **JSON API**: http://${host}:${port}/api/data`);
+          lines.push(`- **Health Check**: http://${host}:${port}/health\n`);
+          lines.push(`## Dashboard Features`);
+          lines.push(`- Visual compliance score overview`);
+          lines.push(`- Per-framework breakdown with grades`);
+          lines.push(`- Security findings list`);
+          lines.push(`- Control status matrix`);
+          lines.push(`- Audit history timeline`);
 
           resultText = lines.join("\n");
           break;

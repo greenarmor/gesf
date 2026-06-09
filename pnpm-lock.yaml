@@ -195,6 +195,9 @@ importers:
       '@greenarmor/ges-audit-engine':
         specifier: 1.1.1
         version: link:../audit-engine
+      '@greenarmor/ges-cicd-generator':
+        specifier: 1.1.1
+        version: link:../cicd-generator
       '@greenarmor/ges-compliance-engine':
         specifier: 1.1.1
         version: link:../compliance-engine
@@ -213,6 +216,9 @@ importers:
       '@greenarmor/ges-rules-engine':
         specifier: 1.1.1
         version: link:../rules-engine
+      '@greenarmor/ges-scanner-integration':
+        specifier: 1.1.1
+        version: link:../scanner-integration
       '@greenarmor/ges-scoring-engine':
         specifier: 1.1.1
         version: link:../scoring-engine

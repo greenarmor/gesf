@@ -45,10 +45,10 @@ describe("MCP Protocol", () => {
     expect(res).toBeNull();
   });
 
-  it("responds to tools/list with 17 tools", () => {
+  it("responds to tools/list with 29 tools", () => {
     const res = handleRequest(req("tools/list"));
     const tools = (res as { result: { tools: { name: string }[] } }).result.tools;
-    expect(tools.length).toBe(17);
+    expect(tools.length).toBe(29);
   });
 
   it("returns error for unknown method", () => {
@@ -79,6 +79,18 @@ describe("tools/list content", () => {
     expect(names).toContain("generate_dpa");
     expect(names).toContain("generate_data_inventory");
     expect(names).toContain("generate_processing_records");
+    expect(names).toContain("generate_badge");
+    expect(names).toContain("get_score");
+    expect(names).toContain("init_project");
+    expect(names).toContain("run_scans");
+    expect(names).toContain("doctor");
+    expect(names).toContain("validate_project");
+    expect(names).toContain("policy_list");
+    expect(names).toContain("policy_install");
+    expect(names).toContain("policy_remove");
+    expect(names).toContain("update_check");
+    expect(names).toContain("install_hooks");
+    expect(names).toContain("start_dashboard");
   });
 });
 
@@ -171,5 +183,52 @@ describe("unknown tool", () => {
   it("returns error for unknown tool name", () => {
     const res = handleRequest(callTool("nonexistent_tool"));
     expect((res as { error?: { code: number } }).error).toBeDefined();
+  });
+});
+
+describe("new tools", () => {
+  it("update_check returns version info", () => {
+    const res = handleRequest(callTool("update_check"));
+    const text = getResultText(res);
+    expect(text).toContain("1.1.1");
+    expect(text).toContain("npm update");
+  });
+
+  it("policy_list returns packs", () => {
+    const res = handleRequest(callTool("policy_list"));
+    const text = getResultText(res);
+    expect(text).toContain("gdpr");
+    expect(text).toContain("owasp");
+  });
+
+  it("doctor returns diagnostic for valid project", () => {
+    const res = handleRequest(callTool("doctor", { project_path: "/Users/tata/gesf" }));
+    const text = getResultText(res);
+    expect(text).toContain("GESF initialized");
+    expect(text).toContain("OK");
+  });
+
+  it("validate_project validates config", () => {
+    const res = handleRequest(callTool("validate_project", { project_path: "/Users/tata/gesf" }));
+    const text = getResultText(res);
+    expect(text).toContain("Configuration");
+  });
+
+  it("get_score returns score for valid project", () => {
+    const res = handleRequest(callTool("get_score", { project_path: "/Users/tata/gesf" }));
+    const text = getResultText(res);
+    expect(text).toContain("GDPR");
+  });
+
+  it("install_hooks returns error without git", () => {
+    const res = handleRequest(callTool("install_hooks", { project_path: "/tmp/nonexistent" }));
+    const text = getResultText(res);
+    expect(text.length).toBeGreaterThan(0);
+  });
+
+  it("start_dashboard returns instructions", () => {
+    const res = handleRequest(callTool("start_dashboard", { project_path: "/Users/tata/gesf" }));
+    const text = getResultText(res);
+    expect(text).toContain("dashboard");
   });
 });
