@@ -17,8 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@greenarmor/ges-core": "1.1.1",
-    "@greenarmor/ges-audit-engine": "1.1.1"
+    "@greenarmor/ges-core": "1.1.2",
+    "@greenarmor/ges-audit-engine": "1.1.2"
   },
   "keywords": [
     "gdpr",
@@ -39,5 +39,8 @@
     "type": "git",
     "url": "https://github.com/greenarmor/gesf"
   },
-  "homepage": "https://github.com/greenarmor/gesf"
+  "homepage": "https://github.com/greenarmor/gesf",
+  "files": [
+    "dist"
+  ]
 }

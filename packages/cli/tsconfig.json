@@ -4,8 +4,17 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "references": [
-    { "path": "../mcp-server" }
+    {
+      "path": "../mcp-server"
+    }
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "node_modules",
+    "dist"
   ]
 }

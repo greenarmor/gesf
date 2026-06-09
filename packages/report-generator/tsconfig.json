@@ -1,6 +1,29 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "outDir": "./dist", "rootDir": "./src" },
-  "include": ["src"],
-  "references": [{ "path": "../core" }, { "path": "../compliance-engine" }, { "path": "../policy-engine" }, { "path": "../scoring-engine" }]
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../compliance-engine"
+    },
+    {
+      "path": "../policy-engine"
+    },
+    {
+      "path": "../scoring-engine"
+    }
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "node_modules",
+    "dist"
+  ]
 }

@@ -4,9 +4,20 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "references": [
-    { "path": "../core" },
-    { "path": "../compliance-engine" }
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../compliance-engine"
+    }
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "node_modules",
+    "dist"
   ]
 }

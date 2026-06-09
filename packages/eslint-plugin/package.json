@@ -32,5 +32,8 @@
     "owasp",
     "gesf"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "files": [
+    "dist"
+  ]
 }

@@ -17,11 +17,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@greenarmor/ges-core": "1.1.1"
+    "@greenarmor/ges-core": "1.1.2"
   },
   "devDependencies": {
     "typescript": "^6.0.0",
     "@types/node": "^22.0.0",
     "vitest": "^4.1.8"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

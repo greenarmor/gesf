@@ -47,5 +47,8 @@
     "esbuild": "^0.28.0",
     "typescript": "^6.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "files": [
+    "dist"
+  ]
 }
