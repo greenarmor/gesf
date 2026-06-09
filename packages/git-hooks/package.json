@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-git-hooks",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "type": "module",
   "description": "GESF Git Hooks - Pre-commit compliance enforcement",
   "main": "./dist/index.js",
