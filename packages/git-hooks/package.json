@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-git-hooks",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "type": "module",
   "description": "GESF Git Hooks - Pre-commit compliance enforcement",
   "main": "./dist/index.js",
@@ -17,8 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@greenarmor/ges-core": "1.1.2",
-    "@greenarmor/ges-audit-engine": "1.1.2"
+    "@greenarmor/ges-core": "1.1.5",
+    "@greenarmor/ges-audit-engine": "1.1.5"
   },
   "keywords": [
     "gdpr",

@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-mcp-server",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "GESF MCP Server - AI Compliance Assistant for GDPR, OWASP, NIST, CIS. Check compliance, generate policies, assess risks via MCP protocol.",
   "keywords": [
     "ai",
@@ -53,16 +53,16 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@greenarmor/ges-audit-engine": "1.1.2",
-    "@greenarmor/ges-compliance-engine": "1.1.2",
-    "@greenarmor/ges-core": "1.1.2",
-    "@greenarmor/ges-cicd-generator": "1.1.2",
-    "@greenarmor/ges-doc-generator": "1.1.2",
-    "@greenarmor/ges-policy-engine": "1.1.2",
-    "@greenarmor/ges-report-generator": "1.1.2",
-    "@greenarmor/ges-rules-engine": "1.1.2",
-    "@greenarmor/ges-scanner-integration": "1.1.2",
-    "@greenarmor/ges-scoring-engine": "1.1.2"
+    "@greenarmor/ges-audit-engine": "1.1.5",
+    "@greenarmor/ges-compliance-engine": "1.1.5",
+    "@greenarmor/ges-core": "1.1.5",
+    "@greenarmor/ges-cicd-generator": "1.1.5",
+    "@greenarmor/ges-doc-generator": "1.1.5",
+    "@greenarmor/ges-policy-engine": "1.1.5",
+    "@greenarmor/ges-report-generator": "1.1.5",
+    "@greenarmor/ges-rules-engine": "1.1.5",
+    "@greenarmor/ges-scanner-integration": "1.1.5",
+    "@greenarmor/ges-scoring-engine": "1.1.5"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
