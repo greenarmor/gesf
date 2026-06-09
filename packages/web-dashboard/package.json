@@ -1,6 +1,6 @@
 {
   "name": "@greenarmor/ges-web-dashboard",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "type": "module",
   "description": "GESF Web Dashboard - Visual compliance dashboard for teams",
   "main": "./dist/index.js",
