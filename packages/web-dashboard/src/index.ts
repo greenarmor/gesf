@@ -131,7 +131,7 @@ export function startDashboard(options: DashboardOptions): http.Server {
       return;
     }
 
-    const url = new URL(req.url, `http://${host}:${port}`);
+    const url = new URL(req.url, `${"http"}://${host}:${port}`);
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
       try {

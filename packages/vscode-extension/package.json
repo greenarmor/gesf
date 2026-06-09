@@ -49,6 +49,8 @@
   },
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ]
 }

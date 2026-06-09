@@ -25,7 +25,7 @@ importers:
     dependencies:
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -41,7 +41,7 @@ importers:
     dependencies:
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -57,43 +57,43 @@ importers:
     dependencies:
       '@greenarmor/ges-audit-engine':
         specifier: 1.1.2
-        version: link:../audit-engine
+        version: 1.1.2
       '@greenarmor/ges-cicd-generator':
         specifier: 1.1.2
-        version: link:../cicd-generator
+        version: 1.1.2
       '@greenarmor/ges-compliance-engine':
         specifier: 1.1.2
-        version: link:../compliance-engine
+        version: 1.1.2
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
       '@greenarmor/ges-doc-generator':
         specifier: 1.1.2
-        version: link:../doc-generator
+        version: 1.1.2
       '@greenarmor/ges-git-hooks':
         specifier: 1.1.2
-        version: link:../git-hooks
+        version: 1.1.2
       '@greenarmor/ges-mcp-server':
         specifier: 1.1.2
-        version: link:../mcp-server
+        version: 1.1.2
       '@greenarmor/ges-policy-engine':
         specifier: 1.1.2
-        version: link:../policy-engine
+        version: 1.1.2
       '@greenarmor/ges-report-generator':
         specifier: 1.1.2
-        version: link:../report-generator
+        version: 1.1.2
       '@greenarmor/ges-rules-engine':
         specifier: 1.1.2
-        version: link:../rules-engine
+        version: 1.1.2
       '@greenarmor/ges-scanner-integration':
         specifier: 1.1.2
-        version: link:../scanner-integration
+        version: 1.1.2
       '@greenarmor/ges-scoring-engine':
         specifier: 1.1.2
-        version: link:../scoring-engine
+        version: 1.1.2
       '@greenarmor/ges-web-dashboard':
         specifier: 1.1.2
-        version: link:../web-dashboard
+        version: 1.1.2
       commander:
         specifier: ^13.0.0
         version: 13.1.0
@@ -112,7 +112,7 @@ importers:
     dependencies:
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -144,7 +144,7 @@ importers:
     dependencies:
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -175,10 +175,10 @@ importers:
     dependencies:
       '@greenarmor/ges-audit-engine':
         specifier: 1.1.2
-        version: link:../audit-engine
+        version: 1.1.2
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -194,34 +194,34 @@ importers:
     dependencies:
       '@greenarmor/ges-audit-engine':
         specifier: 1.1.2
-        version: link:../audit-engine
+        version: 1.1.2
       '@greenarmor/ges-cicd-generator':
         specifier: 1.1.2
-        version: link:../cicd-generator
+        version: 1.1.2
       '@greenarmor/ges-compliance-engine':
         specifier: 1.1.2
-        version: link:../compliance-engine
+        version: 1.1.2
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
       '@greenarmor/ges-doc-generator':
         specifier: 1.1.2
-        version: link:../doc-generator
+        version: 1.1.2
       '@greenarmor/ges-policy-engine':
         specifier: 1.1.2
-        version: link:../policy-engine
+        version: 1.1.2
       '@greenarmor/ges-report-generator':
         specifier: 1.1.2
-        version: link:../report-generator
+        version: 1.1.2
       '@greenarmor/ges-rules-engine':
         specifier: 1.1.2
-        version: link:../rules-engine
+        version: 1.1.2
       '@greenarmor/ges-scanner-integration':
         specifier: 1.1.2
-        version: link:../scanner-integration
+        version: 1.1.2
       '@greenarmor/ges-scoring-engine':
         specifier: 1.1.2
-        version: link:../scoring-engine
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -240,10 +240,10 @@ importers:
     dependencies:
       '@greenarmor/ges-compliance-engine':
         specifier: 1.1.2
-        version: link:../compliance-engine
+        version: 1.1.2
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -259,19 +259,19 @@ importers:
     dependencies:
       '@greenarmor/ges-audit-engine':
         specifier: 1.1.2
-        version: link:../audit-engine
+        version: 1.1.2
       '@greenarmor/ges-compliance-engine':
         specifier: 1.1.2
-        version: link:../compliance-engine
+        version: 1.1.2
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
       '@greenarmor/ges-policy-engine':
         specifier: 1.1.2
-        version: link:../policy-engine
+        version: 1.1.2
       '@greenarmor/ges-scoring-engine':
         specifier: 1.1.2
-        version: link:../scoring-engine
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -287,7 +287,7 @@ importers:
     dependencies:
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -303,7 +303,7 @@ importers:
     dependencies:
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -319,7 +319,7 @@ importers:
     dependencies:
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -350,16 +350,16 @@ importers:
     dependencies:
       '@greenarmor/ges-audit-engine':
         specifier: 1.1.2
-        version: link:../audit-engine
+        version: 1.1.2
       '@greenarmor/ges-core':
         specifier: 1.1.2
-        version: link:../core
+        version: 1.1.2
       '@greenarmor/ges-policy-engine':
         specifier: 1.1.2
-        version: link:../policy-engine
+        version: 1.1.2
       '@greenarmor/ges-scoring-engine':
         specifier: 1.1.2
-        version: link:../scoring-engine
+        version: 1.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -575,6 +575,77 @@ packages:
   '@eslint/plugin-kit@0.4.1':
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@greenarmor/ges-audit-engine@1.1.1':
+    resolution: {integrity: sha512-LjO2sqXTXZ4s0O1e8lYoLy0d4tqxCxYPo0Lfk9ItUV9Gyq18WYrhdgyR/5LcWFE6PpeT2EvI7iurJxUZyEeI0A==}
+
+  '@greenarmor/ges-audit-engine@1.1.2':
+    resolution: {integrity: sha512-I3ZQZm8sJJb31AEqule1LihwUIrTeuUMfCNZ77K81sJ3G0IHslfBOmL4oqpkShICtDugkqQdaOCeMwfBUSPLxA==}
+
+  '@greenarmor/ges-cicd-generator@1.1.1':
+    resolution: {integrity: sha512-rH+uLA7C/VS4zGLUG4kaRtd9CtzMz4KN7FzOFR66kXG+zNqakbfl55pEQNhtLPCGimG+0h0vVgqBxhgFRJ1VSg==}
+
+  '@greenarmor/ges-cicd-generator@1.1.2':
+    resolution: {integrity: sha512-sItcQtqxAONKRPdl8Qjv1+weB/Y6JKWSscBwWH7Qp9Hk8IjkdnymnUD0vEHmDWdEtrU0usQr3pQrt+BDU6gH5g==}
+
+  '@greenarmor/ges-compliance-engine@1.1.1':
+    resolution: {integrity: sha512-rlv7hcCzeLx/PuqI8w6eDQvJNWxGJgvAzpR9g82eL26JYwcymXyE8LKhExeP9S63bYZVeG++PnyPLNp8XIemJw==}
+
+  '@greenarmor/ges-compliance-engine@1.1.2':
+    resolution: {integrity: sha512-jXTEUzmuDf4jUMFraAKnG1amgjbOB0JIzfj5FAGHZ9wop8PJQYMCrzi5jGGw19VuZm3+wZzRt3RQlFqo0JgQCQ==}
+
+  '@greenarmor/ges-core@1.1.1':
+    resolution: {integrity: sha512-/zhBWOS/DcZrJeShq8Hf8GjeFqV7bWQVsc3kowOiRJkqONf/sZLQqXB335rvy3l9OSbXDLg307L4xih8QsP2Xg==}
+
+  '@greenarmor/ges-core@1.1.2':
+    resolution: {integrity: sha512-ioBWqGWq1a+d1ozD/jcHqbLRRFIGb4ASi7WyqgHk6Fm39lzA07dPW7xd+WSH+/sdxcXqX7UlVqnBg3gsoxmenA==}
+
+  '@greenarmor/ges-doc-generator@1.1.1':
+    resolution: {integrity: sha512-bcG2uoz8CWLdRUUuaFToFJZGQtuI+MOnzrXhXhqRwTKTyO/mQ34v9PLUIK0pkLUjPNX/6AbtnU7c6y/iN0aGzA==}
+
+  '@greenarmor/ges-doc-generator@1.1.2':
+    resolution: {integrity: sha512-lgL37yUfFoH5M3MxANFmQ9bueGDlNpWkPuqIG/Y/KSzK+bXacUVmnsG/1VY07a9T6OugPHOHMbUzhcnmugfkmQ==}
+
+  '@greenarmor/ges-git-hooks@1.1.2':
+    resolution: {integrity: sha512-a8vBnQ40zmPZ2BSwfSrHqWT+sl2kdnYTHA90vJF57C1KvekuydCRD5uWFgt1ARxBpsQF0mzww6nzhvVe07Y+aQ==}
+
+  '@greenarmor/ges-mcp-server@1.1.2':
+    resolution: {integrity: sha512-MFsJqVb6VUOJ4PCHcQvm6i+vU1k4fZbW3IDBWLl9qFeHKD9gExie07BIMKVLFR308okGoBC1eShYkjd0x8iqXw==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
+
+  '@greenarmor/ges-policy-engine@1.1.1':
+    resolution: {integrity: sha512-KODMgOKnwOZfVq4h00yk5AIzrHgp6yp6QagXa7+SR4tMYtpLlnEBNNUYEeGPcbW8yv7tu8GZdSMOi2XNoDEPew==}
+
+  '@greenarmor/ges-policy-engine@1.1.2':
+    resolution: {integrity: sha512-8zWTObutA4KiBh2Hi0Tf7VvgyLag//ktH/YjQEq0c9AjCbncENmWZ9ODOsrbkwYx2jfCKgP4bUKERBq2C2aLOw==}
+
+  '@greenarmor/ges-report-generator@1.1.1':
+    resolution: {integrity: sha512-3Wcw0zHnuVR6ggT6xsZktVTEv/gmT4QlW9PbzGw2NcJF8ZW59I4jO4yRlaS856AkRAJJdrj2aWslM3j2TpRvOg==}
+
+  '@greenarmor/ges-report-generator@1.1.2':
+    resolution: {integrity: sha512-CwsVlxSnuQ7ukQiX9vlipdybpQrQSTtFM2sl5gmvZbHbgfABrBt7LhlNQda84adb0cG917J97oNc0xKaZ1hgdQ==}
+
+  '@greenarmor/ges-rules-engine@1.1.1':
+    resolution: {integrity: sha512-QNr25lwK0DZcTiDLzsF9BAtDtyXgRk4xBqQsV4Fn8SQh2EkmdcCio0Te937Tx+cjCekfqy5s93ll/WnBjGHzoA==}
+
+  '@greenarmor/ges-rules-engine@1.1.2':
+    resolution: {integrity: sha512-E4JisWolL38B/cVqOQYE9WE6jSFi7RNJHxpdyHQJMnLMVtRLxI/TO7+R9azpp9P+yYN8p9YaSlIekl+bEwxXaw==}
+
+  '@greenarmor/ges-scanner-integration@1.1.1':
+    resolution: {integrity: sha512-yp2QILqQ0HANNYMdAhkI/C1zAk0VaqG56Ajiru+HDCW6L22Ac1o6ryLqDzG6gpVpjEaYai/T2BmWrwLHGEhheA==}
+
+  '@greenarmor/ges-scanner-integration@1.1.2':
+    resolution: {integrity: sha512-qeXOmKm8V3HLBIr4eSKdjRTi9EM+UkRWjZDz9ult2+FaX7tmEqpptnOdQWyrJ6aMMIJa0MbuotNff7RF6WfB+Q==}
+
+  '@greenarmor/ges-scoring-engine@1.1.1':
+    resolution: {integrity: sha512-dWMZaL+rJYYDsB6esXf6Q/feMaGHaPJmWmE681dcb0tSqyNv+dTDKG8yCHiNRZehL567D/Ty1Nz+hf+olr0j7A==}
+
+  '@greenarmor/ges-scoring-engine@1.1.2':
+    resolution: {integrity: sha512-tX1oMONlL2guDlkkhfwxm71NkzKXFhgNXeYEAhZSYQ0sijf9t7u4BsAYFlgVeXMDVBtGMTrO0MvrFFYRvs/BPA==}
+
+  '@greenarmor/ges-web-dashboard@1.1.2':
+    resolution: {integrity: sha512-Yx+oxXalNKo0kKrxegWzz7t3GolUWzZFuaKFgcq+sDC2o7vFqACDKQl4xBDXMqA1IIDFBSKBehGvvdlgiEEv9w==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1456,6 +1527,121 @@ snapshots:
     dependencies:
       '@eslint/core': 0.17.0
       levn: 0.4.1
+
+  '@greenarmor/ges-audit-engine@1.1.1':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-audit-engine@1.1.2':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-cicd-generator@1.1.1':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-cicd-generator@1.1.2':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-compliance-engine@1.1.1':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-compliance-engine@1.1.2':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-core@1.1.1':
+    dependencies:
+      zod: 3.25.76
+
+  '@greenarmor/ges-core@1.1.2':
+    dependencies:
+      zod: 3.25.76
+
+  '@greenarmor/ges-doc-generator@1.1.1':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-doc-generator@1.1.2':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-git-hooks@1.1.2':
+    dependencies:
+      '@greenarmor/ges-audit-engine': 1.1.1
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-mcp-server@1.1.2':
+    dependencies:
+      '@greenarmor/ges-audit-engine': 1.1.1
+      '@greenarmor/ges-cicd-generator': 1.1.1
+      '@greenarmor/ges-compliance-engine': 1.1.1
+      '@greenarmor/ges-core': 1.1.1
+      '@greenarmor/ges-doc-generator': 1.1.1
+      '@greenarmor/ges-policy-engine': 1.1.1
+      '@greenarmor/ges-report-generator': 1.1.1
+      '@greenarmor/ges-rules-engine': 1.1.1
+      '@greenarmor/ges-scanner-integration': 1.1.1
+      '@greenarmor/ges-scoring-engine': 1.1.1
+
+  '@greenarmor/ges-policy-engine@1.1.1':
+    dependencies:
+      '@greenarmor/ges-compliance-engine': 1.1.1
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-policy-engine@1.1.2':
+    dependencies:
+      '@greenarmor/ges-compliance-engine': 1.1.1
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-report-generator@1.1.1':
+    dependencies:
+      '@greenarmor/ges-audit-engine': 1.1.1
+      '@greenarmor/ges-compliance-engine': 1.1.1
+      '@greenarmor/ges-core': 1.1.1
+      '@greenarmor/ges-policy-engine': 1.1.1
+      '@greenarmor/ges-scoring-engine': 1.1.1
+
+  '@greenarmor/ges-report-generator@1.1.2':
+    dependencies:
+      '@greenarmor/ges-audit-engine': 1.1.1
+      '@greenarmor/ges-compliance-engine': 1.1.1
+      '@greenarmor/ges-core': 1.1.1
+      '@greenarmor/ges-policy-engine': 1.1.1
+      '@greenarmor/ges-scoring-engine': 1.1.1
+
+  '@greenarmor/ges-rules-engine@1.1.1':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-rules-engine@1.1.2':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-scanner-integration@1.1.1':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-scanner-integration@1.1.2':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-scoring-engine@1.1.1':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-scoring-engine@1.1.2':
+    dependencies:
+      '@greenarmor/ges-core': 1.1.1
+
+  '@greenarmor/ges-web-dashboard@1.1.2':
+    dependencies:
+      '@greenarmor/ges-audit-engine': 1.1.1
+      '@greenarmor/ges-core': 1.1.1
+      '@greenarmor/ges-policy-engine': 1.1.1
+      '@greenarmor/ges-scoring-engine': 1.1.1
 
   '@humanfs/core@0.19.2':
     dependencies:

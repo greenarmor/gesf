@@ -43,6 +43,7 @@
   },
   "homepage": "https://github.com/greenarmor/gesf",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE"
   ]
 }

@@ -17,7 +17,7 @@ policyCmd
     const packs = getAllPacks();
     for (const pack of packs) {
       console.log(`  ${pack.id.padEnd(15)} ${pack.name}`);
-      console.log(`  ${"".padEnd(15)} ${pack.controls.length} controls | ${pack.project_types.join(", ")}`);
+      console.log(`  ${" ".repeat(15)} ${pack.controls.length} controls | ${pack.project_types.join(", ")}`);
       console.log("");
     }
 

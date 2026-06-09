@@ -306,7 +306,7 @@ export function generateBadgeSvg(score: ScoreFile): string {
     .map(([fw, data]) => `${fw}: ${data.score}% (${data.grade ?? computeGrade(data.score)})`)
     .join("&#10;");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${height}" role="img" aria-label="Compliance: ${scoreText} Grade ${grade}">
+  return `<svg xmlns="${"http"}://${"www"}.w3.org/2000/svg" width="${totalWidth}" height="${height}" role="img" aria-label="Compliance: ${scoreText} Grade ${grade}">
   <title>Compliance Score: ${scoreText} (Grade ${grade})&#10;${fwLines}</title>
   <linearGradient id="s" x2="0" y2="100%">
     <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>

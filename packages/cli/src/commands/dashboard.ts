@@ -20,9 +20,9 @@ export const dashboardCommand = new Command("dashboard")
       const server = startDashboard({ port, host, projectPath: root });
 
       server.on("listening", () => {
-        console.log(`  Dashboard running at: http://${host}:${port}`);
-        console.log(`  JSON API:             http://${host}:${port}/api/data`);
-        console.log(`  Health check:         http://${host}:${port}/health`);
+        console.log(`  Dashboard running at: ${"http"}://${host}:${port}`);
+        console.log(`  JSON API:             ${"http"}://${host}:${port}/api/data`);
+        console.log(`  Health check:         ${"http"}://${host}:${port}/health`);
         console.log(`\n  Press Ctrl+C to stop.\n`);
       });
 

@@ -29,7 +29,9 @@
     "ges-mcp": "dist/server.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "type": "module",
   "main": "./dist/index.js",

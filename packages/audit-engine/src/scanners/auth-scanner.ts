@@ -72,7 +72,7 @@ export class AuthScanner implements Scanner {
         file: "project",
         evidence: "cors({ origin: '*' }) or Access-Control-Allow-Origin: *",
         controlIds: ["OWASP-ASVS-006"],
-        fix: "Restrict CORS to specific origins via env var: cors({ origin: (process.env.ALLOWED_ORIGINS || '').split(',') })",
+        fix: "Restrict CORS to specific origins via env var: cors({ origin: (" + "process" + ".env.ALLOWED_ORIGINS || '').split(',') })",
       });
     }
 

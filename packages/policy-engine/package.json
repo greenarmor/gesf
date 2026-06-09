@@ -26,6 +26,9 @@
     "vitest": "^4.1.8"
   },
   "files": [
-    "dist"
-  ]
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "license": "MIT"
 }
