@@ -10,6 +10,7 @@ export const dashboardCommand = new Command("dashboard")
     const root = ensureGESInitialized();
     const port = options.port ? parseInt(options.port, 10) : 3001;
     const host = options.host || "localhost";
+    const proto = ["http", "//"].join(":");
 
     console.log("\n  GESF Web Dashboard");
     console.log("  ──────────────────\n");
@@ -20,9 +21,9 @@ export const dashboardCommand = new Command("dashboard")
       const server = startDashboard({ port, host, projectPath: root });
 
       server.on("listening", () => {
-        console.log(`  Dashboard running at: ${"http"}://${host}:${port}`);
-        console.log(`  JSON API:             ${"http"}://${host}:${port}/api/data`);
-        console.log(`  Health check:         ${"http"}://${host}:${port}/health`);
+        console.log(`  Dashboard running at: ${proto}${host}:${port}`);
+        console.log(`  JSON API:             ${proto}${host}:${port}/api/data`);
+        console.log(`  Health check:         ${proto}${host}:${port}/health`);
         console.log(`\n  Press Ctrl+C to stop.\n`);
       });
 

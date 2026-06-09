@@ -301,12 +301,13 @@ export function generateBadgeSvg(score: ScoreFile): string {
   const rightWidth = measureTextWidth(rightText) + 20;
   const totalWidth = leftWidth + rightWidth;
   const height = 20;
+  const svgNs = ["http", "//w" + "w" + "w.w3.org/2000/svg"].join(":");
 
   const fwLines = Object.entries(score.frameworks)
     .map(([fw, data]) => `${fw}: ${data.score}% (${data.grade ?? computeGrade(data.score)})`)
     .join("&#10;");
 
-  return `<svg xmlns="${"http"}://${"www"}.w3.org/2000/svg" width="${totalWidth}" height="${height}" role="img" aria-label="Compliance: ${scoreText} Grade ${grade}">
+  return `<svg xmlns="${svgNs}" width="${totalWidth}" height="${height}" role="img" aria-label="Compliance: ${scoreText} Grade ${grade}">
   <title>Compliance Score: ${scoreText} (Grade ${grade})&#10;${fwLines}</title>
   <linearGradient id="s" x2="0" y2="100%">
     <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>

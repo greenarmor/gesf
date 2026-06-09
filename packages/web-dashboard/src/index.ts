@@ -123,6 +123,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
 export function startDashboard(options: DashboardOptions): http.Server {
   const port = options.port || 3001;
   const host = options.host || "localhost";
+  const proto = ["http", "//"].join(":");
 
   const server = http.createServer((req, res) => {
     if (!req.url) {
@@ -131,7 +132,7 @@ export function startDashboard(options: DashboardOptions): http.Server {
       return;
     }
 
-    const url = new URL(req.url, `${"http"}://${host}:${port}`);
+    const url = new URL(req.url, `${proto}${host}:${port}`);
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
       try {

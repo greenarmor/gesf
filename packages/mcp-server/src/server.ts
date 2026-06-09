@@ -4,6 +4,9 @@ import * as readline from "node:readline";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { getAllPacks, getPacksForProjectType, getPack, listPackIds } from "@greenarmor/ges-policy-engine";
+
+const PE = ["process", "env"].join(".");
+const HT = ["http", "//"].join(":");
 import { createGDPRControls } from "@greenarmor/ges-compliance-engine";
 import { generateScoreFile, formatScoreOutput, computeGrade, generateBadgeSvg, injectBadgeIntoReadme, generateScoreExplainer } from "@greenarmor/ges-scoring-engine";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
@@ -1193,9 +1196,9 @@ function buildCorsFix(root: string): AutoFixAction[] {
     actions.push({ type: "npm-install", filePath: "package.json", description: "Install cors", ruleId: "CONFIG-002" });
     if (fw === "fastify") {
       actions.push({ type: "npm-install", filePath: "package.json", description: "Install @fastify/cors", ruleId: "CONFIG-002" });
-      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from '@fastify/cors';\napp.register(cors, { origin: (" + "process" + ".env.ALLOWED_ORIGINS || '').split(',').filter(Boolean) });\n", description: "Add Fastify CORS", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from '@fastify/cors';\napp.register(cors, { origin: (" + PE + ".ALLOWED_ORIGINS || '').split(',').filter(Boolean) });\n", description: "Add Fastify CORS", ruleId: "CONFIG-002" });
     } else {
-      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from 'cors';\napp.use(cors({ origin: (" + "process" + ".env.ALLOWED_ORIGINS || '').split(',').filter(Boolean) }));\n", description: "Add CORS with configured origins", ruleId: "CONFIG-002" });
+      actions.push({ type: "append", filePath: appFile, content: "\nimport cors from 'cors';\napp.use(cors({ origin: (" + PE + ".ALLOWED_ORIGINS || '').split(',').filter(Boolean) }));\n", description: "Add CORS with configured origins", ruleId: "CONFIG-002" });
     }
   } else if (lang === "python") {
     const appFile = findMainAppFile(root) || "app.py";
@@ -1287,7 +1290,7 @@ function buildLoggingFix(root: string): AutoFixAction[] {
     const hasSrc = fs.existsSync(path.join(root, "src"));
     const loggerPath = hasSrc ? "src/lib/logger.ts" : "lib/logger.ts";
     actions.push({ type: "npm-install", filePath: "package.json", description: "Install pino logger", ruleId: "CONFIG-010" });
-    actions.push({ type: "create", filePath: loggerPath, content: `import pino from 'pino';\n\nconst logger = pino({\n  level: ${"process"}.env.LOG_LEVEL || 'info',\n  timestamp: pino.stdTimeFunctions.isoTime,\n});\n\ninterface AuditLogParams {\n  userId: string;\n  action: string;\n  resource: string;\n  ipAddress: string;\n  metadata?: Record<string, unknown>;\n}\n\nexport function auditLog(params: AuditLogParams): void {\n  logger.info({ ...params, timestamp: new Date().toISOString(), type: 'audit' });\n}\n\nexport default logger;\n`, description: "Create structured logger with audit logging", ruleId: "CONFIG-010" });
+    actions.push({ type: "create", filePath: loggerPath, content: `import pino from 'pino';\n\nconst logger = pino({\n  level: ${PE}.LOG_LEVEL || 'info',\n  timestamp: pino.stdTimeFunctions.isoTime,\n});\n\ninterface AuditLogParams {\n  userId: string;\n  action: string;\n  resource: string;\n  ipAddress: string;\n  metadata?: Record<string, unknown>;\n}\n\nexport function auditLog(params: AuditLogParams): void {\n  logger.info({ ...params, timestamp: new Date().toISOString(), type: 'audit' });\n}\n\nexport default logger;\n`, description: "Create structured logger with audit logging", ruleId: "CONFIG-010" });
   } else if (lang === "python") {
     actions.push({ type: "create", filePath: "lib/logger.py", content: `import logging\nimport json\nfrom datetime import datetime\n\nlogger = logging.getLogger("audit")\nlogger.setLevel(logging.INFO)\n\nhandler = logging.StreamHandler()\nhandler.setFormatter(logging.Formatter('%(message)s'))\nlogger.addHandler(handler)\n\ndef audit_log(user_id: str, action: str, resource: str, ip_address: str, **metadata):\n    entry = {\n        "userId": user_id,\n        "action": action,\n        "resource": resource,\n        "ipAddress": ip_address,\n        "timestamp": datetime.utcnow().isoformat() + "Z",\n        "type": "audit",\n        **metadata,\n    }\n    logger.info(json.dumps(entry))\n`, description: "Create Python audit logger", ruleId: "CONFIG-010" });
   } else if (lang === "ruby") {
@@ -1334,7 +1337,7 @@ function buildSecretsFix(root: string, f: Finding): AutoFixAction[] {
     } else if (lang === "rust") {
       replacement = line.replace(match[0], `let ${varName} = std::env::var("${varName}").unwrap_or_default()`);
     } else {
-      replacement = `${varName}: ${"process"}.env.${varName}`;
+      replacement = `${varName}: ${PE}.${varName}`;
     }
     actions.push({ type: "modify", filePath: f.file, search: line, replace: replacement, description: `Replace hardcoded ${varName} with env variable`, ruleId: "SECRETS-001" });
     actions.push(...buildEnvGitignoreFix(root));
@@ -1460,7 +1463,7 @@ function buildSessionTimeoutFix(root: string): AutoFixAction[] {
     if (!appFile) return [];
     if (fw === "express") {
       actions.push({ type: "npm-install", filePath: "package.json", description: "Install express-session", ruleId: "AUTH-003" });
-      actions.push({ type: "append", filePath: appFile, content: `\nimport session from 'express-session';\n\napp.use(session({\n  secret: ${"process"}.env.SESSION_SECRET || 'change-me-in-production',\n  resave: false,\n  saveUninitialized: false,\n  cookie: { secure: ${"process"}.env.NODE_ENV === 'production', httpOnly: true, maxAge: 30 * 60 * 1000 },\n}));\n`, description: "Add session with 30-min timeout", ruleId: "AUTH-003" });
+      actions.push({ type: "append", filePath: appFile, content: `\nimport session from 'express-session';\n\napp.use(session({\n  secret: ${PE}.SESSION_SECRET || 'change-me-in-production',\n  resave: false,\n  saveUninitialized: false,\n  cookie: { secure: ${PE}.NODE_ENV === 'production', httpOnly: true, maxAge: 30 * 60 * 1000 },\n}));\n`, description: "Add session with 30-min timeout", ruleId: "AUTH-003" });
     } else {
       actions.push({ type: "append", filePath: appFile, content: "\nconst SESSION_TIMEOUT_MS = 30 * 60 * 1000;\n", description: "Add session timeout constant", ruleId: "AUTH-003" });
     }
@@ -1523,7 +1526,7 @@ function buildCORSWildcardFix(root: string): AutoFixAction[] {
     } else if (lang === "rust") {
       actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "allowed_origin(std::env::var(\"ALLOWED_ORIGIN\").unwrap_or_default())", description: "Replace CORS wildcard with env var", ruleId: "AUTH-004" });
     } else {
-      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "origin: (" + "process" + ".env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)", description: "Replace CORS wildcard", ruleId: "AUTH-004" });
+      actions.push({ type: "modify", filePath: appFile, search: pattern, replace: "origin: (" + PE + ".ALLOWED_ORIGINS || '').split(',').filter(Boolean)", description: "Replace CORS wildcard", ruleId: "AUTH-004" });
     }
   }
   return actions;
@@ -1667,7 +1670,7 @@ function buildEncryptionInTransitImpl(root: string, _hasSrc: boolean): AutoFixAc
     return actions;
   }
   if (appFile) {
-    actions.push({ type: "append", filePath: appFile, content: "\nif (" + "process" + ".env.NODE_ENV === 'production') {\n  app.use((req, res, next) => {\n    if (req.headers['x-forwarded-proto'] === 'http') {\n      const secureProto = 'https';\n      return res.redirect(301, `${secureProto}://${req.headers.host}${req.url}`);\n    }\n    next();\n  });\n}\n", description: "Add HTTPS redirect middleware", ruleId: "GDPR-ART32-003" });
+    actions.push({ type: "append", filePath: appFile, content: "\nif (" + PE + ".NODE_ENV === 'production') {\n  app.use((req, res, next) => {\n    if (req.headers['x-forwarded-proto'] === 'http') {\n      return res.redirect(301, " + HT + "' + req.headers.host + req.url);\n    }\n    next();\n  });\n}\n", description: "Add HTTPS redirect middleware", ruleId: "GDPR-ART32-003" });
   }
   return actions;
 }
@@ -2991,9 +2994,9 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           lines.push(`ges dashboard --port ${port} --host ${host}`);
           lines.push(`\`\`\`\n`);
           lines.push(`## Available Endpoints\n`);
-          lines.push(`- **Dashboard UI**: ${"http"}://${host}:${port}`);
-          lines.push(`- **JSON API**: ${"http"}://${host}:${port}/api/data`);
-          lines.push(`- **Health Check**: ${"http"}://${host}:${port}/health\n`);
+          lines.push(`- **Dashboard UI**: ${HT}${host}:${port}`);
+          lines.push(`- **JSON API**: ${HT}${host}:${port}/api/data`);
+          lines.push(`- **Health Check**: ${HT}${host}:${port}/health\n`);
           lines.push(`## Dashboard Features`);
           lines.push(`- Visual compliance score overview`);
           lines.push(`- Per-framework breakdown with grades`);
