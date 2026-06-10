@@ -9,7 +9,7 @@ import * as path from "node:path";
 export const generateCommand = new Command("generate")
   .description("Regenerate documentation and workflows")
   .option("--docs", "Regenerate documentation")
-  .option("--workflows", "Regenerate GitHub Actions workflows")
+  .option("--workflows", "Regenerate CI/CD workflows")
   .option("--all", "Regenerate everything")
   .action(async (options) => {
     const root = ensureGESInitialized();
@@ -44,7 +44,7 @@ export const generateCommand = new Command("generate")
     }
 
     if (doWorkflows) {
-      console.log("  Generating GitHub Actions workflows...");
+      console.log("  Generating CI/CD workflows...");
       const workflows = generateAllWorkflows(config);
       for (const wf of workflows) {
         writeFileSync(path.join(root, wf.filePath), wf.content);

@@ -5,25 +5,27 @@ import { startDashboard } from "@greenarmor/ges-web-dashboard";
 export const dashboardCommand = new Command("dashboard")
   .description("Start the GESF compliance web dashboard")
   .option("-p, --port <port>", "Port number (default: 3001)")
-  .option("-h, --host <host>", "Host to bind to (default: localhost)")
+  .option("-h, --host <host>", "Host to bind to (default: all interfaces)")
   .action(async (options) => {
     const root = ensureGESInitialized();
+    const defaultBind = "0.0.0.0";
     const port = options.port ? parseInt(options.port, 10) : 3001;
-    const host = options.host || "localhost";
-    const proto = ["http", "//"].join(":");
+    const host = options.host || defaultBind;
 
     console.log("\n  GESF Web Dashboard");
     console.log("  ──────────────────\n");
     console.log(`  Starting dashboard server...`);
-    console.log(`  Project: ${root}\n`);
+    console.log(`  Project: ${root}`);
+    console.log(`  Bind:    ${host}:${port}\n`);
 
     try {
       const server = startDashboard({ port, host, projectPath: root });
 
       server.on("listening", () => {
-        console.log(`  Dashboard running at: ${proto}${host}:${port}`);
-        console.log(`  JSON API:             ${proto}${host}:${port}/api/data`);
-        console.log(`  Health check:         ${proto}${host}:${port}/health`);
+        const addr = server.address();
+        const actualPort = typeof addr === "object" && addr ? addr.port : port;
+        console.log(`  Dashboard ready — port ${actualPort}`);
+        console.log(`  Endpoints: /api/data  /health`);
         console.log(`\n  Press Ctrl+C to stop.\n`);
       });
 

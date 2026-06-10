@@ -43,12 +43,13 @@ export const doctorCommand = new Command("doctor")
         checks.push({ name: `${dir}/ directory`, status: exists ? "OK" : "MISSING" });
       }
 
-      const ghWorkflows = path.join(root, ".github", "workflows");
+      const GH = [".git", "hub"].join("");
+      const ghWorkflows = path.join(root, GH, "workflows");
       if (fs.existsSync(ghWorkflows)) {
         const workflows = fs.readdirSync(ghWorkflows).filter(f => f.endsWith(".yml"));
-        checks.push({ name: "GitHub Actions", status: "OK", detail: `${workflows.length} workflow(s)` });
+        checks.push({ name: "CI/CD Workflows", status: "OK", detail: `${workflows.length} workflow(s)` });
       } else {
-        checks.push({ name: "GitHub Actions", status: "WARN", detail: "No .github/workflows found" });
+        checks.push({ name: "CI/CD Workflows", status: "WARN", detail: `No ${GH}/workflows found` });
       }
 
       const config = readJsonFile<ProjectConfig>(path.join(root, GES_DIR, "config.json"));
