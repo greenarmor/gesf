@@ -2,9 +2,9 @@ import * as http from "node:http";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
-import { getAllPacks, getPacksForProjectType } from "@greenarmor/ges-policy-engine";
+import { getAllPacks, getPacksForProjectType, getPack } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile } from "@greenarmor/ges-scoring-engine";
-import type { ProjectConfig, ScoreFile, Control } from "@greenarmor/ges-core";
+import type { ProjectConfig, ScoreFile, Control, PolicyPack } from "@greenarmor/ges-core";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { renderDashboard } from "./template.js";
 
@@ -12,6 +12,48 @@ export interface DashboardOptions {
   port?: number;
   host?: string;
   projectPath: string;
+}
+
+export interface PackSummary {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  controlCount: number;
+  passedCount: number;
+  failedCount: number;
+  warningCount: number;
+  notImplementedCount: number;
+  notApplicableCount: number;
+  score: number;
+  grade: string;
+  findingsCount: number;
+  installed: boolean;
+}
+
+export interface ControlDetail {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  framework: string;
+  article?: string;
+  status: string;
+  severity: string;
+  implementation_guidance: string;
+  checks: { id: string; description: string; status: string; evidence?: string }[];
+  relatedFindings: Finding[];
+  packId: string;
+  packName: string;
+}
+
+export interface PackDetailReport {
+  pack: PackSummary;
+  controls: ControlDetail[];
+  findingsByControl: Record<string, Finding[]>;
+  severityBreakdown: { critical: number; high: number; medium: number; low: number };
+  statusBreakdown: { pass: number; fail: number; warning: number; "not-implemented": number; "not-applicable": number };
+  topFixes: { controlId: string; controlName: string; severity: string; findings: Finding[]; guidance: string }[];
 }
 
 export interface DashboardData {
@@ -22,66 +64,122 @@ export interface DashboardData {
   score: ScoreFile | null;
   controls: Control[];
   findings: Finding[];
-  packs: { id: string; name: string; controlCount: number }[];
+  packs: PackSummary[];
   lastAudit: string;
 }
 
-export function collectDashboardData(projectPath: string): DashboardData {
+function loadConfig(projectPath: string): ProjectConfig | null {
   const configPath = path.join(projectPath, ".ges", "config.json");
-  let config: ProjectConfig | null = null;
-
   try {
     const raw = fs.readFileSync(configPath, "utf-8");
-    config = JSON.parse(raw);
+    return JSON.parse(raw);
   } catch {
-    config = null;
+    return null;
   }
+}
 
-  let score: ScoreFile | null = null;
+function loadScore(projectPath: string): ScoreFile | null {
   try {
     const scorePath = path.join(projectPath, ".ges", "score.json");
     const raw = fs.readFileSync(scorePath, "utf-8");
-    score = JSON.parse(raw);
+    return JSON.parse(raw);
   } catch {
-    score = null;
+    return null;
   }
+}
 
-  let controls: Control[] = [];
-  if (config) {
-    try {
-      const packs = getPacksForProjectType(config.project_type);
-      const fwLower = new Set(config.frameworks.map(f => f.toLowerCase()));
-      const DOMAIN_PACKS = new Set(["ai", "blockchain", "government"]);
-      const filtered = packs.filter(pack =>
-        DOMAIN_PACKS.has(pack.id.toLowerCase()) || fwLower.has(pack.id.toLowerCase())
-      );
-      controls = filtered.flatMap(p => p.controls);
+function loadControlsForConfig(projectPath: string, config: ProjectConfig): Control[] {
+  try {
+    const packs = getPacksForProjectType(config.project_type);
+    const fwLower = new Set(config.frameworks.map(f => f.toLowerCase()));
+    const DOMAIN_PACKS = new Set(["ai", "blockchain", "government"]);
+    const filtered = packs.filter(pack =>
+      DOMAIN_PACKS.has(pack.id.toLowerCase()) || fwLower.has(pack.id.toLowerCase())
+    );
+    const controls = filtered.flatMap(p => p.controls);
 
-      const overridesPath = path.join(projectPath, ".ges", "control-overrides.json");
-      if (fs.existsSync(overridesPath)) {
-        const overrides = JSON.parse(fs.readFileSync(overridesPath, "utf-8"));
-        for (const override of overrides) {
-          const control = controls.find(c => c.id === override.control_id);
-          if (control) {
-            control.status = override.status;
-            for (const check of control.checks) {
-              check.status = override.status;
-            }
+    const overridesPath = path.join(projectPath, ".ges", "control-overrides.json");
+    if (fs.existsSync(overridesPath)) {
+      const overrides = JSON.parse(fs.readFileSync(overridesPath, "utf-8"));
+      for (const override of overrides) {
+        const control = controls.find((c: Control) => c.id === override.control_id);
+        if (control) {
+          control.status = override.status;
+          for (const check of control.checks) {
+            check.status = override.status;
           }
         }
       }
-    } catch {
-      controls = [];
     }
+    return controls;
+  } catch {
+    return [];
   }
+}
 
-  let findings: Finding[] = [];
+function loadFindings(projectPath: string): Finding[] {
   try {
     const result = runAudit(projectPath);
-    findings = deduplicateFindings(result.findings);
+    return deduplicateFindings(result.findings);
   } catch {
-    findings = [];
+    return [];
   }
+}
+
+function buildPackSummary(pack: PolicyPack, controls: Control[], findings: Finding[], installedPacks: Set<string>): PackSummary {
+  const packControlIds = new Set(pack.controls.map(c => c.id));
+  const packControls = controls.filter(c => packControlIds.has(c.id));
+  const packFindings = findings.filter(f => f.controlIds.some(cid => packControlIds.has(cid)));
+
+  const passedCount = packControls.filter(c => c.status === "pass").length;
+  const total = packControls.length || 1;
+  const score = Math.round((passedCount / total) * 100);
+  const grade = score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 60 ? "D" : "F";
+
+  return {
+    id: pack.id,
+    name: pack.name,
+    description: pack.description,
+    version: pack.version,
+    controlCount: pack.controls.length,
+    passedCount,
+    failedCount: packControls.filter(c => c.status === "fail").length,
+    warningCount: packControls.filter(c => c.status === "warning").length,
+    notImplementedCount: packControls.filter(c => c.status === "not-implemented").length,
+    notApplicableCount: packControls.filter(c => c.status === "not-applicable").length,
+    score,
+    grade,
+    findingsCount: packFindings.length,
+    installed: installedPacks.has(pack.id),
+  };
+}
+
+function getInstalledPackIds(projectPath: string): Set<string> {
+  const controlsDir = path.join(projectPath, "controls");
+  const ids = new Set<string>();
+  try {
+    const entries = fs.readdirSync(controlsDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const ctrlFile = path.join(controlsDir, entry.name, "controls.json");
+        if (fs.existsSync(ctrlFile)) {
+          ids.add(entry.name);
+        }
+      }
+    }
+  } catch {
+    // controls dir may not exist
+  }
+
+  return ids;
+}
+
+export function collectDashboardData(projectPath: string): DashboardData {
+  const config = loadConfig(projectPath);
+  let score = loadScore(projectPath);
+
+  const controls = config ? loadControlsForConfig(projectPath, config) : [];
+  const findings = loadFindings(projectPath);
 
   if (!score && config) {
     try {
@@ -92,11 +190,8 @@ export function collectDashboardData(projectPath: string): DashboardData {
   }
 
   const allPacks = getAllPacks();
-  const packsList = allPacks.map(p => ({
-    id: p.id,
-    name: p.name,
-    controlCount: p.controls.length,
-  }));
+  const installedPacks = getInstalledPackIds(projectPath);
+  const packs = allPacks.map(p => buildPackSummary(p, controls, findings, installedPacks));
 
   const metadataPath = path.join(projectPath, ".ges", "metadata.json");
   let lastAudit = "";
@@ -115,13 +210,146 @@ export function collectDashboardData(projectPath: string): DashboardData {
     score,
     controls,
     findings,
-    packs: packsList,
+    packs,
     lastAudit,
   };
 }
 
+export function collectPackDetail(projectPath: string, packId: string): PackDetailReport | null {
+  const pack = getPack(packId);
+  if (!pack) return null;
+
+  const config = loadConfig(projectPath);
+  const controls = config ? loadControlsForConfig(projectPath, config) : [];
+  const findings = loadFindings(projectPath);
+
+  const packControlIds = new Set(pack.controls.map(c => c.id));
+  const packControls = pack.controls;
+  const installedPacks = getInstalledPackIds(projectPath);
+  const packSummary = buildPackSummary(pack, controls, findings, installedPacks);
+
+  const findingsByControlId: Record<string, Finding[]> = {};
+  for (const finding of findings) {
+    for (const cid of finding.controlIds) {
+      if (packControlIds.has(cid)) {
+        if (!findingsByControlId[cid]) findingsByControlId[cid] = [];
+        findingsByControlId[cid].push(finding);
+      }
+    }
+  }
+
+  const controlDetails: ControlDetail[] = packControls.map(ctrl => {
+    const activeCtrl = controls.find(c => c.id === ctrl.id) || ctrl;
+    return {
+      id: activeCtrl.id,
+      name: activeCtrl.name,
+      description: activeCtrl.description,
+      category: activeCtrl.category,
+      framework: activeCtrl.framework,
+      article: activeCtrl.article,
+      status: activeCtrl.status,
+      severity: activeCtrl.severity,
+      implementation_guidance: activeCtrl.implementation_guidance,
+      checks: activeCtrl.checks.map(ch => ({
+        id: ch.id,
+        description: ch.description,
+        status: ch.status,
+        evidence: ch.evidence,
+      })),
+      relatedFindings: findingsByControlId[activeCtrl.id] || [],
+      packId: pack.id,
+      packName: pack.name,
+    };
+  });
+
+  const packFindings = findings.filter(f => f.controlIds.some(cid => packControlIds.has(cid)));
+  const severityBreakdown = {
+    critical: packFindings.filter(f => f.severity === "critical").length,
+    high: packFindings.filter(f => f.severity === "high").length,
+    medium: packFindings.filter(f => f.severity === "medium").length,
+    low: packFindings.filter(f => f.severity === "low").length,
+  };
+
+  const statusBreakdown = {
+    pass: controlDetails.filter(c => c.status === "pass").length,
+    fail: controlDetails.filter(c => c.status === "fail").length,
+    warning: controlDetails.filter(c => c.status === "warning").length,
+    "not-implemented": controlDetails.filter(c => c.status === "not-implemented").length,
+    "not-applicable": controlDetails.filter(c => c.status === "not-applicable").length,
+  };
+
+  const nonPassControls = controlDetails.filter(c => c.status !== "pass" && c.status !== "not-applicable");
+  const topFixes = nonPassControls
+    .sort((a, b) => {
+      const sevOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+      return (sevOrder[a.severity] ?? 4) - (sevOrder[b.severity] ?? 4);
+    })
+    .map(ctrl => ({
+      controlId: ctrl.id,
+      controlName: ctrl.name,
+      severity: ctrl.severity,
+      findings: ctrl.relatedFindings,
+      guidance: ctrl.implementation_guidance,
+    }));
+
+  return {
+    pack: packSummary,
+    controls: controlDetails,
+    findingsByControl: findingsByControlId,
+    severityBreakdown,
+    statusBreakdown,
+    topFixes,
+  };
+}
+
+export function collectControlDetail(projectPath: string, controlId: string): ControlDetail | null {
+  const config = loadConfig(projectPath);
+  if (!config) return null;
+
+  const controls = loadControlsForConfig(projectPath, config);
+  const findings = loadFindings(projectPath);
+  const control = controls.find(c => c.id === controlId);
+  if (!control) return null;
+
+  const relatedFindings = findings.filter(f => f.controlIds.includes(controlId));
+
+  const allPacks = getAllPacks();
+  const matchingPack = allPacks.find(p => p.controls.some(c => c.id === controlId));
+
+  return {
+    id: control.id,
+    name: control.name,
+    description: control.description,
+    category: control.category,
+    framework: control.framework,
+    article: control.article,
+    status: control.status,
+    severity: control.severity,
+    implementation_guidance: control.implementation_guidance,
+    checks: control.checks.map(ch => ({
+      id: ch.id,
+      description: ch.description,
+      status: ch.status,
+      evidence: ch.evidence,
+    })),
+    relatedFindings,
+    packId: matchingPack?.id || "",
+    packName: matchingPack?.name || "",
+  };
+}
+
+function jsonResponse(res: http.ServerResponse, data: unknown, status = 200): void {
+  res.writeHead(status, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(data));
+}
+
+function jsonError(res: http.ServerResponse, message: string, status = 500): void {
+  res.writeHead(status, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: message }));
+}
+
 export function startDashboard(options: DashboardOptions): http.Server {
-  const port = options.port || 3001;
+  const port = options.port ?? 3001;
   const host = options.host || "localhost";
   const proto = ["http", "//"].join(":");
 
@@ -133,8 +361,14 @@ export function startDashboard(options: DashboardOptions): http.Server {
     }
 
     const url = new URL(req.url, `${proto}${host}:${port}`);
+    const pathname = url.pathname;
 
-    if (url.pathname === "/" || url.pathname === "/index.html") {
+    if (req.method !== "GET") {
+      jsonError(res, "Method not allowed", 405);
+      return;
+    }
+
+    if (pathname === "/" || pathname === "/index.html") {
       try {
         const data = collectDashboardData(options.projectPath);
         const html = renderDashboard(data);
@@ -147,21 +381,88 @@ export function startDashboard(options: DashboardOptions): http.Server {
       return;
     }
 
-    if (url.pathname === "/api/data") {
+    if (pathname === "/api/data") {
       try {
         const data = collectDashboardData(options.projectPath);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(data));
+        jsonResponse(res, data);
       } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+        jsonError(res, err instanceof Error ? err.message : String(err));
       }
       return;
     }
 
-    if (url.pathname === "/health") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }));
+    if (pathname === "/api/packs") {
+      try {
+        const data = collectDashboardData(options.projectPath);
+        jsonResponse(res, data.packs);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    const packMatch = pathname.match(/^\/api\/packs\/([a-z0-9-]+)$/);
+    if (packMatch) {
+      try {
+        const detail = collectPackDetail(options.projectPath, packMatch[1]);
+        if (!detail) {
+          jsonError(res, `Pack not found: ${packMatch[1]}`, 404);
+          return;
+        }
+        jsonResponse(res, detail);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    const packControlsMatch = pathname.match(/^\/api\/packs\/([a-z0-9-]+)\/controls$/);
+    if (packControlsMatch) {
+      try {
+        const detail = collectPackDetail(options.projectPath, packControlsMatch[1]);
+        if (!detail) {
+          jsonError(res, `Pack not found: ${packControlsMatch[1]}`, 404);
+          return;
+        }
+        jsonResponse(res, detail.controls);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    const controlMatch = pathname.match(/^\/api\/controls\/([A-Z0-9-]+)$/);
+    if (controlMatch) {
+      try {
+        const detail = collectControlDetail(options.projectPath, controlMatch[1]);
+        if (!detail) {
+          jsonError(res, `Control not found: ${controlMatch[1]}`, 404);
+          return;
+        }
+        jsonResponse(res, detail);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    const findingsByControlMatch = pathname.match(/^\/api\/findings\/by-control\/([A-Z0-9-]+)$/);
+    if (findingsByControlMatch) {
+      try {
+        const detail = collectControlDetail(options.projectPath, findingsByControlMatch[1]);
+        if (!detail) {
+          jsonError(res, `Control not found: ${findingsByControlMatch[1]}`, 404);
+          return;
+        }
+        jsonResponse(res, detail.relatedFindings);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (pathname === "/health") {
+      jsonResponse(res, { status: "ok", timestamp: new Date().toISOString() });
       return;
     }
 
