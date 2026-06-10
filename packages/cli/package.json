@@ -1,40 +1,24 @@
 {
-  "name": "@greenarmor/ges",
-  "version": "1.1.7",
-  "description": "Green Engineering Standard Framework - Compliance-as-Code CLI",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "bin": {
     "ges": "./dist/cli.js"
   },
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "prepublishOnly": "pnpm -r run build",
-    "test": "vitest run"
-  },
   "dependencies": {
-    "@greenarmor/ges-audit-engine": "1.1.5",
-    "@greenarmor/ges-cicd-generator": "1.1.5",
-    "@greenarmor/ges-compliance-engine": "1.1.5",
-    "@greenarmor/ges-core": "1.1.5",
-    "@greenarmor/ges-doc-generator": "1.1.5",
-    "@greenarmor/ges-policy-engine": "1.1.5",
-    "@greenarmor/ges-report-generator": "1.1.5",
-    "@greenarmor/ges-rules-engine": "1.1.5",
-    "@greenarmor/ges-scanner-integration": "1.1.5",
-    "@greenarmor/ges-scoring-engine": "1.1.5",
-    "@greenarmor/ges-mcp-server": "1.1.5",
-    "@greenarmor/ges-git-hooks": "1.1.5",
-    "@greenarmor/ges-web-dashboard": "1.1.5",
+    "@greenarmor/ges-audit-engine": "1.2.0",
+    "@greenarmor/ges-cicd-generator": "1.2.0",
+    "@greenarmor/ges-compliance-engine": "1.2.0",
+    "@greenarmor/ges-core": "1.2.0",
+    "@greenarmor/ges-doc-generator": "1.2.0",
+    "@greenarmor/ges-git-hooks": "1.2.0",
+    "@greenarmor/ges-mcp-server": "1.2.0",
+    "@greenarmor/ges-policy-engine": "1.2.0",
+    "@greenarmor/ges-report-generator": "1.2.0",
+    "@greenarmor/ges-rules-engine": "1.2.0",
+    "@greenarmor/ges-scanner-integration": "1.2.0",
+    "@greenarmor/ges-scoring-engine": "1.2.0",
+    "@greenarmor/ges-web-dashboard": "1.2.0",
     "commander": "^13.0.0"
   },
+  "description": "Green Engineering Standard Framework - Compliance-as-Code CLI",
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^6.0.0",
@@ -43,6 +27,12 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "homepage": "https://github.com/greenarmor/gesf",
   "keywords": [
     "compliance",
     "gdpr",
@@ -55,9 +45,19 @@
     "compliance-as-code"
   ],
   "license": "MIT",
+  "main": "./dist/index.js",
+  "name": "@greenarmor/ges",
   "repository": {
     "type": "git",
     "url": "https://github.com/greenarmor/gesf"
   },
-  "homepage": "https://github.com/greenarmor/gesf"
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepublishOnly": "pnpm -r run build",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.2.0"
 }

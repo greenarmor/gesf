@@ -1,7 +1,41 @@
 {
-  "name": "@greenarmor/ges-mcp-server",
-  "version": "1.1.7",
+  "bin": {
+    "ges-mcp": "dist/server.js"
+  },
+  "dependencies": {
+    "@greenarmor/ges-audit-engine": "1.2.0",
+    "@greenarmor/ges-cicd-generator": "1.2.0",
+    "@greenarmor/ges-compliance-engine": "1.2.0",
+    "@greenarmor/ges-core": "1.2.0",
+    "@greenarmor/ges-doc-generator": "1.2.0",
+    "@greenarmor/ges-policy-engine": "1.2.0",
+    "@greenarmor/ges-report-generator": "1.2.0",
+    "@greenarmor/ges-rules-engine": "1.2.0",
+    "@greenarmor/ges-scanner-integration": "1.2.0",
+    "@greenarmor/ges-scoring-engine": "1.2.0"
+  },
   "description": "GESF MCP Server - AI Compliance Assistant for GDPR, OWASP, NIST, CIS. Check compliance, generate policies, assess risks via MCP protocol.",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.0",
+    "vitest": "^4.1.8"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "homepage": "https://github.com/greenarmor/gesf",
   "keywords": [
     "ai",
     "audit",
@@ -19,32 +53,16 @@
     "privacy",
     "security"
   ],
-  "homepage": "https://github.com/greenarmor/gesf",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/greenarmor/gesf.git"
-  },
-  "bin": {
-    "ges-mcp": "dist/server.js"
-  },
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md"
-  ],
-  "type": "module",
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
+  "name": "@greenarmor/ges-mcp-server",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greenarmor/gesf.git"
   },
   "scripts": {
     "build": "tsc",
@@ -52,25 +70,7 @@
     "prepublishOnly": "tsc",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@greenarmor/ges-audit-engine": "1.1.5",
-    "@greenarmor/ges-compliance-engine": "1.1.5",
-    "@greenarmor/ges-core": "1.1.5",
-    "@greenarmor/ges-cicd-generator": "1.1.5",
-    "@greenarmor/ges-doc-generator": "1.1.5",
-    "@greenarmor/ges-policy-engine": "1.1.5",
-    "@greenarmor/ges-report-generator": "1.1.5",
-    "@greenarmor/ges-rules-engine": "1.1.5",
-    "@greenarmor/ges-scanner-integration": "1.1.5",
-    "@greenarmor/ges-scoring-engine": "1.1.5"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "esbuild": "^0.28.0",
-    "typescript": "^6.0.0",
-    "vitest": "^4.1.8"
-  },
-  "engines": {
-    "node": ">=20.0.0"
-  }
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.2.0"
 }

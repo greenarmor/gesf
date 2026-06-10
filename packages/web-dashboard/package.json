@@ -1,32 +1,27 @@
 {
-  "name": "@greenarmor/ges-web-dashboard",
-  "version": "1.1.7",
-  "type": "module",
-  "description": "GESF Web Dashboard - Visual compliance dashboard for teams",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
-  "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "test": "vitest run"
-  },
   "dependencies": {
-    "@greenarmor/ges-core": "1.1.5",
-    "@greenarmor/ges-audit-engine": "1.1.5",
-    "@greenarmor/ges-policy-engine": "1.1.5",
-    "@greenarmor/ges-scoring-engine": "1.1.5"
+    "@greenarmor/ges-audit-engine": "1.2.0",
+    "@greenarmor/ges-core": "1.2.0",
+    "@greenarmor/ges-policy-engine": "1.2.0",
+    "@greenarmor/ges-scoring-engine": "1.2.0"
   },
+  "description": "GESF Web Dashboard - Visual compliance dashboard for teams",
   "devDependencies": {
-    "typescript": "^6.0.0",
     "@types/node": "^22.0.0",
+    "typescript": "^6.0.0",
     "vitest": "^4.1.8"
   },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "homepage": "https://github.com/greenarmor/gesf",
   "keywords": [
     "gdpr",
     "compliance",
@@ -37,13 +32,18 @@
     "green-armor"
   ],
   "license": "MIT",
+  "main": "./dist/index.js",
+  "name": "@greenarmor/ges-web-dashboard",
   "repository": {
     "type": "git",
     "url": "https://github.com/greenarmor/gesf"
   },
-  "homepage": "https://github.com/greenarmor/gesf",
-  "files": [
-    "dist",
-    "LICENSE"
-  ]
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.2.0"
 }

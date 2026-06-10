@@ -1,28 +1,22 @@
 {
-  "name": "@greenarmor/eslint-plugin-ges",
-  "version": "1.1.7",
-  "type": "module",
+  "dependencies": {},
   "description": "GESF ESLint Plugin - Real-time security and compliance rules for GESF standards",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^6.0.0",
+    "vitest": "^4.1.8"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
-  "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "test": "vitest run"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "typescript": "^6.0.0",
-    "@types/node": "^22.0.0",
-    "vitest": "^4.1.8",
-    "eslint": "^9.0.0"
-  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
   "keywords": [
     "eslint",
     "eslint-plugin",
@@ -33,8 +27,14 @@
     "gesf"
   ],
   "license": "MIT",
-  "files": [
-    "dist",
-    "LICENSE"
-  ]
+  "main": "./dist/index.js",
+  "name": "@greenarmor/eslint-plugin-ges",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.2.0"
 }
