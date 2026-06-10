@@ -1,7 +1,8 @@
 import { Command } from "commander";
 import { findProjectRoot, readJsonFile } from "../utils/project.js";
 import type { ProjectConfig } from "@greenarmor/ges-core";
-import { GESF_VERSION, GES_DIR } from "@greenarmor/ges-core";
+import { CLI_VERSION } from "../utils/version.js";
+import { GES_DIR } from "@greenarmor/ges-core";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -59,7 +60,7 @@ export const doctorCommand = new Command("doctor")
       }
     }
 
-    checks.push({ name: "GESF Version", status: "OK", detail: GESF_VERSION });
+    checks.push({ name: "GESF Version", status: "OK", detail: CLI_VERSION });
 
     for (const check of checks) {
       const icon = check.status === "OK" ? "✓" : check.status === "WARN" ? "!" : "✗";

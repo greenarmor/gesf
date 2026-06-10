@@ -4,7 +4,6 @@ import {
   PROJECT_TYPES,
   FRAMEWORKS,
   DEFAULT_FRAMEWORKS,
-  GESF_VERSION,
   GES_DIR,
   COMPLIANCE_DIR,
   SECURITY_DIR,
@@ -14,6 +13,7 @@ import {
   DOCS_DIR,
   REPORTS_DIR,
 } from "@greenarmor/ges-core";
+import { CLI_VERSION } from "../utils/version.js";
 import type { ProjectConfig, ProjectType, FrameworkName } from "@greenarmor/ges-core";
 import { getPacksForProjectType } from "@greenarmor/ges-policy-engine";
 import {
@@ -37,7 +37,7 @@ export const initCommand = new Command("init")
   .option("-f, --frameworks <frameworks>", "Comma-separated frameworks")
   .option("--force", "Re-initialize even if GESF is already set up")
   .action(async (options) => {
-    console.log("\n  Green Engineering Standard Framework (GESF) v" + GESF_VERSION);
+    console.log("\n  Green Engineering Standard Framework (GESF) v" + CLI_VERSION);
     console.log("  ─────────────────────────────────────────────\n");
 
     const gesDir = path.join(process.cwd(), GES_DIR);
@@ -99,7 +99,7 @@ export const initCommand = new Command("init")
         privacy_controls: { required: true, level: "mandatory" },
       },
       created_at: now,
-      version: GESF_VERSION,
+      version: CLI_VERSION,
     };
 
     const dirs = [GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR];

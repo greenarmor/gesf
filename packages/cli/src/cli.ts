@@ -18,14 +18,15 @@ import { controlCommand } from "./commands/control.js";
 import { fixCommand } from "./commands/fix.js";
 import { hooksCommand } from "./commands/hooks.js";
 import { dashboardCommand } from "./commands/dashboard.js";
-import { GESF_VERSION } from "@greenarmor/ges-core";
+import { CLI_VERSION } from "./utils/version.js";
+import { createRequire } from "node:module";
 
 const program = new Command();
 
 program
   .name("ges")
   .description("Green Engineering Standard Framework - Compliance-as-Code CLI")
-  .version(GESF_VERSION);
+  .version(CLI_VERSION);
 
 program.addCommand(initCommand);
 program.addCommand(auditCommand);
