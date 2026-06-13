@@ -181,7 +181,7 @@ ges mcp setup     → Connect to AI assistant
 
     # Step 2 — Developer creates feature (with accidental secret)
     git checkout -b feature/new-api
-    echo 'const apiKey = "sk-real-key-here";' > src/api.js
+apiKey: process.env.apiKey
 
     # Step 3 — CI catches it (simulate locally)
     ges audit --ci

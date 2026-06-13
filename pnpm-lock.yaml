@@ -222,6 +222,9 @@ importers:
       '@greenarmor/ges-scoring-engine':
         specifier: 1.2.0
         version: link:../scoring-engine
+      '@greenarmor/ges-web-dashboard':
+        specifier: 1.2.0
+        version: link:../web-dashboard
     devDependencies:
       '@types/node':
         specifier: ^22.0.0

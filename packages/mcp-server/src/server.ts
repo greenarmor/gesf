@@ -11,12 +11,23 @@ import { createGDPRControls } from "@greenarmor/ges-compliance-engine";
 import { generateScoreFile, formatScoreOutput, computeGrade, generateBadgeSvg, injectBadgeIntoReadme, generateScoreExplainer } from "@greenarmor/ges-scoring-engine";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding } from "@greenarmor/ges-audit-engine";
-import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, ControlStatus, ProjectConfig } from "@greenarmor/ges-core";
+import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, ControlStatus, ProjectConfig, FixHistoryEntry } from "@greenarmor/ges-core";
 import { GESF_VERSION, GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, PROJECT_TYPES, FRAMEWORKS, DEFAULT_FRAMEWORKS, PROJECT_TYPE_PACKS } from "@greenarmor/ges-core";
+import { appendFixHistory, createFixHistoryEntry } from "@greenarmor/ges-core";
 import { ProjectConfigSchema } from "@greenarmor/ges-core";
 import { generateComplianceDocs, generateSecurityDocs, generateConfigJson, generateMetadataJson, generateFrameworkVersionJson, generateScoreJson } from "@greenarmor/ges-doc-generator";
 import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
 import { detectProject, runAllScansWithSbom, formatScanResults, formatSbomResults } from "@greenarmor/ges-scanner-integration";
+import { startDashboard } from "@greenarmor/ges-web-dashboard";
+
+let activeDashboardServer: import("node:http").Server | null = null;
+
+export function stopDashboardServer(): void {
+  if (activeDashboardServer) {
+    try { activeDashboardServer.close(); } catch { /* ignore */ }
+    activeDashboardServer = null;
+  }
+}
 
 export type AutoFixAction = {
   type: "create" | "modify" | "append" | "npm-install";
@@ -2270,6 +2281,20 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             break;
           }
 
+          let projectControls: Control[] = [];
+          try {
+            const configPath = path.join(projectPath, ".ges", "config.json");
+            if (fs.existsSync(configPath)) {
+              const cfg = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+              const fwLower = new Set(cfg.frameworks.map((f: string) => f.toLowerCase()));
+              const allPacks = getAllPacks();
+              const filtered = allPacks.filter((pack: { id: string }) =>
+                fwLower.has(pack.id.toLowerCase())
+              );
+              projectControls = filtered.flatMap((p: { controls: Control[] }) => p.controls);
+            }
+          } catch { /* ignore */ }
+
           const npmInstalls = getNpmInstallsFromActions(actions);
 
           const lines = [
@@ -2290,10 +2315,30 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
 
           let applied = 0;
           let failed = 0;
+          const historyEntries: FixHistoryEntry[] = [];
+
           for (const action of actions) {
+            const matchingFindings = findings.filter(f => f.ruleId === action.ruleId);
+            const primaryFinding = matchingFindings[0];
+            const matchedControls = primaryFinding
+              ? projectControls.filter((c: Control) => primaryFinding.controlIds.includes(c.id))
+              : [];
+
             if (dryRun) {
               lines.push(`- [${action.type}] ${action.filePath}: ${action.description}`);
               applied++;
+              historyEntries.push(createFixHistoryEntry({
+                source: "mcp",
+                dry_run: true,
+                finding: primaryFinding ?? {
+                  ruleId: action.ruleId, severity: "medium", category: "",
+                  title: action.description, file: "", evidence: "",
+                  description: action.description, controlIds: [], fix: action.description,
+                },
+                action,
+                controls: matchedControls,
+                applied: false,
+              }));
             } else {
               const result = applyAutoFixAction(projectPath, action);
               if (result.applied) {
@@ -2303,11 +2348,31 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
                 failed++;
                 lines.push(`- ✗ [${action.type}] ${action.filePath}: ${action.description} — ${result.error}`);
               }
+              historyEntries.push(createFixHistoryEntry({
+                source: "mcp",
+                dry_run: false,
+                finding: primaryFinding ?? {
+                  ruleId: action.ruleId, severity: "medium", category: "",
+                  title: action.description, file: "", evidence: "",
+                  description: action.description, controlIds: [], fix: action.description,
+                },
+                action,
+                controls: matchedControls,
+                applied: result.applied,
+                error: result.applied ? undefined : result.error,
+              }));
             }
+          }
+
+          if (historyEntries.length > 0 && !dryRun) {
+            appendFixHistory(projectPath, historyEntries);
           }
 
           lines.push(`\n## Summary\n`);
           lines.push(`- Actions applied: ${applied}${failed > 0 ? ` (${failed} failed)` : ""}`);
+          if (!dryRun && historyEntries.length > 0) {
+            lines.push(`- Fix history recorded in .ges/fix-history.json`);
+          }
 
           if (npmInstalls.length > 0) {
             lines.push(`\n## npm Packages to Install\n`);
@@ -2974,7 +3039,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
         }
         case "start_dashboard": {
           const projectPath = resolveProjectPath(args.project_path);
-          const port = args.port || 3001;
+          const port = typeof args.port === "string" ? parseInt(args.port, 10) : (args.port || 3001);
           const host = args.host || "localhost";
 
           if (!fs.existsSync(path.join(projectPath, ".ges"))) {
@@ -2982,29 +3047,41 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             break;
           }
 
-          const lines: string[] = [];
-          lines.push(`# GESF Web Dashboard\n`);
-          lines.push(`**Project**: ${projectPath}`);
-          lines.push(`**Host**: ${host}`);
-          lines.push(`**Port**: ${port}\n`);
-          lines.push(`## Starting the Dashboard\n`);
-          lines.push(`The dashboard must be started via the GESF CLI. Run:\n`);
-          lines.push(`\`\`\`bash`);
-          lines.push(`cd ${projectPath}`);
-          lines.push(`ges dashboard --port ${port} --host ${host}`);
-          lines.push(`\`\`\`\n`);
-          lines.push(`## Available Endpoints\n`);
-          lines.push(`- **Dashboard UI**: ${HT}${host}:${port}`);
-          lines.push(`- **JSON API**: ${HT}${host}:${port}/api/data`);
-          lines.push(`- **Health Check**: ${HT}${host}:${port}/health\n`);
-          lines.push(`## Dashboard Features`);
-          lines.push(`- Visual compliance score overview`);
-          lines.push(`- Per-framework breakdown with grades`);
-          lines.push(`- Security findings list`);
-          lines.push(`- Control status matrix`);
-          lines.push(`- Audit history timeline`);
+          if (activeDashboardServer) {
+            try {
+              activeDashboardServer.close();
+            } catch { /* ignore close errors */ }
+            activeDashboardServer = null;
+          }
 
-          resultText = lines.join("\n");
+          try {
+            const server = startDashboard({ port, host, projectPath });
+            activeDashboardServer = server;
+
+            const proto = ["http", "//"].join(":");
+
+            const lines: string[] = [];
+            lines.push(`# GESF Web Dashboard — Running\n`);
+            lines.push(`**Project**: ${projectPath}`);
+            lines.push(`**Host**: ${host}`);
+            lines.push(`**Port**: ${port}\n`);
+            lines.push(`Dashboard server started successfully.\n`);
+            lines.push(`## Endpoints\n`);
+            lines.push(`- **Dashboard UI**: ${proto}${host}:${port}`);
+            lines.push(`- **JSON API**: ${proto}${host}:${port}/api/data`);
+            lines.push(`- **Health Check**: ${proto}${host}:${port}/health\n`);
+            lines.push(`## Features`);
+            lines.push(`- Visual compliance score overview`);
+            lines.push(`- Per-framework breakdown with grades`);
+            lines.push(`- Security findings list`);
+            lines.push(`- Control status matrix`);
+            lines.push(`- Audit history timeline`);
+
+            resultText = lines.join("\n");
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            resultText = `Failed to start dashboard: ${msg}\n\nMake sure port ${port} is available. Try a different port.`;
+          }
           break;
         }
         default:

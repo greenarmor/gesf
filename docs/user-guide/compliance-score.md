@@ -20,26 +20,28 @@ ges score
 
 ## How Scoring Works
 
-- Each framework's score = percentage of controls that are **passing** or **not applicable**
-- Overall score = average of all framework scores, rounded to nearest integer
+- Each framework's score = **severity-weighted** percentage of controls that are **passing** or **not applicable** (see [Compliance Badge guide](compliance-badge.md#scoring-engine-details) for the full algorithm)
+- Overall score = **control-count-weighted average** of all framework scores (frameworks with more controls carry more weight; frameworks with zero controls are excluded from the average)
 - Controls default to **"not-implemented"** until positive evidence is detected or findings map them to **"fail"**
 
 ### Control Status Values
 
 | Status | Meaning | Effect on Score |
 |--------|---------|----------------|
-| `pass` | Control requirements are met | Counts toward score |
-| `fail` | Control requirements are violated | Counts against score |
-| `warning` | Partial compliance | Does not count as pass |
-| `not-implemented` | No evidence found | Does not count as pass |
-| `not-applicable` | Control does not apply to this project | Excluded from calculation |
+| `pass` | Control requirements are met | Full credit (1.0x weight) |
+| `fail` | Control requirements are violated | No credit (0x weight) |
+| `warning` | Partial compliance | Half credit (0.5x weight) |
+| `not-implemented` | No evidence found | No credit (0x weight) |
+| `not-applicable` | Control does not apply to this project | Full credit (1.0x weight) |
 
 ### Score Calculation
 
 ```
-Framework Score = (passed_controls + not_applicable_controls) / total_controls * 100
-Overall Score = average of all framework scores
+Framework Score = round(Σ(control_weight × status_credit) / Σ(control_weight) × 100)
+Overall Score = round(Σ(framework_score × total_controls) / Σ(total_controls))
 ```
+
+Frameworks with zero controls are excluded from the overall calculation. See the [Compliance Badge guide](compliance-badge.md#scoring-engine-details) for severity weights, status credits, critical failure caps, and audit deduction details.
 
 ## CI Mode
 

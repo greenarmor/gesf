@@ -35,18 +35,63 @@ Open `http://localhost:3001` in your browser to view the dashboard.
 
 ## What the Dashboard Shows
 
-The dashboard collects real-time data from your project:
+The dashboard has **five pages**, accessible via the navigation tabs at the top.
+
+### Overview Page
+
+The landing page with a high-level summary:
 
 | Section | Description |
 |---------|-------------|
-| **Project Info** | Project name, type, frameworks, GESF version |
-| **Compliance Score** | Overall score with letter grade, per-framework breakdown |
-| **Findings Summary** | Count by severity (critical, high, medium, low) |
-| **Controls Status** | Pass/fail/warning/not-implemented counts |
-| **Policy Packs** | All available packs with control counts |
-| **Last Audit** | Timestamp of the last audit run |
+| **Compliance Donut** | Visual percentage of passing controls (pass + not-applicable) |
+| **Overall Score** | Weighted score with letter grade (A–F) |
+| **Security Findings** | Count by severity (critical, high, medium, low) |
+| **Framework Scores** | Per-framework score bars with grades |
+| **Control Status Breakdown** | Pass / fail / warning / not-implemented / N/A counts |
+| **Security Findings Detail** | Top 20 findings with rule, file, issue, and linked controls |
+| **Missing Controls** | Controls not yet passing, sorted by severity |
+| **Active Frameworks** | Framework tags configured for the project |
 
-The dashboard runs a fresh audit every time you load the page, so the data is always current.
+### Policy Packs Page
+
+Lists all 10 available policy packs with drill-down detail:
+
+- Each pack card shows score %, grade, pass/fail/warn/N-A counts, findings count, and installed status
+- Packs configured in `.ges/config.json` frameworks are marked **Installed**
+- Click any pack to drill down into:
+  - Pack summary stats (controls, pass, findings, need-fix)
+  - **Prioritized Fixes** — expandable cards with findings, fix guidance, and control checks
+  - **Controls Table** — filterable by All / Failing / With Findings
+  - Click any control to open a detail modal with checks, related findings, and implementation guidance
+
+### Fixes Detail Page
+
+Two tabs for tracking remediation:
+
+| Tab | Description |
+|-----|-------------|
+| **Fix History** | Every `ges fix` (CLI) and `auto_fix` (MCP) action recorded in `.ges/fix-history.json`, with full compliance traceability: finding → fix action → controls → frameworks → severity resolved. Shows summary stats (total, applied, failed), severity breakdown, source (CLI/MCP), and expandable detail cards. |
+| **Pending Fixes** | Current findings grouped by control, with fix guidance, evidence, and traceability — prioritized by severity. |
+
+### Findings Page
+
+Security findings from the live audit, filterable by severity:
+
+- **All** / **Critical** / **High** / **Medium** / **Low** / **By Pack** tabs
+- Each finding shows severity badge, rule ID, file:line, issue title, and fix guidance
+- **By Pack** groups findings under their parent policy pack
+
+### Traceability Page
+
+End-to-end finding → fix → control → pack traceability:
+
+| Tab | Description |
+|-----|-------------|
+| **Matrix** | Full table: Finding, Severity, File, Linked Controls, Policy Pack, Fix Guidance |
+| **Prioritized Fixes** | Same detailed fix list as the Fixes page |
+| **Control Coverage** | Per-pack table: total controls, pass/fail/warn/not-implemented, coverage %, findings count |
+
+The dashboard runs a fresh audit every time you load the page, so the data is always current. Scores are recomputed live from current control statuses and findings.
 
 ## API Endpoints
 
@@ -60,22 +105,47 @@ Returns the full dashboard data as JSON:
 {
   "projectName": "My App",
   "projectType": "saas",
-  "frameworks": ["GDPR", "OWASP"],
-  "gesfVersion": "1.1.1",
+  "frameworks": ["GDPR", "OWASP", "CIS", "NIST"],
+  "gesfVersion": "1.2.0",
   "score": {
-    "overall": 72,
-    "letter": "C",
+    "overall": 98,
+    "overall_grade": "A",
     "frameworks": {
-      "GDPR": { "score": 75 },
-      "OWASP": { "score": 68 }
+      "GDPR": { "score": 100, "grade": "A", "total_controls": 22, "passed_controls": 22 },
+      "OWASP": { "score": 100, "grade": "A", "total_controls": 6, "passed_controls": 6 }
     }
   },
   "controls": [...],
   "findings": [...],
   "packs": [...],
-  "lastAudit": "2026-06-07T10:30:00.000Z"
+  "fixHistory": [...],
+  "lastAudit": "2026-06-11T10:30:00.000Z"
 }
 ```
+
+### `GET /api/packs`
+
+Returns all policy packs with summary data (score, grade, control counts, findings count, installed status).
+
+### `GET /api/packs/:packId`
+
+Returns detailed pack report: controls with checks, findings by control, severity/status breakdown, and prioritized fixes.
+
+### `GET /api/packs/:packId/controls`
+
+Returns just the controls for a specific pack.
+
+### `GET /api/controls/:controlId`
+
+Returns detailed control info: description, checks, status, severity, related findings, implementation guidance, and parent pack.
+
+### `GET /api/findings/by-control/:controlId`
+
+Returns findings linked to a specific control.
+
+### `GET /api/fix-history`
+
+Returns the fix history entries from `.ges/fix-history.json`.
 
 ### `GET /health`
 
@@ -84,7 +154,7 @@ Health check endpoint for monitoring:
 ```json
 {
   "status": "ok",
-  "timestamp": "2026-06-07T10:30:00.000Z"
+  "timestamp": "2026-06-11T10:30:00.000Z"
 }
 ```
 
@@ -117,11 +187,11 @@ The findings panel shows how many issues were detected:
 
 The controls panel summarizes the state of all compliance controls:
 
-- **PASS** — Control is satisfied
-- **FAIL** — Control is violated
-- **WARNING** — Control is partially met
-- **NOT IMPLEMENTED** — Control has not been addressed
-- **NOT APPLICABLE** — Control does not apply (manually overridden via `ges control`)
+- **PASS** — Control is satisfied (full credit toward score)
+- **FAIL** — Control is violated (no credit)
+- **WARNING** — Control is partially met (half credit)
+- **NOT IMPLEMENTED** — Control has not been addressed (no credit)
+- **NOT APPLICABLE** — Control does not apply (full credit, manually overridden via `ges control`)
 
 ## Using the Dashboard for Team Reviews
 
@@ -164,7 +234,7 @@ Use a different port with `--port`.
     2. Add some security issues:
 
     ```bash
-    echo 'const DB_PASSWORD = "secret123";' > src/config.js
+DB_PASSWORD: process.env.DB_PASSWORD
     echo 'const crypto = require("crypto");
     const hash = crypto.createHash("md5").update(data).digest("hex");' > src/auth.js
     ```

@@ -73,7 +73,7 @@ Detects hardcoded passwords, API keys, tokens, and private keys in source code.
 
 | Pattern | Example |
 |---------|---------|
-| Hardcoded passwords | `password = "secret123"` |
+password: process.env.password
 | Hardcoded API keys | `apiKey = "abc123def456"` |
 | Hardcoded secrets/tokens | `authToken = "very-long-token"` |
 | OpenAI-style API keys | `sk-abcdef1234567890...` |

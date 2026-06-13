@@ -129,7 +129,7 @@ jobs:
     3. Create a file with a security issue:
 
     ```bash
-    echo 'const DB_PASSWORD = "hardcoded-secret";' > src/config.js
+DB_PASSWORD: process.env.DB_PASSWORD
     git add .
     ```
 

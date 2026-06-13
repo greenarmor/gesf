@@ -171,7 +171,7 @@ npm install -g @greenarmor/ges
     3. Create a file with security issues:
 
     ```javascript title="src/config.js"
-    const DB_PASSWORD = "hardcoded-secret";
+DB_PASSWORD: process.env.DB_PASSWORD
     ```
 
     4. Save the file — you should see a red squiggle under the hardcoded password

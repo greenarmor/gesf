@@ -4,7 +4,7 @@
 
 - **Project**: gesf
 - **Type**: vulnerability-scanner
-- **Assessment Date**: 2026-06-03
+- **Assessment Date**: 2026-06-10
 - **Assessor**: [To be completed]
 
 ## Data Processing Description

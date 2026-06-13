@@ -52,7 +52,7 @@ Now let's create some code with intentional security issues so the audit has som
     Create `src/config.js`:
 
     ```javascript title="src/config.js"
-    const DB_PASSWORD = "super-secret-password-123";
+DB_PASSWORD: process.env.DB_PASSWORD
     const API_KEY = "sk-abc123def456ghi789";
     const dbUrl = "mongodb://admin:admin123@prod-db.example.com:27017/myapp";
     ```

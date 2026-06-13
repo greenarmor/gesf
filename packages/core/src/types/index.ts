@@ -171,3 +171,40 @@ export interface ControlOverride {
   status: ControlStatus;
   reason: string;
 }
+
+export interface FixHistoryEntry {
+  id: string;
+  timestamp: string;
+  source: "cli" | "mcp";
+  dry_run: boolean;
+  finding: {
+    rule_id: string;
+    severity: SeverityLevel;
+    category: string;
+    title: string;
+    file: string;
+    line?: number;
+    evidence: string;
+    description: string;
+  };
+  controls: {
+    id: string;
+    name: string;
+    framework: string;
+    article?: string;
+    status: ControlStatus;
+  }[];
+  fix: {
+    action_type: "create" | "modify" | "append" | "npm-install";
+    file_path: string;
+    description: string;
+    guidance: string;
+    applied: boolean;
+    error?: string;
+  };
+  compliance_impact: {
+    frameworks_affected: string[];
+    controls_addressed: number;
+    severity_resolved: SeverityLevel;
+  };
+}
