@@ -17,7 +17,7 @@
   "description": "GESF MCP Server - AI Compliance Assistant for GDPR, OWASP, NIST, CIS. Check compliance, generate policies, assess risks via MCP protocol.",
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "typescript": "^6.0.0",
     "vitest": "^4.1.8"
   },
