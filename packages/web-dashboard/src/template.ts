@@ -259,11 +259,11 @@ export function renderDashboard(data: DashboardData): string {
     <div class="subtitle">${escapeHtml(data.projectName)} | ${escapeHtml(data.projectType)} | GESF v${escapeHtml(data.gesfVersion)}</div>
   </div>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('overview')">Overview</button>
-    <button class="nav-tab" onclick="showPage('packs')">Policy Packs</button>
-    <button class="nav-tab" onclick="showPage('fixes')">Fixes Detail</button>
-    <button class="nav-tab" onclick="showPage('findings')">Findings</button>
-    <button class="nav-tab" onclick="showPage('traceability')">Traceability</button>
+    <button class="nav-tab active" onclick="showPage('overview', this)">Overview</button>
+    <button class="nav-tab" onclick="showPage('packs', this)">Policy Packs</button>
+    <button class="nav-tab" onclick="showPage('fixes', this)">Fixes Detail</button>
+    <button class="nav-tab" onclick="showPage('findings', this)">Findings</button>
+    <button class="nav-tab" onclick="showPage('traceability', this)">Traceability</button>
   </div>
 </div>
 
@@ -273,7 +273,7 @@ export function renderDashboard(data: DashboardData): string {
     <div class="grid">
       <div class="grid grid-3">
         <div class="card stat">
-          ${donutSvg(score ? Object.values(frameworks).reduce((n,f)=>n+f.passed_controls,0) : 0, controls.length || 1)}
+          ${donutSvg(controls.filter(c => c.status === "pass" || c.status === "not-applicable").length, controls.length || 1)}
           <div class="label">Overall Compliance</div>
         </div>
         <div class="card">
@@ -389,10 +389,11 @@ export function renderDashboard(data: DashboardData): string {
           <div class="pack-desc">${escapeHtml(p.description)}</div>
           ${scoreBarHtml(pct)}
           <div class="pack-stats" style="margin-top:12px;">
-            <span><span class="badge badge-status" style="background:#22c55e;">${p.passedCount}</span> pass</span>
+            <span><span class="badge badge-status" style="background:#22c55e;">${p.passedCount - p.notApplicableCount}</span> pass</span>
             <span><span class="badge badge-status" style="background:#ef4444;">${p.failedCount}</span> fail</span>
             <span><span class="badge badge-status" style="background:#eab308;">${p.warningCount}</span> warn</span>
             <span><span class="badge badge-status" style="background:#6b7280;">${p.notImplementedCount}</span> not impl</span>
+            <span><span class="badge badge-status" style="background:#9ca3af;">${p.notApplicableCount}</span> N/A</span>
             <span style="color:#ef4444;font-weight:600;">${p.findingsCount} findings</span>
             <span>${p.controlCount} controls</span>
             ${p.installed ? '<span style="color:#0f766e;font-weight:600;">Installed</span>' : '<span style="color:#9ca3af;">Not installed</span>'}
@@ -405,19 +406,30 @@ export function renderDashboard(data: DashboardData): string {
   </div>
 
   <div id="page-fixes" class="page">
-    ${renderDetailedFixesList(findings, controls, packs)}
+    <div class="tab-bar" style="margin-bottom:0;">
+      <button class="tab-btn active" onclick="showFixesTab('history', this)">Fix History (${data.fixHistory.length})</button>
+      <button class="tab-btn" onclick="showFixesTab('pending', this)">Pending Fixes (${findings.length})</button>
+    </div>
+
+    <div id="fixes-tab-history" class="tab-panel active">
+      ${renderFixHistorySection(data.fixHistory)}
+    </div>
+
+    <div id="fixes-tab-pending" class="tab-panel">
+      ${renderDetailedFixesList(findings, controls, packs)}
+    </div>
   </div>
 
   <div id="page-findings" class="page">
     <div id="findings-main">
       <h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">Security Findings Report</h2>
       <div class="tab-bar">
-        <button class="tab-btn active" onclick="showFindingsTab('all')">All (${findings.length})</button>
-        <button class="tab-btn" onclick="showFindingsTab('critical')">Critical (${findingsBySeverity.critical})</button>
-        <button class="tab-btn" onclick="showFindingsTab('high')">High (${findingsBySeverity.high})</button>
-        <button class="tab-btn" onclick="showFindingsTab('medium')">Medium (${findingsBySeverity.medium})</button>
-        <button class="tab-btn" onclick="showFindingsTab('low')">Low (${findingsBySeverity.low})</button>
-        <button class="tab-btn" onclick="showFindingsTab('bypack')">By Pack</button>
+        <button class="tab-btn active" onclick="showFindingsTab('all', this)">All (${findings.length})</button>
+        <button class="tab-btn" onclick="showFindingsTab('critical', this)">Critical (${findingsBySeverity.critical})</button>
+        <button class="tab-btn" onclick="showFindingsTab('high', this)">High (${findingsBySeverity.high})</button>
+        <button class="tab-btn" onclick="showFindingsTab('medium', this)">Medium (${findingsBySeverity.medium})</button>
+        <button class="tab-btn" onclick="showFindingsTab('low', this)">Low (${findingsBySeverity.low})</button>
+        <button class="tab-btn" onclick="showFindingsTab('bypack', this)">By Pack</button>
       </div>
 
       <div id="findings-tab-all" class="tab-panel active">
@@ -446,9 +458,9 @@ export function renderDashboard(data: DashboardData): string {
     <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Fix Traceability Matrix</h2>
     <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Finding &rarr; Fix &rarr; Control &rarr; Policy Pack traceability for every security issue.</p>
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="showTraceTab('matrix')">Matrix</button>
-      <button class="tab-btn" onclick="showTraceTab('fixes')">Prioritized Fixes</button>
-      <button class="tab-btn" onclick="showTraceTab('controls')">Control Coverage</button>
+      <button class="tab-btn active" onclick="showTraceTab('matrix', this)">Matrix</button>
+      <button class="tab-btn" onclick="showTraceTab('fixes', this)">Prioritized Fixes</button>
+      <button class="tab-btn" onclick="showTraceTab('controls', this)">Control Coverage</button>
     </div>
 
     <div id="trace-tab-matrix" class="tab-panel active">
@@ -522,7 +534,7 @@ export function renderDashboard(data: DashboardData): string {
 </div>
 
 <div class="footer">
-  Generated by GESF v${escapeHtml(data.gesfVersion)} | Last audit: ${escapeHtml(new Date(data.lastAudit).toLocaleString())} | <a href="/api/data">JSON API</a> | <a href="/api/packs">Packs API</a>
+  Generated by GESF v${escapeHtml(data.gesfVersion)} | Last audit: ${escapeHtml(new Date(data.lastAudit).toLocaleString())} | <a href="/api/data">JSON API</a> | <a href="/api/packs">Packs API</a> | <a href="/api/fix-history">Fix History API</a>
 </div>
 
 <script>
@@ -543,13 +555,21 @@ export function renderDashboard(data: DashboardData): string {
     }
   };
 
-  window.showPage = function(page) {
+  var navTabMap = { overview: 0, packs: 1, fixes: 2, findings: 3, traceability: 4 };
+
+  window.navigateToPage = function(page) {
+    var tabs = document.querySelectorAll('.nav-tab');
+    var idx = navTabMap[page];
+    showPage(page, idx !== undefined ? tabs[idx] : null);
+  };
+
+  window.showPage = function(page, btn) {
     var pages = document.querySelectorAll('.page');
     for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
     document.getElementById('page-' + page).classList.add('active');
     var tabs = document.querySelectorAll('.nav-tab');
     for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
-    event.target.classList.add('active');
+    if (btn) btn.classList.add('active');
     if (page === 'packs') {
       document.getElementById('packs-list').style.display = '';
       document.getElementById('pack-detail').style.display = 'none';
@@ -560,22 +580,32 @@ export function renderDashboard(data: DashboardData): string {
     }
   };
 
-  window.showFindingsTab = function(tab) {
+  window.showFindingsTab = function(tab, btn) {
     var panels = document.querySelectorAll('#page-findings .tab-panel');
     for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
     document.getElementById('findings-tab-' + tab).classList.add('active');
     var btns = document.querySelectorAll('#page-findings .tab-btn');
     for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
-    event.target.classList.add('active');
+    if (btn) btn.classList.add('active');
   };
 
-  window.showTraceTab = function(tab) {
+  window.showFixesTab = function(tab, btn) {
+    var panels = document.querySelectorAll('#page-fixes .tab-panel');
+    for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
+    var el = document.getElementById('fixes-tab-' + tab);
+    if (el) el.classList.add('active');
+    var btns = document.querySelectorAll('#page-fixes .tab-btn');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+    if (btn) btn.classList.add('active');
+  };
+
+  window.showTraceTab = function(tab, btn) {
     var panels = document.querySelectorAll('#page-traceability .tab-panel');
     for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
     document.getElementById('trace-tab-' + tab).classList.add('active');
     var btns = document.querySelectorAll('#page-traceability .tab-btn');
     for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
-    event.target.classList.add('active');
+    if (btn) btn.classList.add('active');
   };
 
   window.loadPackDetail = function(packId) {
@@ -746,7 +776,7 @@ export function renderDashboard(data: DashboardData): string {
   function renderControlModal(data, container) {
     var html = '<div class="card" style="position:relative;">';
     html += '<button onclick="document.getElementById(\\'control-detail-modal\\').style.display=\\'none\\'" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280;">&times;</button>';
-    html += '<div class="breadcrumb"><span onclick="showPage(\\'packs\\')">Policy Packs</span> &rsaquo; <span onclick="loadPackDetail(\\'' + data.packId + '\\')">' + esc(data.packName) + '</span> &rsaquo; ' + esc(data.id) + '</div>';
+    html += '<div class="breadcrumb"><span onclick="navigateToPage(\\'packs\\')">Policy Packs</span> &rsaquo; <span onclick="loadPackDetail(\\'' + data.packId + '\\')">' + esc(data.packName) + '</span> &rsaquo; ' + esc(data.id) + '</div>';
     html += '<div class="detail-header">';
     html += '<div><div class="detail-title">' + esc(data.name) + '</div>';
     html += '<div class="detail-meta">' + esc(data.id) + ' | ' + esc(data.category) + ' | ' + esc(data.framework) + (data.article ? ' | ' + esc(data.article) : '') + '</div></div>';
@@ -1016,6 +1046,180 @@ function renderDetailedFixesList(findings: Finding[], controls: Control[], packs
     html += `</div>`;
     html += `</div>`;
   }
+
+  return html;
+}
+
+function renderFixHistorySection(entries: import("@greenarmor/ges-core").FixHistoryEntry[]): string {
+  if (entries.length === 0) {
+    return `<div class="card">
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Compliance Fix History</h2>
+      <p style="color:#6b7280;font-size:14px;margin-bottom:16px;">Every autofix applied via CLI or MCP is recorded here with full compliance traceability.</p>
+      <div class="empty-state">
+        <div class="icon">&#128203;</div>
+        <div class="msg">No fixes recorded yet</div>
+        <div class="sub">Run <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;">ges fix</code> or use the MCP <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;">auto_fix</code> tool to apply fixes. Each fix will be recorded here.</div>
+      </div>
+    </div>`;
+  }
+
+  const applied = entries.filter(e => e.fix.applied);
+  const failed = entries.filter(e => !e.fix.applied);
+  const bySource = { cli: entries.filter(e => e.source === "cli").length, mcp: entries.filter(e => e.source === "mcp").length };
+  const frameworksAffected = [...new Set(entries.flatMap(e => e.compliance_impact.frameworks_affected))];
+  const totalControlsAddressed = entries.reduce((sum, e) => sum + e.compliance_impact.controls_addressed, 0);
+
+  const bySeverity = {
+    critical: entries.filter(e => e.compliance_impact.severity_resolved === "critical").length,
+    high: entries.filter(e => e.compliance_impact.severity_resolved === "high").length,
+    medium: entries.filter(e => e.compliance_impact.severity_resolved === "medium").length,
+    low: entries.filter(e => e.compliance_impact.severity_resolved === "low").length,
+  };
+
+  let html = '';
+  html += `<h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Compliance Fix History</h2>`;
+  html += `<p style="color:#6b7280;font-size:14px;margin-bottom:16px;">Every autofix applied via CLI or MCP is recorded here with full compliance traceability.</p>`;
+
+  html += `<div class="grid grid-4" style="margin-bottom:20px;">`;
+  html += `<div class="card stat"><div class="num">${entries.length}</div><div class="label">Total Fixes</div></div>`;
+  html += `<div class="card stat"><div class="num" style="color:#22c55e;">${applied.length}</div><div class="label">Applied</div></div>`;
+  html += `<div class="card stat"><div class="num" style="color:#ef4444;">${failed.length}</div><div class="label">Failed</div></div>`;
+  html += `<div class="card stat"><div class="num" style="color:#0f766e;">${totalControlsAddressed}</div><div class="label">Controls Addressed</div></div>`;
+  html += `</div>`;
+
+  html += `<div class="grid grid-3" style="margin-bottom:20px;">`;
+  html += `<div class="card"><div class="card-title">Severity Breakdown</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;">
+      <div class="stat"><div class="num" style="color:#ef4444;font-size:20px;">${bySeverity.critical}</div><div class="label">Critical</div></div>
+      <div class="stat"><div class="num" style="color:#f97316;font-size:20px;">${bySeverity.high}</div><div class="label">High</div></div>
+      <div class="stat"><div class="num" style="color:#eab308;font-size:20px;">${bySeverity.medium}</div><div class="label">Medium</div></div>
+      <div class="stat"><div class="num" style="color:#3b82f6;font-size:20px;">${bySeverity.low}</div><div class="label">Low</div></div>
+    </div></div>`;
+  html += `<div class="card"><div class="card-title">Fix Sources</div>
+    <div style="display:flex;gap:16px;margin-top:8px;">
+      <div class="stat"><div class="num" style="font-size:20px;">${bySource.cli}</div><div class="label">CLI (ges fix)</div></div>
+      <div class="stat"><div class="num" style="font-size:20px;">${bySource.mcp}</div><div class="label">MCP (auto_fix)</div></div>
+    </div></div>`;
+  html += `<div class="card"><div class="card-title">Frameworks Impacted</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+      ${frameworksAffected.length > 0 ? frameworksAffected.map(fw => `<span class="tag" style="background:#d1fae5;color:#065f46;">${escapeHtml(fw)}</span>`).join('') : '<span style="color:#9ca3af;">None</span>'}
+    </div></div>`;
+  html += `</div>`;
+
+  const sorted = [...entries].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  html += `<div class="card"><div class="card-title">All Recorded Fixes (newest first)</div>`;
+  html += `<table><thead><tr><th>Time</th><th>Source</th><th>Severity</th><th>Rule</th><th>Finding</th><th>Fix Action</th><th>Controls</th><th>Frameworks</th><th>Status</th></tr></thead><tbody>`;
+
+  for (const entry of sorted) {
+    const time = new Date(entry.timestamp).toLocaleString();
+    const sourceBadge = entry.source === "mcp"
+      ? '<span class="badge" style="background:#7c3aed;font-size:10px;">MCP</span>'
+      : '<span class="badge" style="background:#0f766e;font-size:10px;">CLI</span>';
+    const sevBadge = `<span class="badge badge-sev" style="background:${severityColor(entry.compliance_impact.severity_resolved)};font-size:10px;">${entry.compliance_impact.severity_resolved.toUpperCase()}</span>`;
+    const statusBadge = entry.fix.applied
+      ? '<span class="badge badge-status" style="background:#22c55e;font-size:10px;">APPLIED</span>'
+      : `<span class="badge badge-status" style="background:#ef4444;font-size:10px;">FAILED</span>`;
+    const controlsHtml = entry.controls.length > 0
+      ? entry.controls.map(c => `<div style="margin-bottom:2px;"><span class="link" onclick="showControlDetail('${escapeHtml(c.id)}')">${escapeHtml(c.id)}</span></div>`).join('')
+      : '<span style="color:#9ca3af;">-</span>';
+    const frameworksHtml = entry.compliance_impact.frameworks_affected.length > 0
+      ? entry.compliance_impact.frameworks_affected.map(f => `<span class="tag">${escapeHtml(f)}</span>`).join(' ')
+      : '<span style="color:#9ca3af;">-</span>';
+
+    html += `<tr>
+      <td style="font-size:11px;white-space:nowrap;">${time}</td>
+      <td>${sourceBadge}</td>
+      <td>${sevBadge}</td>
+      <td style="font-family:monospace;font-size:11px;">${escapeHtml(entry.finding.rule_id)}</td>
+      <td style="max-width:200px;">
+        <div style="font-weight:600;font-size:12px;">${escapeHtml(entry.finding.title)}</div>
+        <div style="font-size:11px;color:#6b7280;">${escapeHtml(entry.finding.file)}${entry.finding.line ? ':' + entry.finding.line : ''}</div>
+      </td>
+      <td style="max-width:200px;">
+        <div style="font-size:12px;"><span class="badge" style="background:#6b7280;font-size:9px;">${entry.fix.action_type.toUpperCase()}</span> ${escapeHtml(entry.fix.file_path)}</div>
+        <div style="font-size:11px;color:#6b7280;">${escapeHtml(entry.fix.description)}</div>
+      </td>
+      <td style="max-width:150px;">${controlsHtml}</td>
+      <td>${frameworksHtml}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+
+  html += `<div class="card" style="margin-top:20px;"><div class="card-title">Detailed Fix Records</div>`;
+  for (let i = 0; i < sorted.length; i++) {
+    const entry = sorted[i];
+    const fixId = `histfix-${i}`;
+    const sevClass = entry.compliance_impact.severity_resolved;
+
+    html += `<div class="fix-detail-card" style="margin-bottom:8px;">`;
+    html += `<div class="fix-detail-header ${sevClass}" onclick="toggleFix('${fixId}')">`;
+    html += `<div class="fix-detail-num" style="color:${severityColor(sevClass)};">${i + 1}</div>`;
+    html += `<div class="fix-detail-info">`;
+    html += `<div class="fix-detail-title">${escapeHtml(entry.finding.title)}</div>`;
+    html += `<div class="fix-detail-meta">${escapeHtml(entry.finding.rule_id)} | ${escapeHtml(entry.finding.file)}${entry.finding.line ? ':' + entry.finding.line : ''} | ${entry.source.toUpperCase()} | ${new Date(entry.timestamp).toLocaleString()}</div>`;
+    html += `</div>`;
+    html += `<div class="fix-detail-badges">`;
+    html += `<span class="badge badge-sev" style="background:${severityColor(sevClass)};font-size:10px;">${sevClass.toUpperCase()}</span>`;
+    if (entry.fix.applied) {
+      html += `<span class="badge" style="background:#22c55e;font-size:10px;">APPLIED</span>`;
+    } else {
+      html += `<span class="badge" style="background:#ef4444;font-size:10px;">FAILED</span>`;
+    }
+    html += `<span class="badge" style="background:${entry.source === 'mcp' ? '#7c3aed' : '#0f766e'};font-size:10px;">${entry.source.toUpperCase()}</span>`;
+    html += `<span class="fix-toggle" id="${fixId}-toggle">Expand</span>`;
+    html += `</div></div>`;
+
+    html += `<div class="fix-detail-body" id="${fixId}">`;
+
+    html += `<div class="fix-section"><div class="fix-section-title">Finding Details</div>`;
+    html += `<table><tbody>`;
+    html += `<tr><td style="font-weight:600;width:140px;">Rule</td><td style="font-family:monospace;">${escapeHtml(entry.finding.rule_id)}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Category</td><td>${escapeHtml(entry.finding.category)}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Severity</td><td><span class="badge badge-sev" style="background:${severityColor(entry.compliance_impact.severity_resolved)}">${sevClass.toUpperCase()}</span></td></tr>`;
+    html += `<tr><td style="font-weight:600;">File</td><td style="font-family:monospace;">${escapeHtml(entry.finding.file)}${entry.finding.line ? ':' + entry.finding.line : ''}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Title</td><td>${escapeHtml(entry.finding.title)}</td></tr>`;
+    if (entry.finding.description) {
+      html += `<tr><td style="font-weight:600;">Description</td><td style="color:#4b5563;">${escapeHtml(entry.finding.description)}</td></tr>`;
+    }
+    if (entry.finding.evidence) {
+      html += `<tr><td style="font-weight:600;">Evidence</td><td><div class="fix-evidence">${escapeHtml(entry.finding.evidence)}</div></td></tr>`;
+    }
+    html += `</tbody></table></div>`;
+
+    html += `<div class="fix-section"><div class="fix-section-title">Fix Applied</div>`;
+    html += `<table><tbody>`;
+    html += `<tr><td style="font-weight:600;width:140px;">Action</td><td><span class="badge" style="background:#6b7280;">${entry.fix.action_type.toUpperCase()}</span></td></tr>`;
+    html += `<tr><td style="font-weight:600;">Target File</td><td style="font-family:monospace;">${escapeHtml(entry.fix.file_path)}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Description</td><td>${escapeHtml(entry.fix.description)}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Status</td><td>${entry.fix.applied ? '<span style="color:#22c55e;font-weight:600;">Applied successfully</span>' : `<span style="color:#ef4444;font-weight:600;">Failed: ${escapeHtml(entry.fix.error || 'Unknown error')}</span>`}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Source</td><td>${entry.source === 'mcp' ? 'MCP auto_fix tool' : 'CLI ges fix command'}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Timestamp</td><td>${new Date(entry.timestamp).toLocaleString()}</td></tr>`;
+    if (entry.dry_run) {
+      html += `<tr><td style="font-weight:600;">Mode</td><td><span class="badge" style="background:#eab308;color:white;">DRY RUN</span></td></tr>`;
+    }
+    html += `</tbody></table></div>`;
+
+    if (entry.fix.guidance) {
+      html += `<div class="fix-section"><div class="fix-section-title">Fix Guidance</div>`;
+      html += `<div class="fix-guidance-box">${escapeHtml(entry.fix.guidance)}</div></div>`;
+    }
+
+    html += `<div class="fix-section"><div class="fix-section-title">Compliance Traceability</div>`;
+    html += `<table><tbody>`;
+    html += `<tr><td style="font-weight:600;width:160px;">Controls Addressed</td><td>${entry.controls.length > 0 ? entry.controls.map(c =>
+      `<div style="margin-bottom:4px;"><span class="link" onclick="showControlDetail('${escapeHtml(c.id)}')">${escapeHtml(c.id)}</span> &mdash; ${escapeHtml(c.name)} <span style="color:#6b7280;font-size:11px;">(${escapeHtml(c.framework)}${c.article ? ' / ' + escapeHtml(c.article) : ''})</span></div>`
+    ).join('') : '<span style="color:#9ca3af;">No controls mapped</span>'}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Frameworks Affected</td><td>${entry.compliance_impact.frameworks_affected.length > 0 ? entry.compliance_impact.frameworks_affected.map(f => `<span class="tag" style="background:#d1fae5;color:#065f46;">${escapeHtml(f)}</span>`).join(' ') : '<span style="color:#9ca3af;">-</span>'}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Controls Count</td><td>${entry.compliance_impact.controls_addressed}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Severity Resolved</td><td><span class="badge badge-sev" style="background:${severityColor(entry.compliance_impact.severity_resolved)}">${entry.compliance_impact.severity_resolved.toUpperCase()}</span></td></tr>`;
+    html += `</tbody></table></div>`;
+
+    html += `</div></div>`;
+  }
+  html += `</div>`;
 
   return html;
 }

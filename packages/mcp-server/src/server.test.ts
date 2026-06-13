@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { handleRequest } from "./server.js";
+import { describe, it, expect, afterEach } from "vitest";
+import { handleRequest, stopDashboardServer } from "./server.js";
 import type { MCPRequest } from "./server.js";
 
 function req(method: string, params?: Record<string, unknown>, id: number | string = 1): MCPRequest {
@@ -226,9 +226,14 @@ describe("new tools", () => {
     expect(text.length).toBeGreaterThan(0);
   });
 
-  it("start_dashboard returns instructions", () => {
-    const res = handleRequest(callTool("start_dashboard", { project_path: "/Users/tata/gesf" }));
+  it("start_dashboard starts the dashboard server", () => {
+    const res = handleRequest(callTool("start_dashboard", { project_path: "/Users/tata/gesf", port: "13987" }));
     const text = getResultText(res);
-    expect(text).toContain("dashboard");
+    expect(text).toContain("Running");
+    expect(text).toContain("13987");
+  });
+
+  afterEach(() => {
+    stopDashboardServer();
   });
 });

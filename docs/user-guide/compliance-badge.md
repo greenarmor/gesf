@@ -206,7 +206,7 @@ MaxPossible = Σ(control_weight)
 Framework Score = round(Earned / MaxPossible × 100)
 ```
 
-The overall score is a **control-count-weighted average** across all frameworks — frameworks with more controls contribute proportionally more to the overall score.
+The overall score is a **control-count-weighted average** across all frameworks — frameworks with more controls contribute proportionally more to the overall score. Frameworks with zero controls are excluded from the average.
 
 ### Critical Failure Cap
 

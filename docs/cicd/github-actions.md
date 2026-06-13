@@ -78,7 +78,7 @@ After a workflow runs:
 
     ```bash
     git checkout -b test/compliance
-    echo 'const apiKey = "sk-test-key";' > src/test.js
+apiKey: process.env.apiKey
     git add src/test.js
     git commit -m "Test: add vulnerable code"
     git push -u origin test/compliance

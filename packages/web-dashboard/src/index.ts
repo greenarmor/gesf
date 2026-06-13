@@ -4,7 +4,8 @@ import * as path from "node:path";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import { getAllPacks, getPacksForProjectType, getPack } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile } from "@greenarmor/ges-scoring-engine";
-import type { ProjectConfig, ScoreFile, Control, PolicyPack } from "@greenarmor/ges-core";
+import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry } from "@greenarmor/ges-core";
+import { loadFixHistory } from "@greenarmor/ges-core";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { renderDashboard } from "./template.js";
 
@@ -65,6 +66,7 @@ export interface DashboardData {
   controls: Control[];
   findings: Finding[];
   packs: PackSummary[];
+  fixHistory: FixHistoryEntry[];
   lastAudit: string;
 }
 
@@ -90,13 +92,10 @@ function loadScore(projectPath: string): ScoreFile | null {
 
 function loadControlsForConfig(projectPath: string, config: ProjectConfig): Control[] {
   try {
-    const packs = getPacksForProjectType(config.project_type);
     const fwLower = new Set(config.frameworks.map(f => f.toLowerCase()));
-    const DOMAIN_PACKS = new Set(["ai", "blockchain", "government"]);
-    const filtered = packs.filter(pack =>
-      DOMAIN_PACKS.has(pack.id.toLowerCase()) || fwLower.has(pack.id.toLowerCase())
-    );
-    const controls = filtered.flatMap(p => p.controls);
+    const allPacks = getAllPacks();
+    const packs = allPacks.filter(pack => fwLower.has(pack.id.toLowerCase()));
+    const controls = packs.flatMap(p => p.controls);
 
     const overridesPath = path.join(projectPath, ".ges", "control-overrides.json");
     if (fs.existsSync(overridesPath)) {
@@ -131,7 +130,7 @@ function buildPackSummary(pack: PolicyPack, controls: Control[], findings: Findi
   const packControls = controls.filter(c => packControlIds.has(c.id));
   const packFindings = findings.filter(f => f.controlIds.some(cid => packControlIds.has(cid)));
 
-  const passedCount = packControls.filter(c => c.status === "pass").length;
+  const passedCount = packControls.filter(c => c.status === "pass" || c.status === "not-applicable").length;
   const total = packControls.length || 1;
   const score = Math.round((passedCount / total) * 100);
   const grade = score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 60 ? "D" : "F";
@@ -154,9 +153,20 @@ function buildPackSummary(pack: PolicyPack, controls: Control[], findings: Findi
   };
 }
 
-function getInstalledPackIds(projectPath: string): Set<string> {
-  const controlsDir = path.join(projectPath, "controls");
+function getInstalledPackIds(projectPath: string, config?: ProjectConfig): Set<string> {
   const ids = new Set<string>();
+
+  if (config) {
+    const fwLower = new Set(config.frameworks.map(f => f.toLowerCase()));
+    const allPacks = getAllPacks();
+    for (const pack of allPacks) {
+      if (fwLower.has(pack.id.toLowerCase())) {
+        ids.add(pack.id);
+      }
+    }
+  }
+
+  const controlsDir = path.join(projectPath, "controls");
   try {
     const entries = fs.readdirSync(controlsDir, { withFileTypes: true });
     for (const entry of entries) {
@@ -181,17 +191,19 @@ export function collectDashboardData(projectPath: string): DashboardData {
   const controls = config ? loadControlsForConfig(projectPath, config) : [];
   const findings = loadFindings(projectPath);
 
-  if (!score && config) {
+  if (config) {
     try {
-      score = generateScoreFile(controls, config.frameworks, findings);
+      const freshScore = generateScoreFile(controls, config.frameworks, findings);
+      score = freshScore;
     } catch {
-      score = null;
+      if (!score) score = null;
     }
   }
 
   const allPacks = getAllPacks();
-  const installedPacks = getInstalledPackIds(projectPath);
+  const installedPacks = getInstalledPackIds(projectPath, config || undefined);
   const packs = allPacks.map(p => buildPackSummary(p, controls, findings, installedPacks));
+  const fixHistory = loadFixHistory(projectPath);
 
   const metadataPath = path.join(projectPath, ".ges", "metadata.json");
   let lastAudit = "";
@@ -211,6 +223,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
     controls,
     findings,
     packs,
+    fixHistory,
     lastAudit,
   };
 }
@@ -225,7 +238,7 @@ export function collectPackDetail(projectPath: string, packId: string): PackDeta
 
   const packControlIds = new Set(pack.controls.map(c => c.id));
   const packControls = pack.controls;
-  const installedPacks = getInstalledPackIds(projectPath);
+  const installedPacks = getInstalledPackIds(projectPath, config || undefined);
   const packSummary = buildPackSummary(pack, controls, findings, installedPacks);
 
   const findingsByControlId: Record<string, Finding[]> = {};
@@ -395,6 +408,16 @@ export function startDashboard(options: DashboardOptions): http.Server {
       try {
         const data = collectDashboardData(options.projectPath);
         jsonResponse(res, data.packs);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (pathname === "/api/fix-history") {
+      try {
+        const data = collectDashboardData(options.projectPath);
+        jsonResponse(res, data.fixHistory);
       } catch (err) {
         jsonError(res, err instanceof Error ? err.message : String(err));
       }

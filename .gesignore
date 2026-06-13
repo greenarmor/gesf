@@ -1,0 +1,17 @@
+# Documentation - contains example secrets for instructional purposes
+docs/
+
+# Generated static site (mirrors docs)
+site/
+
+# Test files - contain mock/example data
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+
+# ESLint plugin rules - reference weak algorithms by design
+packages/eslint-plugin/src/rules/
+
+# Auto-generated .env from false-positive auto-fix
+.env

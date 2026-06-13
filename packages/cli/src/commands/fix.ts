@@ -3,6 +3,27 @@ import { ensureGESInitialized } from "../utils/project.js";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { createAutoFixPlan, applyAutoFixAction, getNpmInstallsFromActions } from "@greenarmor/ges-mcp-server";
+import { appendFixHistory, createFixHistoryEntry } from "@greenarmor/ges-core";
+import type { Control } from "@greenarmor/ges-core";
+import { getAllPacks } from "@greenarmor/ges-policy-engine";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+function loadProjectControls(root: string): Control[] {
+  try {
+    const configPath = path.join(root, ".ges", "config.json");
+    if (!fs.existsSync(configPath)) return [];
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    const fwLower = new Set(config.frameworks.map((f: string) => f.toLowerCase()));
+    const allPacks = getAllPacks();
+    const filtered = allPacks.filter(pack =>
+      fwLower.has(pack.id.toLowerCase())
+    );
+    return filtered.flatMap((p: any) => p.controls);
+  } catch {
+    return [];
+  }
+}
 
 export const fixCommand = new Command("fix")
   .description("Automatically fix security and compliance findings")
@@ -18,6 +39,7 @@ export const fixCommand = new Command("fix")
     console.log("  Scanning project files...");
     const { findings: rawFindings, scannedFiles } = runAudit(root);
     const findings: Finding[] = deduplicateFindings(rawFindings);
+    const projectControls = loadProjectControls(root);
 
     console.log(`  Scanned ${scannedFiles} files`);
     console.log(`  Found ${findings.length} findings\n`);
@@ -55,12 +77,38 @@ export const fixCommand = new Command("fix")
 
     let applied = 0;
     let failed = 0;
+    const historyEntries = [];
 
     for (const action of actions) {
+      const matchingFindings = findings.filter(f => f.ruleId === action.ruleId);
+      const primaryFinding = matchingFindings[0];
+
+      const matchedControls = primaryFinding
+        ? projectControls.filter((c: Control) => primaryFinding.controlIds.includes(c.id))
+        : [];
+
       if (dryRun) {
         console.log(`    [${action.type}] ${action.filePath}`);
         console.log(`        ${action.description}  [${action.ruleId}]`);
         applied++;
+        historyEntries.push(createFixHistoryEntry({
+          source: "cli",
+          dry_run: true,
+          finding: primaryFinding ?? {
+            ruleId: action.ruleId,
+            severity: "medium",
+            category: "",
+            title: action.description,
+            file: "",
+            evidence: "",
+            description: action.description,
+            controlIds: [],
+            fix: action.description,
+          },
+          action,
+          controls: matchedControls,
+          applied: false,
+        }));
       } else {
         const result = applyAutoFixAction(root, action);
         if (result.applied) {
@@ -71,7 +119,31 @@ export const fixCommand = new Command("fix")
           console.log(`        ${result.error}`);
           failed++;
         }
+        historyEntries.push(createFixHistoryEntry({
+          source: "cli",
+          dry_run: false,
+          finding: primaryFinding ?? {
+            ruleId: action.ruleId,
+            severity: "medium",
+            category: "",
+            title: action.description,
+            file: "",
+            evidence: "",
+            description: action.description,
+            controlIds: [],
+            fix: action.description,
+          },
+          action,
+          controls: matchedControls,
+          applied: result.applied,
+          error: result.applied ? undefined : result.error,
+        }));
       }
+    }
+
+    if (historyEntries.length > 0 && !dryRun) {
+      appendFixHistory(root, historyEntries);
+      console.log(`\n  Fix history recorded in .ges/fix-history.json`);
     }
 
     console.log("");

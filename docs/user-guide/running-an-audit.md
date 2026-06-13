@@ -30,7 +30,7 @@ ges audit
 Given this source code:
 
 ```javascript title="src/config.js"
-const DB_PASSWORD = "my-secret-password";
+DB_PASSWORD: process.env.DB_PASSWORD
 ```
 
 ```javascript title="src/auth.js"

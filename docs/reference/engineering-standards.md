@@ -158,7 +158,7 @@ All projects must maintain a Software Bill of Materials:
 
             ```javascript
             // BAD
-            const apiKey = "sk-abc123";
+apiKey: process.env.apiKey
 
             // GOOD
             const apiKey = process.env.API_KEY;

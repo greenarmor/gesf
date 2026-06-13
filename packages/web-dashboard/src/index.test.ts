@@ -256,11 +256,11 @@ describe("web-dashboard", () => {
     it("includes all page tabs", () => {
       const data = collectDashboardData(tmpDir);
       const html = renderDashboard(data);
-      expect(html).toContain("showPage('overview')");
-      expect(html).toContain("showPage('packs')");
-      expect(html).toContain("showPage('fixes')");
-      expect(html).toContain("showPage('findings')");
-      expect(html).toContain("showPage('traceability')");
+      expect(html).toContain("showPage('overview', this)");
+      expect(html).toContain("showPage('packs', this)");
+      expect(html).toContain("showPage('fixes', this)");
+      expect(html).toContain("showPage('findings', this)");
+      expect(html).toContain("showPage('traceability', this)");
     });
 
     it("includes findings count when findings exist", () => {
@@ -380,7 +380,7 @@ describe("web-dashboard", () => {
           description: "An API key was found in source code",
           file: "src/config.ts",
           line: 42,
-          evidence: "const API_KEY = 'sk-abc123'",
+          evidence: `API_KEY=abc123`,
           controlIds: [controlId],
           fix: "Move API key to environment variable",
         },
@@ -400,11 +400,11 @@ describe("web-dashboard", () => {
     it("includes all 5 navigation tabs", () => {
       const data = collectDashboardData(tmpDir);
       const html = renderDashboard(data);
-      expect(html).toContain("showPage('overview')");
-      expect(html).toContain("showPage('packs')");
-      expect(html).toContain("showPage('fixes')");
-      expect(html).toContain("showPage('findings')");
-      expect(html).toContain("showPage('traceability')");
+      expect(html).toContain("showPage('overview', this)");
+      expect(html).toContain("showPage('packs', this)");
+      expect(html).toContain("showPage('fixes', this)");
+      expect(html).toContain("showPage('findings', this)");
+      expect(html).toContain("showPage('traceability', this)");
     });
 
     it("includes API links in footer", () => {
@@ -412,6 +412,102 @@ describe("web-dashboard", () => {
       const html = renderDashboard(data);
       expect(html).toContain("/api/data");
       expect(html).toContain("/api/packs");
+      expect(html).toContain("/api/fix-history");
+    });
+
+    it("includes empty fix history when no fixes applied", () => {
+      const data = collectDashboardData(tmpDir);
+      const html = renderDashboard(data);
+      expect(html).toContain("Compliance Fix History");
+      expect(html).toContain("No fixes recorded yet");
+    });
+
+    it("renders fix history entries with full compliance traceability", () => {
+      setupProject(["GDPR"]);
+      const data = collectDashboardData(tmpDir);
+      data.fixHistory = [
+        {
+          id: "fix-test-1",
+          timestamp: "2026-06-09T12:00:00Z",
+          source: "mcp",
+          dry_run: false,
+          finding: {
+            rule_id: "SECRETS-001",
+            severity: "critical",
+            category: "secrets",
+            title: "Hardcoded API key",
+            file: "src/config.ts",
+            line: 42,
+            evidence: "const API_KEY = 'sk-abc123'",
+            description: "An API key was found in source code",
+          },
+          controls: [
+            { id: "GDPR-ART32-001", name: "Encryption at Rest", framework: "GDPR", article: "Article 32", status: "fail" },
+          ],
+          fix: {
+            action_type: "modify",
+            file_path: "src/config.ts",
+            description: "Replace hardcoded key with env variable",
+            guidance: "Move API key to environment variable",
+            applied: true,
+          },
+          compliance_impact: {
+            frameworks_affected: ["GDPR"],
+            controls_addressed: 1,
+            severity_resolved: "critical",
+          },
+        },
+      ];
+      const html = renderDashboard(data);
+      expect(html).toContain("Compliance Fix History");
+      expect(html).toContain("SECRETS-001");
+      expect(html).toContain("Hardcoded API key");
+      expect(html).toContain("src/config.ts");
+      expect(html).toContain("GDPR-ART32-001");
+      expect(html).toContain("APPLIED");
+      expect(html).toContain("MCP");
+      expect(html).toContain("showFixesTab");
+      expect(html).toContain("fixes-tab-history");
+      expect(html).toContain("fixes-tab-pending");
+    });
+
+    it("shows failed fixes in fix history", () => {
+      const data = collectDashboardData(tmpDir);
+      data.fixHistory = [
+        {
+          id: "fix-test-2",
+          timestamp: "2026-06-09T12:00:00Z",
+          source: "cli",
+          dry_run: false,
+          finding: {
+            rule_id: "CONFIG-001",
+            severity: "high",
+            category: "config",
+            title: "Missing helmet",
+            file: "src/app.ts",
+            evidence: "No helmet middleware",
+            description: "Helmet middleware not configured",
+          },
+          controls: [],
+          fix: {
+            action_type: "create",
+            file_path: "src/middleware/security.ts",
+            description: "Create security middleware",
+            guidance: "Install and configure helmet",
+            applied: false,
+            error: "File already exists",
+          },
+          compliance_impact: {
+            frameworks_affected: [],
+            controls_addressed: 0,
+            severity_resolved: "high",
+          },
+        },
+      ];
+      const html = renderDashboard(data);
+      expect(html).toContain("FAILED");
+      expect(html).toContain("File already exists");
+      expect(html).toContain("CLI");
     });
   });
 
@@ -528,6 +624,16 @@ describe("web-dashboard", () => {
       const { body } = await get(port, "/health");
       const parsed = JSON.parse(body);
       expect(parsed.status).toBe("ok");
+      await close(server);
+    });
+
+    it("responds to /api/fix-history", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const { body, status } = await get(port, "/api/fix-history");
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(Array.isArray(parsed)).toBe(true);
       await close(server);
     });
 

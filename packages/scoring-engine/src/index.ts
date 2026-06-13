@@ -175,7 +175,8 @@ export function computeOverallScore(
   let weightedSum = 0;
 
   for (const s of scores) {
-    const weight = Math.max(1, s.total_controls);
+    if (s.total_controls === 0) continue;
+    const weight = s.total_controls;
     weightedSum += s.score * weight;
     totalWeight += weight;
   }
