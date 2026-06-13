@@ -2,7 +2,7 @@
   "description": "Green Engineering Standard Framework - Compliance-as-Code",
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "eslint": "^9.0.0",
     "typescript": "^6.0.0"
   },
