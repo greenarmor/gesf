@@ -44,7 +44,7 @@ allPacks.forEach(p => console.log(`${p.id}: ${p.name}`));
 | `gdpr` | GDPR | EU General Data Protection Regulation controls |
 | `owasp` | OWASP ASVS | Application Security Verification Standard |
 | `cis` | CIS Controls | Center for Internet Security controls |
-| `nist` | NIST CSF | NIST Cybersecurity Framework |
+| `nist` | NIST CSF 2.0 | NIST Cybersecurity Framework 2.0 (23 controls / 145 checks) |
 | `ai` | AI Policy | LLM, Agent, MCP, RAG security controls |
 | `blockchain` | Blockchain | Cryptographic signatures, key rotation, on-chain rules |
 | `government` | Government | Data sovereignty, chain of custody, tamper evidence |

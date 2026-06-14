@@ -41,6 +41,12 @@ export const fixCommand = new Command("fix")
     const findings: Finding[] = deduplicateFindings(rawFindings);
     const projectControls = loadProjectControls(root);
 
+    try {
+      fs.writeFileSync(path.join(root, ".ges", "last-audit.json"), JSON.stringify({
+        findings, scannedFiles, timestamp: new Date().toISOString(),
+      }, null, 2));
+    } catch { /* ignore persistence errors */ }
+
     console.log(`  Scanned ${scannedFiles} files`);
     console.log(`  Found ${findings.length} findings\n`);
 

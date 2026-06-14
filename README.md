@@ -9,7 +9,7 @@
 > | GDPR | 100% | A | 22/22 passed |
 > | OWASP | 100% | A | 6/6 passed |
 > | CIS | 100% | A | 5/5 passed |
-> | NIST | 100% | A | 6/6 passed |
+> | NIST | 100% | A | 23/23 passed |
 >
 > _(Last evaluated: 2026-06-02)_
 <!-- GESF-SCORE-END -->

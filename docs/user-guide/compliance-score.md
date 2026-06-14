@@ -124,7 +124,7 @@ Output:
     Different project types install different packs, which changes the scoring. Try this:
 
     ```bash
-    # SaaS (4 packs: GDPR, OWASP, CIS, NIST = 40 controls)
+    # SaaS (4 packs: GDPR, OWASP, CIS, NIST = 56 controls)
     mkdir /tmp/type-saas && cd /tmp/type-saas && echo '{"name":"t"}' > package.json
     ges init -n "SaaS" -t saas -f "GDPR,OWASP,CIS,NIST"
     ges audit && ges score

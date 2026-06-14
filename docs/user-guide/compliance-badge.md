@@ -111,7 +111,7 @@ Example of the injected block:
 > | GDPR | 94% | A | 21/22 passed |
 > | OWASP | 91% | B | 5/6 passed |
 > | CIS | 88% | B | 4/5 passed |
-> | NIST | 95% | A | 6/6 passed |
+> | NIST | 95% | A | 22/23 passed |
 >
 > Audit findings: 1 high, 2 medium (score deduction: -15%)
 >
@@ -233,12 +233,12 @@ The deduction is subtracted from the overall score (clamped at 0%).
 
 ### Complete Calculation Example
 
-A SaaS project with GDPR + OWASP + CIS + NIST packs (39 total controls):
+A SaaS project with GDPR + OWASP + CIS + NIST packs (56 total controls):
 
 1. **GDPR controls (22):** 16 pass, 2 warning, 2 fail, 2 not-implemented
 2. **OWASP controls (6):** 5 pass, 1 warning
 3. **CIS controls (5):** 5 pass
-4. **NIST controls (6):** 4 pass, 1 fail, 1 not-applicable
+4. **NIST controls (23):** 20 pass, 1 fail, 2 not-applicable
 
 After severity weighting and status credit calculation, the engine produces per-framework scores. The overall score is the weighted average. Then audit findings deduct additional points.
 
@@ -246,7 +246,7 @@ After severity weighting and status credit calculation, the engine produces per-
 GDPR ............... 72%  (B)   16/22 passed · 2 critical · 3 high
 OWASP .............. 91%  (A)   5/6 passed
 CIS ................ 100% (A)   5/5 passed
-NIST ............... 83%  (B)   4/6 passed
+NIST ............... 87%  (B)   20/23 passed
 ──────────────────────────────────────────────
 Overall ............ 82%  (B)
 

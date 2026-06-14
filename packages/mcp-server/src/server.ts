@@ -2114,6 +2114,18 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           const auditedControls = updateControlsFromFindings(overriddenControls, findings);
           const score = generateScoreFile(auditedControls, frameworks, findings);
 
+          try {
+            fs.writeFileSync(path.join(projectPath, ".ges", "last-audit.json"), JSON.stringify({
+              findings, scannedFiles, timestamp: new Date().toISOString(),
+            }, null, 2));
+            fs.writeFileSync(path.join(projectPath, ".ges", "score.json"), JSON.stringify(score, null, 2));
+            const metaPath = path.join(projectPath, ".ges", "metadata.json");
+            let meta: Record<string, unknown> = {};
+            try { meta = JSON.parse(fs.readFileSync(metaPath, "utf-8")); } catch { /* ignore */ }
+            meta.last_audit = new Date().toISOString();
+            fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+          } catch { /* ignore persistence errors */ }
+
           const critical = findings.filter(f => f.severity === "critical");
           const high = findings.filter(f => f.severity === "high");
           const medium = findings.filter(f => f.severity === "medium");
@@ -2256,6 +2268,12 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
 
           const { findings: rawFindings, scannedFiles } = runAudit(projectPath);
           const findings = deduplicateFindings(rawFindings);
+
+          try {
+            fs.writeFileSync(path.join(projectPath, ".ges", "last-audit.json"), JSON.stringify({
+              findings, scannedFiles, timestamp: new Date().toISOString(),
+            }, null, 2));
+          } catch { /* ignore persistence errors */ }
 
           if (findings.length === 0) {
             resultText = `# Auto-Fix Report\n\n**Project**: ${projectPath}\n**Scanned**: ${scannedFiles} files\n\nNo issues found. Project is clean!`;

@@ -118,11 +118,58 @@ function loadControlsForConfig(projectPath: string, config: ProjectConfig): Cont
 
 function loadFindings(projectPath: string): Finding[] {
   try {
+    const auditPath = path.join(projectPath, ".ges", "last-audit.json");
+    if (fs.existsSync(auditPath)) {
+      const raw = fs.readFileSync(auditPath, "utf-8");
+      const data = JSON.parse(raw);
+      if (data.findings && Array.isArray(data.findings)) {
+        return data.findings;
+      }
+    }
+  } catch { /* fall through to live audit */ }
+
+  try {
     const result = runAudit(projectPath);
     return deduplicateFindings(result.findings);
   } catch {
     return [];
   }
+}
+
+const SCANNABLE_CATEGORIES = new Set([
+  "encryption", "authentication", "audit", "security",
+  "database", "secrets", "injection", "xss",
+  "infrastructure", "dependencies",
+]);
+
+function updateControlsFromFindings(controls: Control[], findings: Finding[]): Control[] {
+  const controlsWithFindings = new Set(findings.flatMap(f => f.controlIds));
+
+  return controls.map(control => {
+    if (control.status === "pass" || control.status === "not-applicable") return control;
+
+    const relevantFindings = findings.filter(f => f.controlIds.includes(control.id));
+    if (relevantFindings.length === 0) {
+      if (SCANNABLE_CATEGORIES.has(control.category) && !controlsWithFindings.has(control.id)) {
+        return {
+          ...control,
+          checks: control.checks.map(check => ({ ...check, status: "pass" as const })),
+          status: "pass" as const,
+        };
+      }
+      return control;
+    }
+
+    const hasCritical = relevantFindings.some(f => f.severity === "critical" || f.severity === "high");
+    return {
+      ...control,
+      checks: control.checks.map(check => ({
+        ...check,
+        status: hasCritical ? "fail" as const : "warning" as const,
+      })),
+      status: hasCritical ? "fail" as const : "warning" as const,
+    };
+  });
 }
 
 function buildPackSummary(pack: PolicyPack, controls: Control[], findings: Finding[], installedPacks: Set<string>): PackSummary {
@@ -188,8 +235,9 @@ export function collectDashboardData(projectPath: string): DashboardData {
   const config = loadConfig(projectPath);
   let score = loadScore(projectPath);
 
-  const controls = config ? loadControlsForConfig(projectPath, config) : [];
+  const baseControls = config ? loadControlsForConfig(projectPath, config) : [];
   const findings = loadFindings(projectPath);
+  const controls = updateControlsFromFindings(baseControls, findings);
 
   if (config) {
     try {
@@ -233,8 +281,9 @@ export function collectPackDetail(projectPath: string, packId: string): PackDeta
   if (!pack) return null;
 
   const config = loadConfig(projectPath);
-  const controls = config ? loadControlsForConfig(projectPath, config) : [];
+  const baseControls = config ? loadControlsForConfig(projectPath, config) : [];
   const findings = loadFindings(projectPath);
+  const controls = updateControlsFromFindings(baseControls, findings);
 
   const packControlIds = new Set(pack.controls.map(c => c.id));
   const packControls = pack.controls;
@@ -319,8 +368,9 @@ export function collectControlDetail(projectPath: string, controlId: string): Co
   const config = loadConfig(projectPath);
   if (!config) return null;
 
-  const controls = loadControlsForConfig(projectPath, config);
+  const baseControls = loadControlsForConfig(projectPath, config);
   const findings = loadFindings(projectPath);
+  const controls = updateControlsFromFindings(baseControls, findings);
   const control = controls.find(c => c.id === controlId);
   if (!control) return null;
 

@@ -292,8 +292,8 @@ Use clear, descriptive commit messages in imperative mood:
 ```
 Add NIST CSF policy pack to policy engine
 
-Implement all 5 NIST CSF functions (Identify, Protect, Detect,
-Respond, Recover) with 23 subcategories and evaluation logic.
+Implement all 6 NIST CSF 2.0 functions (Govern, Identify, Protect,
+Detect, Respond, Recover) with 23 categories and 145 checks.
 ```
 
 ### What to Include

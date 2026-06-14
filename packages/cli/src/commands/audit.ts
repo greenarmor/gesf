@@ -61,6 +61,18 @@ export const auditCommand = new Command("audit")
     const scoreData = generateScoreFile(auditedControls, frameworks, findings);
 
     writeJsonFile(path.join(root, ".ges", "score.json"), scoreData);
+    writeJsonFile(path.join(root, ".ges", "last-audit.json"), {
+      findings,
+      scannedFiles,
+      timestamp: new Date().toISOString(),
+    });
+
+    try {
+      const metaPath = path.join(root, ".ges", "metadata.json");
+      const meta = readJsonFile<Record<string, unknown>>(metaPath) || {};
+      meta.last_audit = new Date().toISOString();
+      writeJsonFile(metaPath, meta);
+    } catch { /* ignore metadata errors */ }
 
     const critical = findings.filter(f => f.severity === "critical");
     const high = findings.filter(f => f.severity === "high");

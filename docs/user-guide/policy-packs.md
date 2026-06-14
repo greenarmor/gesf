@@ -104,7 +104,7 @@ This deletes the `controls/blockchain/` directory.
 
 ### NIST CSF Pack (`nist`)
 
-**6 controls** based on the NIST Cybersecurity Framework. Covers identify, protect, detect, respond, and recover functions.
+**23 controls / 145 checks** based on NIST Cybersecurity Framework 2.0. Covers all six Functions: Govern (GV), Identify (ID), Protect (PR), Detect (DE), Respond (RS), and Recover (RC) — 23 Categories with SP 800-53 informative references.
 
 ### AI System Pack (`ai`)
 

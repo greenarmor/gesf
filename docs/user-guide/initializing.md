@@ -101,7 +101,7 @@ The project type determines which policy packs are installed:
 | **GDPR** | 22 controls | Articles 5, 25, 30, 32, 33, 34 |
 | **OWASP ASVS** | 6 controls | Input validation, auth, secrets, encryption |
 | **CIS Controls** | 5 controls | Asset management, configuration, vulnerability mgmt |
-| **NIST CSF** | 6 controls | Identify, Protect, Detect, Respond, Recover |
+| **NIST CSF 2.0** | 23 controls / 145 checks | Govern, Identify, Protect, Detect, Respond, Recover |
 | **AI System** | 6 controls | Prompt logging, PII detection, output validation |
 | **Blockchain** | 6 controls | Signatures, key rotation, on-chain data rules |
 | **Government** | 5 controls | Data sovereignty, chain of custody, tamper evidence |
