@@ -705,7 +705,7 @@ export function renderDashboard(data: DashboardData): string {
 
     html += '<div class="tab-bar">';
     html += '<button class="tab-btn active" onclick="showPackTab(\\'all\\',this)">All Controls (' + controls.length + ')</button>';
-    html += '<button class="tab-btn" onclick="showPackTab(\\'failing\\',this)">Failing (' + (controls.filter(function(c){return c.status!==\\'pass\\'&&c.status!==\\'not-applicable\\'}).length) + ')</button>';
+    html += '<button class="tab-btn" onclick="showPackTab(\\'failing\\',this)">Failing (' + (controls.filter(function(c){return c.status!=="pass"&&c.status!=="not-applicable"}).length) + ')</button>';
     html += '<button class="tab-btn" onclick="showPackTab(\\'withfindings\\',this)">With Findings (' + (controls.filter(function(c){return c.relatedFindings.length>0}).length) + ')</button>';
     html += '</div>';
 
@@ -713,7 +713,7 @@ export function renderDashboard(data: DashboardData): string {
     html += renderControlsTable(controls);
     html += '</div>';
     html += '<div id="pack-controls-failing" style="display:none;">';
-    html += renderControlsTable(controls.filter(function(c){return c.status!==\\'pass\\'&&c.status!==\\'not-applicable\\'}));
+    html += renderControlsTable(controls.filter(function(c){return c.status!=="pass"&&c.status!=="not-applicable"}));
     html += '</div>';
     html += '<div id="pack-controls-withfindings" style="display:none;">';
     html += renderControlsTable(controls.filter(function(c){return c.relatedFindings.length>0}));
