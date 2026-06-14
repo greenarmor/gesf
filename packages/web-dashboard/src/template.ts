@@ -2,6 +2,40 @@ import type { DashboardData } from "./index.js";
 import type { Control } from "@greenarmor/ges-core";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 
+interface ComplianceIssue {
+  controlId: string;
+  controlName: string;
+  severity: string;
+  status: string;
+  category: string;
+  framework: string;
+  article?: string;
+  description: string;
+  implementation_guidance: string;
+  packId: string;
+  packName: string;
+  passedChecks: number;
+  totalChecks: number;
+  auditFindings: Finding[];
+}
+
+function matchPackForControl(controlId: string, packs: { id: string; name: string }[]): { id: string; name: string } | undefined {
+  const idUpper = controlId.toUpperCase();
+  for (const p of packs) {
+    if (p.id === "gdpr" && idUpper.startsWith("GDPR-")) return p;
+    if (p.id === "owasp" && idUpper.startsWith("OWASP-")) return p;
+    if (p.id === "cis" && idUpper.startsWith("CIS-")) return p;
+    if (p.id === "nist" && idUpper.startsWith("NIST-")) return p;
+    if (p.id === "ai" && idUpper.startsWith("AI-")) return p;
+    if (p.id === "blockchain" && idUpper.startsWith("BC-")) return p;
+    if (p.id === "government" && idUpper.startsWith("GOV-")) return p;
+    if (p.id === "iso27001" && idUpper.startsWith("ISO27K-")) return p;
+    if (p.id === "iso27701" && idUpper.startsWith("ISO277-")) return p;
+    if (p.id === "hipaa" && idUpper.startsWith("HIPAA-")) return p;
+  }
+  return undefined;
+}
+
 function gradeColor(grade: string): string {
   switch (grade) {
     case "A": return "#22c55e";
@@ -108,6 +142,47 @@ export function renderDashboard(data: DashboardData): string {
     ...p,
     _controls: undefined,
   })));
+
+  const complianceIssues: ComplianceIssue[] = controls
+    .filter(c => c.status !== "pass" && c.status !== "not-applicable")
+    .map(c => {
+      const pack = matchPackForControl(c.id, packs);
+      const auditFindings = findings.filter(f => f.controlIds.includes(c.id));
+      return {
+        controlId: c.id,
+        controlName: c.name,
+        severity: c.severity,
+        status: c.status,
+        category: c.category,
+        framework: c.framework,
+        article: c.article,
+        description: c.description,
+        implementation_guidance: c.implementation_guidance,
+        packId: pack?.id || "",
+        packName: pack?.name || "Direct",
+        passedChecks: c.checks.filter(ch => ch.status === "pass").length,
+        totalChecks: c.checks.length,
+        auditFindings,
+      };
+    })
+    .sort((a, b) => {
+      const sevOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+      return (sevOrder[a.severity] ?? 4) - (sevOrder[b.severity] ?? 4);
+    });
+
+  const issuesBySeverity = {
+    critical: complianceIssues.filter(i => i.severity === "critical").length,
+    high: complianceIssues.filter(i => i.severity === "high").length,
+    medium: complianceIssues.filter(i => i.severity === "medium").length,
+    low: complianceIssues.filter(i => i.severity === "low").length,
+  };
+
+  const issuesByPackId: Record<string, ComplianceIssue[]> = {};
+  for (const issue of complianceIssues) {
+    const key = issue.packId || "direct";
+    if (!issuesByPackId[key]) issuesByPackId[key] = [];
+    issuesByPackId[key].push(issue);
+  }
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -408,99 +483,97 @@ export function renderDashboard(data: DashboardData): string {
   <div id="page-fixes" class="page">
     <div class="tab-bar" style="margin-bottom:0;">
       <button class="tab-btn active" onclick="showFixesTab('history', this)">Fix History (${data.fixHistory.length})</button>
-      <button class="tab-btn" onclick="showFixesTab('pending', this)">Pending Fixes (${findings.length})</button>
+      <button class="tab-btn" onclick="showFixesTab('pending', this)">Pending Fixes (${complianceIssues.length})</button>
     </div>
 
     <div id="fixes-tab-history" class="tab-panel active">
-      ${renderFixHistorySection(data.fixHistory)}
+      ${renderFixHistorySection(data.fixHistory, complianceIssues)}
     </div>
 
     <div id="fixes-tab-pending" class="tab-panel">
-      ${renderDetailedFixesList(findings, controls, packs)}
+      ${renderComplianceFixCards(complianceIssues, "fix")}
     </div>
   </div>
 
   <div id="page-findings" class="page">
     <div id="findings-main">
-      <h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">Security Findings Report</h2>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Compliance Findings &amp; Issues</h2>
+      <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Every control that is not passing is a compliance finding. Code-level audit evidence is shown where available.</p>
+
+      <div class="grid grid-4" style="margin-bottom:20px;">
+        <div class="card stat"><div class="num" style="color:${complianceIssues.length > 0 ? '#ef4444' : '#22c55e'};">${complianceIssues.length}</div><div class="label">Total Issues</div></div>
+        <div class="card stat"><div class="num" style="color:#ef4444;">${issuesBySeverity.critical}</div><div class="label">Critical</div></div>
+        <div class="card stat"><div class="num" style="color:#f97316;">${issuesBySeverity.high}</div><div class="label">High</div></div>
+        <div class="card stat"><div class="num">${findings.length}</div><div class="label">Audit Evidence</div></div>
+      </div>
+
       <div class="tab-bar">
-        <button class="tab-btn active" onclick="showFindingsTab('all', this)">All (${findings.length})</button>
-        <button class="tab-btn" onclick="showFindingsTab('critical', this)">Critical (${findingsBySeverity.critical})</button>
-        <button class="tab-btn" onclick="showFindingsTab('high', this)">High (${findingsBySeverity.high})</button>
-        <button class="tab-btn" onclick="showFindingsTab('medium', this)">Medium (${findingsBySeverity.medium})</button>
-        <button class="tab-btn" onclick="showFindingsTab('low', this)">Low (${findingsBySeverity.low})</button>
+        <button class="tab-btn active" onclick="showFindingsTab('all', this)">All Issues (${complianceIssues.length})</button>
+        <button class="tab-btn" onclick="showFindingsTab('critical', this)">Critical (${issuesBySeverity.critical})</button>
+        <button class="tab-btn" onclick="showFindingsTab('high', this)">High (${issuesBySeverity.high})</button>
+        <button class="tab-btn" onclick="showFindingsTab('medium', this)">Medium (${issuesBySeverity.medium})</button>
+        <button class="tab-btn" onclick="showFindingsTab('low', this)">Low (${issuesBySeverity.low})</button>
         <button class="tab-btn" onclick="showFindingsTab('bypack', this)">By Pack</button>
+        ${findings.length > 0 ? `<button class="tab-btn" onclick="showFindingsTab('evidence', this)">Audit Evidence (${findings.length})</button>` : ''}
       </div>
 
       <div id="findings-tab-all" class="tab-panel active">
-        ${renderFindingsTable(findings)}
+        ${renderComplianceIssuesTable(complianceIssues)}
       </div>
-      <div id="findings-tab-critical" class="tab-panel">${renderFindingsTable(findings.filter(f => f.severity === "critical"))}</div>
-      <div id="findings-tab-high" class="tab-panel">${renderFindingsTable(findings.filter(f => f.severity === "high"))}</div>
-      <div id="findings-tab-medium" class="tab-panel">${renderFindingsTable(findings.filter(f => f.severity === "medium"))}</div>
-      <div id="findings-tab-low" class="tab-panel">${renderFindingsTable(findings.filter(f => f.severity === "low"))}</div>
+      <div id="findings-tab-critical" class="tab-panel">${renderComplianceIssuesTable(complianceIssues.filter(i => i.severity === "critical"))}</div>
+      <div id="findings-tab-high" class="tab-panel">${renderComplianceIssuesTable(complianceIssues.filter(i => i.severity === "high"))}</div>
+      <div id="findings-tab-medium" class="tab-panel">${renderComplianceIssuesTable(complianceIssues.filter(i => i.severity === "medium"))}</div>
+      <div id="findings-tab-low" class="tab-panel">${renderComplianceIssuesTable(complianceIssues.filter(i => i.severity === "low"))}</div>
       <div id="findings-tab-bypack" class="tab-panel">
-        ${packs.filter(p => (findingsByPackId[p.id] || []).length > 0).length > 0 ? packs.filter(p => (findingsByPackId[p.id] || []).length > 0).map(p => `
+        ${packs.filter(p => (issuesByPackId[p.id] || []).length > 0).length > 0 ? packs.filter(p => (issuesByPackId[p.id] || []).length > 0).map(p => `
           <div class="card" style="margin-bottom:16px;">
             <div class="card-title" style="cursor:pointer;" onclick="loadPackDetail('${p.id}')">
-              ${escapeHtml(p.name)} &mdash; ${(findingsByPackId[p.id] || []).length} findings
+              ${escapeHtml(p.name)} &mdash; ${(issuesByPackId[p.id] || []).length} issues
               <span style="float:right;color:#0f766e;font-weight:400;font-size:11px;">View pack details &rarr;</span>
             </div>
-            ${renderFindingsTable(findingsByPackId[p.id] || [])}
+            ${renderComplianceIssuesTable(issuesByPackId[p.id] || [])}
           </div>
-        `).join('') : '<div class="empty-state"><div class="msg">No findings mapped to policy packs</div></div>'}
+        `).join('') : '<div class="empty-state"><div class="msg">No compliance issues mapped to policy packs</div></div>'}
       </div>
+      ${findings.length > 0 ? `<div id="findings-tab-evidence" class="tab-panel">${renderFindingsTable(findings)}</div>` : ''}
     </div>
     <div id="finding-detail" style="display:none;"></div>
   </div>
 
   <div id="page-traceability" class="page">
-    <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Fix Traceability Matrix</h2>
-    <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Finding &rarr; Fix &rarr; Control &rarr; Policy Pack traceability for every security issue.</p>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Compliance Traceability Matrix</h2>
+    <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Full traceability: Control &rarr; Framework &rarr; Policy Pack &rarr; Severity &rarr; Fix Guidance for every compliance issue.</p>
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="showTraceTab('matrix', this)">Matrix</button>
+      <button class="tab-btn active" onclick="showTraceTab('matrix', this)">Matrix (${complianceIssues.length})</button>
       <button class="tab-btn" onclick="showTraceTab('fixes', this)">Prioritized Fixes</button>
       <button class="tab-btn" onclick="showTraceTab('controls', this)">Control Coverage</button>
     </div>
 
     <div id="trace-tab-matrix" class="tab-panel active">
-      ${findings.length > 0 ? `<div class="card">
+      ${complianceIssues.length > 0 ? `<div class="card">
         <table>
-          <thead><tr><th>Finding</th><th>Severity</th><th>File</th><th>Linked Controls</th><th>Policy Pack</th><th>Fix Guidance</th></tr></thead>
+          <thead><tr><th>Control</th><th>Severity</th><th>Framework</th><th>Policy Pack</th><th>Status</th><th>Checks</th><th>Audit</th><th>Fix Guidance</th></tr></thead>
           <tbody>
-            ${findings.slice(0, 50).map(f => {
-              const linkedControls = controls.filter(c => f.controlIds.includes(c.id));
-              const linkedPackIds = new Set<string>();
-              for (const ctrl of linkedControls) {
-                const pk = packs.find(pp => {
-                  const pCtrls = getAllControlsForPack(pp.id, controls);
-                  return pCtrls.some(c2 => c2.id === ctrl.id);
-                });
-                if (pk) linkedPackIds.add(pk.id);
-              }
-              return `<tr>
-                <td>
-                  <div style="font-weight:600;font-size:13px;">${escapeHtml(f.title)}</div>
-                  <div style="font-size:11px;color:#6b7280;">${escapeHtml(f.ruleId)}</div>
-                </td>
-                <td><span class="badge badge-sev" style="background:${severityColor(f.severity)}">${f.severity.toUpperCase()}</span></td>
-                <td style="font-family:monospace;font-size:11px;">${escapeHtml(f.file)}${f.line ? ':' + f.line : ''}</td>
-                <td>${linkedControls.length > 0 ? linkedControls.map(c => `<div style="margin-bottom:2px;"><span class="link" onclick="showControlDetail('${escapeHtml(c.id)}')">${escapeHtml(c.id)}</span> <span style="color:#6b7280;font-size:11px;">${escapeHtml(c.name)}</span></div>`).join('') : '<span style="color:#9ca3af;">No linked controls</span>'}</td>
-                <td>${linkedPackIds.size > 0 ? [...linkedPackIds].map(pid => {
-                  const pk = packs.find(pp => pp.id === pid);
-                  return pk ? `<span class="tag" style="cursor:pointer;" onclick="loadPackDetail('${pk.id}')">${escapeHtml(pk.name)}</span>` : '';
-                }).join(' ') : '<span style="color:#9ca3af;">-</span>'}</td>
-                <td style="max-width:300px;font-size:12px;color:#374151;">${escapeHtml(f.fix)}</td>
-              </tr>`;
-            }).join('')}
+            ${complianceIssues.map(issue => `<tr>
+              <td>
+                <span class="link" onclick="showControlDetail('${escapeHtml(issue.controlId)}')">${escapeHtml(issue.controlId)}</span>
+                <div style="font-size:12px;color:#4b5563;">${escapeHtml(issue.controlName)}</div>
+              </td>
+              <td><span class="badge badge-sev" style="background:${severityColor(issue.severity)}">${issue.severity.toUpperCase()}</span></td>
+              <td style="font-size:12px;">${escapeHtml(issue.framework)}${issue.article ? '<br><span style="color:#6b7280;">' + escapeHtml(issue.article) + '</span>' : ''}</td>
+              <td>${issue.packId ? `<span class="tag" style="cursor:pointer;" onclick="loadPackDetail('${issue.packId}')">${escapeHtml(issue.packName)}</span>` : '<span style="color:#9ca3af;">-</span>'}</td>
+              <td><span class="badge badge-status" style="background:${statusColor(issue.status)}">${statusLabel(issue.status)}</span></td>
+              <td style="font-size:12px;">${issue.passedChecks}/${issue.totalChecks}</td>
+              <td>${issue.auditFindings.length > 0 ? `<span style="color:#ef4444;font-weight:600;">${issue.auditFindings.length}</span>` : '<span style="color:#9ca3af;">0</span>'}</td>
+              <td style="max-width:280px;font-size:12px;color:#374151;">${escapeHtml(issue.implementation_guidance.substring(0, 150))}${issue.implementation_guidance.length > 150 ? '...' : ''}</td>
+            </tr>`).join('')}
           </tbody>
         </table>
-        ${findings.length > 50 ? `<div style="text-align:center;padding:8px;color:#9ca3af;font-size:12px;">Showing 50 of ${findings.length} findings</div>` : ''}
-      </div>` : '<div class="card"><div class="empty-state"><div class="icon">&#10003;</div><div class="msg" style="color:#22c55e;">No findings to trace</div><div class="sub">All clear</div></div></div>'}
+      </div>` : '<div class="card"><div class="empty-state"><div class="icon">&#10003;</div><div class="msg" style="color:#22c55e;">No issues to trace</div><div class="sub">All controls passing</div></div></div>'}
     </div>
 
     <div id="trace-tab-fixes" class="tab-panel">
-      ${renderDetailedFixesList(findings, controls, packs)}
+      ${renderComplianceFixCards(complianceIssues, "trace")}
     </div>
 
     <div id="trace-tab-controls" class="tab-panel">
@@ -597,6 +670,11 @@ export function renderDashboard(data: DashboardData): string {
     var btns = document.querySelectorAll('#page-fixes .tab-btn');
     for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
     if (btn) btn.classList.add('active');
+  };
+
+  window.goToPendingFixes = function() {
+    var btns = document.querySelectorAll('#page-fixes .tab-btn');
+    showFixesTab('pending', btns.length > 1 ? btns[1] : (btns[0] || null));
   };
 
   window.showTraceTab = function(tab, btn) {
@@ -1050,7 +1128,7 @@ function renderDetailedFixesList(findings: Finding[], controls: Control[], packs
   return html;
 }
 
-function renderFixHistorySection(entries: import("@greenarmor/ges-core").FixHistoryEntry[]): string {
+function renderFixHistorySection(entries: import("@greenarmor/ges-core").FixHistoryEntry[], complianceIssues: ComplianceIssue[] = []): string {
   if (entries.length === 0) {
     return `<div class="card">
       <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Compliance Fix History</h2>
@@ -1059,6 +1137,7 @@ function renderFixHistorySection(entries: import("@greenarmor/ges-core").FixHist
         <div class="icon">&#128203;</div>
         <div class="msg">No fixes recorded yet</div>
         <div class="sub">Run <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;">ges fix</code> or use the MCP <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;">auto_fix</code> tool to apply fixes. Each fix will be recorded here.</div>
+        ${complianceIssues.length > 0 ? `<div style="margin-top:16px;"><span class="badge badge-status" style="background:#f97316;font-size:12px;padding:4px 12px;">${complianceIssues.length} pending fixes</span> <span class="link" style="font-size:13px;" onclick="goToPendingFixes()">View pending fixes &rarr;</span></div>` : ''}
       </div>
     </div>`;
   }
@@ -1220,6 +1299,119 @@ function renderFixHistorySection(entries: import("@greenarmor/ges-core").FixHist
     html += `</div></div>`;
   }
   html += `</div>`;
+
+  return html;
+}
+
+function renderComplianceIssuesTable(issues: ComplianceIssue[]): string {
+  if (issues.length === 0) {
+    return '<div class="empty-state"><div class="icon">&#10003;</div><div class="msg" style="color:#22c55e;">No compliance issues in this category</div></div>';
+  }
+  return `<table>
+    <thead><tr><th>Severity</th><th>Control</th><th>Framework</th><th>Policy Pack</th><th>Status</th><th>Checks</th><th>Audit</th><th>Fix Guidance</th></tr></thead>
+    <tbody>
+      ${issues.map(issue => `<tr>
+        <td><span class="badge badge-sev" style="background:${severityColor(issue.severity)}">${issue.severity.toUpperCase()}</span></td>
+        <td>
+          <span class="link" onclick="showControlDetail('${escapeHtml(issue.controlId)}')">${escapeHtml(issue.controlId)}</span>
+          <div style="font-size:12px;color:#4b5563;">${escapeHtml(issue.controlName)}</div>
+        </td>
+        <td style="font-size:12px;">${escapeHtml(issue.framework)}${issue.article ? '<br><span style="color:#6b7280;">' + escapeHtml(issue.article) + '</span>' : ''}</td>
+        <td>${issue.packId ? `<span class="tag" style="cursor:pointer;" onclick="loadPackDetail('${issue.packId}')">${escapeHtml(issue.packName)}</span>` : '<span style="color:#9ca3af;">Direct</span>'}</td>
+        <td><span class="badge badge-status" style="background:${statusColor(issue.status)}">${statusLabel(issue.status)}</span></td>
+        <td style="font-size:12px;">${issue.passedChecks}/${issue.totalChecks}</td>
+        <td>${issue.auditFindings.length > 0 ? `<span style="color:#ef4444;font-weight:600;">${issue.auditFindings.length}</span>` : '<span style="color:#9ca3af;">0</span>'}</td>
+        <td style="max-width:280px;font-size:12px;color:#4b5563;">${escapeHtml(issue.implementation_guidance.substring(0, 200))}${issue.implementation_guidance.length > 200 ? '...' : ''}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderComplianceFixCards(issues: ComplianceIssue[], idPrefix: string): string {
+  if (issues.length === 0) {
+    return '<div class="card"><div class="empty-state"><div class="icon">&#10003;</div><div class="msg" style="color:#22c55e;">All controls passing</div><div class="sub">No fixes needed</div></div></div>';
+  }
+
+  const totalAuditFindings = issues.reduce((sum, i) => sum + i.auditFindings.length, 0);
+  const criticalCount = issues.filter(i => i.severity === "critical").length;
+  const highCount = issues.filter(i => i.severity === "high").length;
+
+  let html = '';
+  html += `<div style="margin-bottom:20px;">`;
+  html += `<div class="grid grid-4" style="margin-bottom:20px;">`;
+  html += `<div class="card stat"><div class="num" style="color:#ef4444;">${issues.length}</div><div class="label">Controls to Fix</div></div>`;
+  html += `<div class="card stat"><div class="num" style="color:#ef4444;">${criticalCount}</div><div class="label">Critical</div></div>`;
+  html += `<div class="card stat"><div class="num" style="color:#f97316;">${highCount}</div><div class="label">High</div></div>`;
+  html += `<div class="card stat"><div class="num">${totalAuditFindings}</div><div class="label">Audit Findings</div></div>`;
+  html += `</div>`;
+  html += `</div>`;
+
+  for (let i = 0; i < issues.length; i++) {
+    const issue = issues[i];
+    const fixId = `${idPrefix}-${i}`;
+
+    html += `<div class="fix-detail-card">`;
+    html += `<div class="fix-detail-header ${issue.severity}" onclick="toggleFix('${fixId}')">`;
+    html += `<div class="fix-detail-num" style="color:${severityColor(issue.severity)};">${i + 1}</div>`;
+    html += `<div class="fix-detail-info">`;
+    html += `<div class="fix-detail-title">${escapeHtml(issue.controlName)}</div>`;
+    html += `<div class="fix-detail-meta">${escapeHtml(issue.controlId)} | ${escapeHtml(issue.category)} | ${escapeHtml(issue.framework)}${issue.article ? ' | ' + escapeHtml(issue.article) : ''} | Pack: ${escapeHtml(issue.packName)}</div>`;
+    html += `</div>`;
+    html += `<div class="fix-detail-badges">`;
+    html += `<span class="badge badge-sev" style="background:${severityColor(issue.severity)}">${issue.severity.toUpperCase()}</span>`;
+    html += `<span class="badge badge-status" style="background:${statusColor(issue.status)}">${statusLabel(issue.status)}</span>`;
+    html += `<span style="font-size:12px;color:#6b7280;">${issue.passedChecks}/${issue.totalChecks} checks</span>`;
+    if (issue.auditFindings.length > 0) {
+      html += `<span style="font-size:12px;color:#ef4444;font-weight:600;">${issue.auditFindings.length} evidence</span>`;
+    }
+    html += `<span class="fix-toggle" id="${fixId}-toggle">Expand</span>`;
+    html += `</div></div>`;
+
+    html += `<div class="fix-detail-body" id="${fixId}">`;
+
+    html += `<div class="fix-section"><div class="fix-section-title">Description</div>`;
+    html += `<div style="font-size:13px;color:#4b5563;line-height:1.6;">${escapeHtml(issue.description)}</div>`;
+    html += `</div>`;
+
+    if (issue.auditFindings.length > 0) {
+      html += `<div class="fix-section"><div class="fix-section-title">Audit Evidence (${issue.auditFindings.length})</div>`;
+      for (const f of issue.auditFindings) {
+        html += `<div class="fix-finding-item ${f.severity}">`;
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">`;
+        html += `<span class="badge badge-sev" style="background:${severityColor(f.severity)};font-size:10px;">${f.severity.toUpperCase()}</span>`;
+        html += `<strong style="font-size:13px;">${escapeHtml(f.title)}</strong></div>`;
+        html += `<div style="font-size:12px;color:#6b7280;"><span style="font-family:monospace;font-weight:600;">${escapeHtml(f.ruleId)}</span> &mdash; <span style="font-family:monospace;">${escapeHtml(f.file)}${f.line ? ':' + f.line : ''}</span></div>`;
+        if (f.description) html += `<div style="font-size:12px;color:#4b5563;margin-top:4px;">${escapeHtml(f.description)}</div>`;
+        if (f.evidence) html += `<div class="fix-evidence">${escapeHtml(f.evidence)}</div>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `<div class="fix-section"><div class="fix-section-title">Fix Guidance</div>`;
+    html += `<div class="fix-guidance-box"><strong>How to fix:</strong> ${escapeHtml(issue.implementation_guidance)}</div>`;
+    for (const f of issue.auditFindings) {
+      if (f.fix) {
+        html += `<div class="fix-guidance-box" style="margin-top:8px;background:#eff6ff;border-color:#bfdbfe;"><strong>Fix for ${escapeHtml(f.ruleId)}:</strong> ${escapeHtml(f.fix)}</div>`;
+      }
+    }
+    html += `</div>`;
+
+    html += `<div class="fix-section"><div class="fix-section-title">Traceability</div>`;
+    html += `<table><tbody>`;
+    html += `<tr><td style="font-weight:600;width:160px;">Control</td><td><span class="link" onclick="showControlDetail('${escapeHtml(issue.controlId)}')">${escapeHtml(issue.controlId)}</span> &mdash; ${escapeHtml(issue.controlName)}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Category</td><td>${escapeHtml(issue.category)}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Framework</td><td>${escapeHtml(issue.framework)}${issue.article ? ' / ' + escapeHtml(issue.article) : ''}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Policy Pack</td><td>${issue.packId ? `<span class="tag" style="cursor:pointer;" onclick="loadPackDetail('${issue.packId}')">${escapeHtml(issue.packName)}</span>` : 'Direct'}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Severity</td><td><span class="badge badge-sev" style="background:${severityColor(issue.severity)}">${issue.severity.toUpperCase()}</span></td></tr>`;
+    html += `<tr><td style="font-weight:600;">Status</td><td><span class="badge badge-status" style="background:${statusColor(issue.status)}">${statusLabel(issue.status)}</span></td></tr>`;
+    html += `<tr><td style="font-weight:600;">Checks</td><td>${issue.passedChecks}/${issue.totalChecks} passed</td></tr>`;
+    html += `<tr><td style="font-weight:600;">Audit Evidence</td><td>${issue.auditFindings.length} finding(s)</td></tr>`;
+    html += `</tbody></table>`;
+    html += `</div>`;
+
+    html += `</div></div>`;
+  }
 
   return html;
 }

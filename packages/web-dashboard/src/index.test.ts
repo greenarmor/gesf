@@ -337,7 +337,7 @@ describe("web-dashboard", () => {
     it("includes traceability matrix page", () => {
       const data = collectDashboardData(tmpDir);
       const html = renderDashboard(data);
-      expect(html).toContain("Fix Traceability Matrix");
+      expect(html).toContain("Compliance Traceability Matrix");
       expect(html).toContain("trace-tab-matrix");
       expect(html).toContain("trace-tab-fixes");
       expect(html).toContain("trace-tab-controls");
@@ -346,7 +346,7 @@ describe("web-dashboard", () => {
     it("includes findings report with severity tabs", () => {
       const data = collectDashboardData(tmpDir);
       const html = renderDashboard(data);
-      expect(html).toContain("Security Findings Report");
+      expect(html).toContain("Compliance Findings &amp; Issues");
       expect(html).toContain("findings-tab-all");
       expect(html).toContain("findings-tab-critical");
       expect(html).toContain("findings-tab-high");
