@@ -4,8 +4,9 @@ import * as path from "node:path";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import { getAllPacks, getPacksForProjectType, getPack } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile } from "@greenarmor/ges-scoring-engine";
-import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry } from "@greenarmor/ges-core";
-import { loadFixHistory } from "@greenarmor/ges-core";
+import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry, ActivityLogEntry } from "@greenarmor/ges-core";
+import { loadFixHistory, loadActivityLog, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls } from "@greenarmor/ges-core";
+import { getInstalledPackIds as getInstalledPackIdsFromDisk } from "@greenarmor/ges-core";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { renderDashboard } from "./template.js";
 
@@ -67,6 +68,7 @@ export interface DashboardData {
   findings: Finding[];
   packs: PackSummary[];
   fixHistory: FixHistoryEntry[];
+  activityLog: ActivityLogEntry[];
   lastAudit: string;
 }
 
@@ -95,22 +97,15 @@ function loadControlsForConfig(projectPath: string, config: ProjectConfig): Cont
     const fwLower = new Set(config.frameworks.map(f => f.toLowerCase()));
     const allPacks = getAllPacks();
     const packs = allPacks.filter(pack => fwLower.has(pack.id.toLowerCase()));
-    const controls = packs.flatMap(p => p.controls);
+    const inMemoryControls = packs.flatMap(p => p.controls);
 
-    const overridesPath = path.join(projectPath, ".ges", "control-overrides.json");
-    if (fs.existsSync(overridesPath)) {
-      const overrides = JSON.parse(fs.readFileSync(overridesPath, "utf-8"));
-      for (const override of overrides) {
-        const control = controls.find((c: Control) => c.id === override.control_id);
-        if (control) {
-          control.status = override.status;
-          for (const check of control.checks) {
-            check.status = override.status;
-          }
-        }
-      }
-    }
-    return controls;
+    const diskControls = loadControlsFromDisk(projectPath);
+    const seenIds = new Set(inMemoryControls.map((c: Control) => c.id));
+    const extraFromDisk = diskControls.filter(c => !seenIds.has(c.id));
+    const controls = [...inMemoryControls, ...extraFromDisk];
+
+    const overrides = loadControlOverrides(projectPath);
+    return applyOverridesToControls(controls, overrides);
   } catch {
     return [];
   }
@@ -213,35 +208,45 @@ function getInstalledPackIds(projectPath: string, config?: ProjectConfig): Set<s
     }
   }
 
-  const controlsDir = path.join(projectPath, "controls");
-  try {
-    const entries = fs.readdirSync(controlsDir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        const ctrlFile = path.join(controlsDir, entry.name, "controls.json");
-        if (fs.existsSync(ctrlFile)) {
-          ids.add(entry.name);
-        }
-      }
-    }
-  } catch {
-    // controls dir may not exist
+  for (const id of getInstalledPackIdsFromDisk(projectPath)) {
+    ids.add(id);
   }
 
   return ids;
+}
+
+function getFrameworksFromControls(controls: Control[]): string[] {
+  const fwSet = new Set<string>();
+  for (const c of controls) {
+    if (c.framework) fwSet.add(c.framework);
+  }
+  return [...fwSet];
 }
 
 export function collectDashboardData(projectPath: string): DashboardData {
   const config = loadConfig(projectPath);
   let score = loadScore(projectPath);
 
-  const baseControls = config ? loadControlsForConfig(projectPath, config) : [];
+  let baseControls: Control[];
+  let frameworks: string[];
+
+  if (config) {
+    baseControls = loadControlsForConfig(projectPath, config);
+    frameworks = config.frameworks;
+  } else {
+    baseControls = loadControlsFromDisk(projectPath);
+    frameworks = [];
+  }
+
   const findings = loadFindings(projectPath);
   const controls = updateControlsFromFindings(baseControls, findings);
 
-  if (config) {
+  if (config || controls.length > 0) {
     try {
-      const freshScore = generateScoreFile(controls, config.frameworks, findings);
+      const scoreFrameworks = frameworks.length > 0
+        ? frameworks as string[]
+        : getFrameworksFromControls(controls);
+      const freshScore = generateScoreFile(controls, scoreFrameworks as any, findings);
       score = freshScore;
     } catch {
       if (!score) score = null;
@@ -252,6 +257,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
   const installedPacks = getInstalledPackIds(projectPath, config || undefined);
   const packs = allPacks.map(p => buildPackSummary(p, controls, findings, installedPacks));
   const fixHistory = loadFixHistory(projectPath);
+  const activityLog = loadActivityLog(projectPath);
 
   const metadataPath = path.join(projectPath, ".ges", "metadata.json");
   let lastAudit = "";
@@ -262,16 +268,22 @@ export function collectDashboardData(projectPath: string): DashboardData {
     lastAudit = new Date().toISOString();
   }
 
+  const allFrameworks = new Set<string>(frameworks);
+  for (const c of controls) {
+    if (c.framework) allFrameworks.add(c.framework);
+  }
+
   return {
     projectName: config?.project_name || "Unknown Project",
     projectType: config?.project_type || "unknown",
-    frameworks: config?.frameworks || [],
+    frameworks: [...allFrameworks],
     gesfVersion: "1.2.4",
     score,
     controls,
     findings,
     packs,
     fixHistory,
+    activityLog,
     lastAudit,
   };
 }
@@ -281,7 +293,9 @@ export function collectPackDetail(projectPath: string, packId: string): PackDeta
   if (!pack) return null;
 
   const config = loadConfig(projectPath);
-  const baseControls = config ? loadControlsForConfig(projectPath, config) : [];
+  const baseControls = config
+    ? loadControlsForConfig(projectPath, config)
+    : loadControlsFromDisk(projectPath);
   const findings = loadFindings(projectPath);
   const controls = updateControlsFromFindings(baseControls, findings);
 
@@ -366,9 +380,10 @@ export function collectPackDetail(projectPath: string, packId: string): PackDeta
 
 export function collectControlDetail(projectPath: string, controlId: string): ControlDetail | null {
   const config = loadConfig(projectPath);
-  if (!config) return null;
 
-  const baseControls = loadControlsForConfig(projectPath, config);
+  const baseControls = config
+    ? loadControlsForConfig(projectPath, config)
+    : loadControlsFromDisk(projectPath);
   const findings = loadFindings(projectPath);
   const controls = updateControlsFromFindings(baseControls, findings);
   const control = controls.find(c => c.id === controlId);
@@ -468,6 +483,16 @@ export function startDashboard(options: DashboardOptions): http.Server {
       try {
         const data = collectDashboardData(options.projectPath);
         jsonResponse(res, data.fixHistory);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (pathname === "/api/activity-log") {
+      try {
+        const data = collectDashboardData(options.projectPath);
+        jsonResponse(res, data.activityLog);
       } catch (err) {
         jsonError(res, err instanceof Error ? err.message : String(err));
       }

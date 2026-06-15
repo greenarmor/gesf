@@ -3,7 +3,7 @@ import { ensureGESInitialized } from "../utils/project.js";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { createAutoFixPlan, applyAutoFixAction, getNpmInstallsFromActions } from "@greenarmor/ges-mcp-server";
-import { appendFixHistory, createFixHistoryEntry } from "@greenarmor/ges-core";
+import { appendFixHistory, createFixHistoryEntry, recordActivity, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls } from "@greenarmor/ges-core";
 import type { Control } from "@greenarmor/ges-core";
 import { getAllPacks } from "@greenarmor/ges-policy-engine";
 import * as fs from "node:fs";
@@ -12,14 +12,25 @@ import * as path from "node:path";
 function loadProjectControls(root: string): Control[] {
   try {
     const configPath = path.join(root, ".ges", "config.json");
-    if (!fs.existsSync(configPath)) return [];
-    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    const fwLower = new Set(config.frameworks.map((f: string) => f.toLowerCase()));
-    const allPacks = getAllPacks();
-    const filtered = allPacks.filter(pack =>
-      fwLower.has(pack.id.toLowerCase())
-    );
-    return filtered.flatMap((p: any) => p.controls);
+    let inMemoryControls: Control[] = [];
+
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+      const fwLower = new Set(config.frameworks.map((f: string) => f.toLowerCase()));
+      const allPacks = getAllPacks();
+      const filtered = allPacks.filter(pack =>
+        fwLower.has(pack.id.toLowerCase())
+      );
+      inMemoryControls = filtered.flatMap((p: any) => p.controls);
+    }
+
+    const diskControls = loadControlsFromDisk(root);
+    const seenIds = new Set(inMemoryControls.map(c => c.id));
+    const extraFromDisk = diskControls.filter(c => !seenIds.has(c.id));
+    const controls = [...inMemoryControls, ...extraFromDisk];
+
+    const overrides = loadControlOverrides(root);
+    return applyOverridesToControls(controls, overrides);
   } catch {
     return [];
   }
@@ -172,6 +183,15 @@ export const fixCommand = new Command("fix")
     console.log("    2. Review changes: git diff");
     console.log("    3. Re-run audit: ges audit");
     console.log("");
+
+    recordActivity(root, {
+      source: "cli",
+      action: "fix",
+      title: `Auto-fix ${dryRun ? "planned" : "applied"}: ${applied} fixes`,
+      description: `${dryRun ? "Planned" : "Applied"} ${applied} fix(es) across ${actions.length} action(s)${failed > 0 ? ` (${failed} failed)` : ""}. Scanned ${scannedFiles} files, ${findings.length} findings found.`,
+      status: failed > 0 ? "partial" : "success",
+      details: { fixes_applied: applied, findings_count: findings.length, files_scanned: scannedFiles },
+    });
 
     if (options.ci && (findings.length > 0 && failed < findings.length) === false && findings.length > 0) {
       process.exit(1);

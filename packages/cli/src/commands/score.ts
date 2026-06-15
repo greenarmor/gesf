@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { ensureGESInitialized, readJsonFile } from "../utils/project.js";
 import type { ScoreFile } from "@greenarmor/ges-core";
+import { recordActivity } from "@greenarmor/ges-core";
 import { formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as path from "node:path";
@@ -25,6 +26,14 @@ export const scoreCommand = new Command("score")
       console.log(formatScoreOutput(score));
       console.log(`  Last evaluated: ${score.evaluated_at}\n`);
     }
+
+    recordActivity(root, {
+      source: "cli",
+      action: "score",
+      title: `Score displayed: ${score.overall}% (${score.overall_grade})`,
+      description: `Compliance score: ${score.overall}% (Grade ${score.overall_grade}) across ${Object.keys(score.frameworks).length} frameworks.`,
+      details: { score: score.overall },
+    });
 
     await showNextStepsMenu("score");
   });

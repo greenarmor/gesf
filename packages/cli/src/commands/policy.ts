@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { getAllPacks, listPackIds } from "@greenarmor/ges-policy-engine";
 import { ensureGESInitialized, readJsonFile, writeFileSync, writeJsonFile } from "../utils/project.js";
 import type { ProjectConfig } from "@greenarmor/ges-core";
+import { addFrameworkToConfig, removeFrameworkFromConfig, recordActivity } from "@greenarmor/ges-core";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -45,7 +46,21 @@ policyCmd
       JSON.stringify(pack.controls, null, 2),
     );
 
-    console.log(`\n  ✓ Installed policy pack: ${pack.id} (${pack.controls.length} controls)\n`);
+    const addedToConfig = addFrameworkToConfig(root, pack.id.toUpperCase());
+
+    console.log(`\n  ✓ Installed policy pack: ${pack.id} (${pack.controls.length} controls)`);
+    if (addedToConfig) {
+      console.log(`  ✓ Added ${pack.id.toUpperCase()} to project frameworks in .ges/config.json`);
+    }
+    console.log("  ✓ Dashboard will now reflect this pack's controls\n");
+
+    recordActivity(root, {
+      source: "cli",
+      action: "policy_install",
+      title: `Installed pack: ${pack.name}`,
+      description: `Installed ${pack.controls.length} controls from ${pack.id} pack.${addedToConfig ? ` Added ${pack.id.toUpperCase()} to config frameworks.` : ""}`,
+      details: { packs_affected: [pack.id], frameworks_added: addedToConfig ? [pack.id.toUpperCase()] : [] },
+    });
 
     await showNextStepsMenu("policy-install");
   });
@@ -63,7 +78,16 @@ policyCmd
     }
 
     fs.rmSync(packDir, { recursive: true, force: true });
+    removeFrameworkFromConfig(root, packId.toUpperCase());
     console.log(`\n  ✓ Removed policy pack: ${packId}\n`);
+
+    recordActivity(root, {
+      source: "cli",
+      action: "policy_remove",
+      title: `Removed pack: ${packId}`,
+      description: `Removed ${packId} pack and its controls from the project.`,
+      details: { packs_affected: [packId] },
+    });
 
     await showNextStepsMenu("policy-remove");
   });

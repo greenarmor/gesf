@@ -15,6 +15,7 @@ import {
 } from "@greenarmor/ges-core";
 import { CLI_VERSION } from "../utils/version.js";
 import type { ProjectConfig, ProjectType, FrameworkName } from "@greenarmor/ges-core";
+import { recordActivity } from "@greenarmor/ges-core";
 import { getPacksForProjectType } from "@greenarmor/ges-policy-engine";
 import {
   generateComplianceDocs,
@@ -160,6 +161,14 @@ export const initCommand = new Command("init")
     console.log("    1. Review generated compliance documents");
     console.log("    2. Run 'ges audit' to evaluate your project");
     console.log("    3. Run 'ges score' to see your compliance score\n");
+
+    recordActivity(process.cwd(), {
+      source: "cli",
+      action: "init",
+      title: `Project initialized: ${projectName}`,
+      description: `Initialized GESF for ${projectType} project with frameworks: ${selectedFrameworks.join(", ")}. Installed ${packs.length} policy packs: ${packs.map(p => p.id).join(", ")}.`,
+      details: { packs_affected: packs.map(p => p.id), frameworks_added: selectedFrameworks.map((f: FrameworkName) => String(f)) },
+    });
 
     await showNextStepsMenu("init");
   });

@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { ensureGESInitialized } from "../utils/project.js";
 import { installHooks, uninstallHooks } from "@greenarmor/ges-git-hooks";
+import { recordActivity } from "@greenarmor/ges-core";
 
 export const hooksCommand = new Command("hooks")
   .description("Manage GESF git hooks (pre-commit compliance enforcement)")
@@ -29,6 +30,13 @@ export const hooksCommand = new Command("hooks")
         console.log("  The hook will run 'ges audit' before allowing commits.");
         console.log("  To bypass: git commit --no-verify");
         console.log("  To remove: ges hooks uninstall\n");
+
+        recordActivity(root, {
+          source: "cli",
+          action: "hooks_install",
+          title: `Git hooks installed (${result.installed.length})`,
+          description: `Installed pre-commit hook that runs 'ges audit' before each commit.`,
+        });
       })
   )
   .addCommand(
@@ -46,5 +54,12 @@ export const hooksCommand = new Command("hooks")
         }
 
         console.log("\n  Pre-commit hook removed.\n");
+
+        recordActivity(root, {
+          source: "cli",
+          action: "hooks_uninstall",
+          title: `Git hooks removed`,
+          description: `Removed pre-commit hook.`,
+        });
       })
   );

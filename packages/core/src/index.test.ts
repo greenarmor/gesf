@@ -18,6 +18,24 @@ import {
   PROJECT_TYPE_PACKS,
 } from "./constants/index.js";
 import { loadFixHistory, appendFixHistory, clearFixHistory, createFixHistoryEntry } from "./fix-history/index.js";
+import {
+  loadControlsFromDisk,
+  getInstalledPackIds,
+  loadControlOverrides,
+  saveControlOverride,
+  applyOverridesToControls,
+  loadConfig,
+  addFrameworkToConfig,
+  removeFrameworkFromConfig,
+} from "./controls/index.js";
+import type { Control, ControlOverride } from "./types/index.js";
+import {
+  loadActivityLog,
+  appendActivityLog,
+  clearActivityLog,
+  createActivityLogEntry,
+  recordActivity,
+} from "./activity-log/index.js";
 
 describe("GESF_VERSION", () => {
   it("is defined and looks like a semver", () => {
@@ -275,5 +293,280 @@ describe("fix-history", () => {
 
     expect(entry.dry_run).toBe(true);
     expect(entry.fix.applied).toBe(false);
+  });
+});
+
+describe("controls utilities", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gesf-ctrl-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  const sampleControl: Control = {
+    id: "AI-001",
+    name: "Prompt Logging",
+    description: "Log all AI prompts",
+    category: "ai",
+    framework: "GDPR" as any,
+    status: "not-implemented",
+    severity: "high",
+    implementation_guidance: "Log all prompts to audit trail",
+    checks: [{ id: "AI-001-C1", description: "Prompt log exists", status: "not-implemented" }],
+  };
+
+  describe("loadControlsFromDisk", () => {
+    it("returns empty when controls/ does not exist", () => {
+      expect(loadControlsFromDisk(tmpDir)).toEqual([]);
+    });
+
+    it("reads controls from installed packs", () => {
+      const packDir = path.join(tmpDir, "controls", "ai");
+      fs.mkdirSync(packDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(packDir, "controls.json"),
+        JSON.stringify([sampleControl], null, 2),
+      );
+
+      const controls = loadControlsFromDisk(tmpDir);
+      expect(controls.length).toBe(1);
+      expect(controls[0].id).toBe("AI-001");
+    });
+
+    it("reads from multiple pack directories", () => {
+      for (const packId of ["gdpr", "owasp"]) {
+        const d = path.join(tmpDir, "controls", packId);
+        fs.mkdirSync(d, { recursive: true });
+        fs.writeFileSync(path.join(d, "controls.json"), JSON.stringify([
+          { ...sampleControl, id: `${packId.toUpperCase()}-001` },
+        ], null, 2));
+      }
+
+      const controls = loadControlsFromDisk(tmpDir);
+      expect(controls.length).toBe(2);
+    });
+
+    it("skips malformed controls.json", () => {
+      const d = path.join(tmpDir, "controls", "bad");
+      fs.mkdirSync(d, { recursive: true });
+      fs.writeFileSync(path.join(d, "controls.json"), "not json");
+      expect(loadControlsFromDisk(tmpDir)).toEqual([]);
+    });
+  });
+
+  describe("getInstalledPackIds", () => {
+    it("returns empty when controls/ does not exist", () => {
+      expect(getInstalledPackIds(tmpDir).size).toBe(0);
+    });
+
+    it("returns pack IDs for directories with controls.json", () => {
+      for (const packId of ["gdpr", "ai", "owasp"]) {
+        const d = path.join(tmpDir, "controls", packId);
+        fs.mkdirSync(d, { recursive: true });
+        fs.writeFileSync(path.join(d, "controls.json"), "[]");
+      }
+      const ids = getInstalledPackIds(tmpDir);
+      expect(ids.size).toBe(3);
+      expect(ids.has("gdpr")).toBe(true);
+      expect(ids.has("ai")).toBe(true);
+      expect(ids.has("owasp")).toBe(true);
+    });
+
+    it("ignores directories without controls.json", () => {
+      fs.mkdirSync(path.join(tmpDir, "controls", "empty"), { recursive: true });
+      expect(getInstalledPackIds(tmpDir).size).toBe(0);
+    });
+  });
+
+  describe("saveControlOverride / loadControlOverrides", () => {
+    it("returns empty when no overrides file", () => {
+      expect(loadControlOverrides(tmpDir)).toEqual([]);
+    });
+
+    it("saves and loads an override", () => {
+      saveControlOverride(tmpDir, "GDPR-ART32-002", "pass", "Auto-implemented");
+      const overrides = loadControlOverrides(tmpDir);
+      expect(overrides.length).toBe(1);
+      expect(overrides[0].control_id).toBe("GDPR-ART32-002");
+      expect(overrides[0].status).toBe("pass");
+      expect(overrides[0].reason).toBe("Auto-implemented");
+    });
+
+    it("updates existing override instead of duplicating", () => {
+      saveControlOverride(tmpDir, "GDPR-ART32-002", "pass", "First");
+      saveControlOverride(tmpDir, "GDPR-ART32-002", "not-applicable", "Updated");
+      const overrides = loadControlOverrides(tmpDir);
+      expect(overrides.length).toBe(1);
+      expect(overrides[0].status).toBe("not-applicable");
+      expect(overrides[0].reason).toBe("Updated");
+    });
+  });
+
+  describe("applyOverridesToControls", () => {
+    it("returns controls unchanged when no overrides", () => {
+      const controls = [{ ...sampleControl }];
+      const result = applyOverridesToControls(controls, []);
+      expect(result[0].status).toBe("not-implemented");
+    });
+
+    it("applies override status and evidence to control and checks", () => {
+      const controls = [{ ...sampleControl }];
+      const overrides: ControlOverride[] = [
+        { control_id: "AI-001", status: "pass", reason: "Done" },
+      ];
+      const result = applyOverridesToControls(controls, overrides);
+      expect(result[0].status).toBe("pass");
+      expect(result[0].checks[0].status).toBe("pass");
+    });
+
+    it("leaves controls without matching override unchanged", () => {
+      const controls = [{ ...sampleControl }];
+      const overrides: ControlOverride[] = [
+        { control_id: "OTHER-001", status: "pass", reason: "Done" },
+      ];
+      const result = applyOverridesToControls(controls, overrides);
+      expect(result[0].status).toBe("not-implemented");
+    });
+  });
+
+  describe("addFrameworkToConfig / removeFrameworkFromConfig", () => {
+    function writeConfig(dir: string, frameworks: string[]) {
+      const gesDir = path.join(dir, ".ges");
+      fs.mkdirSync(gesDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(gesDir, "config.json"),
+        JSON.stringify({ project_name: "Test", project_type: "saas", frameworks, requirements: {}, created_at: "2025-01-01", version: "1.0.0" }, null, 2),
+      );
+    }
+
+    it("adds framework when not present", () => {
+      writeConfig(tmpDir, ["GDPR", "OWASP"]);
+      const added = addFrameworkToConfig(tmpDir, "AI");
+      expect(added).toBe(true);
+      const config = loadConfig(tmpDir);
+      expect(config!.frameworks).toContain("AI" as any);
+      expect(config!.frameworks.length).toBe(3);
+    });
+
+    it("returns false when framework already present", () => {
+      writeConfig(tmpDir, ["GDPR", "AI"]);
+      const added = addFrameworkToConfig(tmpDir, "AI");
+      expect(added).toBe(false);
+    });
+
+    it("removes framework when present", () => {
+      writeConfig(tmpDir, ["GDPR", "AI", "OWASP"]);
+      const removed = removeFrameworkFromConfig(tmpDir, "AI");
+      expect(removed).toBe(true);
+      const config = loadConfig(tmpDir);
+      expect(config!.frameworks).not.toContain("AI" as any);
+      expect(config!.frameworks.length).toBe(2);
+    });
+
+    it("returns false when removing non-existent framework", () => {
+      writeConfig(tmpDir, ["GDPR"]);
+      const removed = removeFrameworkFromConfig(tmpDir, "AI");
+      expect(removed).toBe(false);
+    });
+  });
+});
+
+describe("activity-log", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gesf-actlog-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("returns empty array when no activity log exists", () => {
+    expect(loadActivityLog(tmpDir)).toEqual([]);
+  });
+
+  it("creates activity log entry with correct fields", () => {
+    const entry = createActivityLogEntry({
+      source: "cli",
+      action: "audit",
+      title: "Audit completed",
+      description: "Found 5 issues",
+      details: { findings_count: 5 },
+    });
+    expect(entry.id).toBeTruthy();
+    expect(entry.source).toBe("cli");
+    expect(entry.action).toBe("audit");
+    expect(entry.title).toBe("Audit completed");
+    expect(entry.description).toBe("Found 5 issues");
+    expect(entry.status).toBe("success");
+    expect(entry.details.findings_count).toBe(5);
+    expect(entry.timestamp).toBeTruthy();
+  });
+
+  it("defaults status to success when not provided", () => {
+    const entry = createActivityLogEntry({
+      source: "mcp",
+      action: "fix",
+      title: "Fix applied",
+      description: "Fixed 3 issues",
+    });
+    expect(entry.status).toBe("success");
+  });
+
+  it("appends and loads entries", () => {
+    const entry1 = createActivityLogEntry({ source: "cli", action: "audit", title: "Audit 1", description: "d1" });
+    const entry2 = createActivityLogEntry({ source: "mcp", action: "fix", title: "Fix 1", description: "d2" });
+    appendActivityLog(tmpDir, [entry1, entry2]);
+    const loaded = loadActivityLog(tmpDir);
+    expect(loaded.length).toBe(2);
+    expect(loaded[0].title).toBe("Audit 1");
+    expect(loaded[1].title).toBe("Fix 1");
+  });
+
+  it("appends to existing log without overwriting", () => {
+    const entry1 = createActivityLogEntry({ source: "cli", action: "init", title: "Init", description: "d" });
+    appendActivityLog(tmpDir, [entry1]);
+    const entry2 = createActivityLogEntry({ source: "mcp", action: "audit", title: "Audit", description: "d" });
+    appendActivityLog(tmpDir, [entry2]);
+    const loaded = loadActivityLog(tmpDir);
+    expect(loaded.length).toBe(2);
+  });
+
+  it("clears activity log", () => {
+    const entry = createActivityLogEntry({ source: "cli", action: "audit", title: "A", description: "d" });
+    appendActivityLog(tmpDir, [entry]);
+    expect(loadActivityLog(tmpDir).length).toBe(1);
+    clearActivityLog(tmpDir);
+    expect(loadActivityLog(tmpDir).length).toBe(0);
+  });
+
+  it("recordActivity writes directly to disk", () => {
+    recordActivity(tmpDir, {
+      source: "cli",
+      action: "audit",
+      title: "Test audit",
+      description: "Test description",
+      status: "partial",
+      details: { findings_count: 3, score: 75 },
+    });
+    const loaded = loadActivityLog(tmpDir);
+    expect(loaded.length).toBe(1);
+    expect(loaded[0].status).toBe("partial");
+    expect(loaded[0].details.score).toBe(75);
+  });
+
+  it("creates .ges dir if not exists", () => {
+    recordActivity(tmpDir, {
+      source: "mcp",
+      action: "policy_install",
+      title: "Installed AI pack",
+      description: "Added AI pack",
+    });
+    expect(fs.existsSync(path.join(tmpDir, ".ges", "activity-log.json"))).toBe(true);
   });
 });

@@ -208,3 +208,43 @@ export interface FixHistoryEntry {
     severity_resolved: SeverityLevel;
   };
 }
+
+export type ActivityAction =
+  | "init"
+  | "audit"
+  | "fix"
+  | "policy_install"
+  | "policy_remove"
+  | "control_override"
+  | "implement_control"
+  | "score"
+  | "scan"
+  | "validate"
+  | "generate"
+  | "hooks_install"
+  | "hooks_uninstall"
+  | "dashboard_start"
+  | "badge_generate";
+
+export type ActivityStatus = "success" | "partial" | "failed" | "info";
+
+export interface ActivityLogEntry {
+  id: string;
+  timestamp: string;
+  source: "cli" | "mcp";
+  action: ActivityAction;
+  title: string;
+  description: string;
+  status: ActivityStatus;
+  details: {
+    packs_affected?: string[];
+    controls_affected?: string[];
+    files_created?: string[];
+    files_modified?: string[];
+    findings_count?: number;
+    fixes_applied?: number;
+    score?: number;
+    frameworks_added?: string[];
+    [key: string]: unknown;
+  };
+}

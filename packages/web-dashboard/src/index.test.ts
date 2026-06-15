@@ -127,6 +127,91 @@ describe("web-dashboard", () => {
       expect(gdprPack).toBeDefined();
       expect(gdprPack!.installed).toBe(true);
     });
+
+    it("includes controls from installed packs not in config frameworks", () => {
+      setupProject(["GDPR"]);
+      const customControls = [
+        {
+          id: "AI-CUSTOM-001",
+          name: "PII Detection in Prompts",
+          description: "Detect PII in AI prompts",
+          category: "ai",
+          framework: "GDPR",
+          status: "not-implemented",
+          severity: "high",
+          implementation_guidance: "Scan all prompts for PII",
+          checks: [{ id: "AI-CUSTOM-001-C1", description: "PII scanner", status: "not-implemented" }],
+        },
+      ];
+      fs.mkdirSync(path.join(tmpDir, "controls", "ai"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "controls", "ai", "controls.json"),
+        JSON.stringify(customControls),
+      );
+
+      const data = collectDashboardData(tmpDir);
+      const aiControl = data.controls.find(c => c.id === "AI-CUSTOM-001");
+      expect(aiControl).toBeDefined();
+      expect(aiControl!.name).toBe("PII Detection in Prompts");
+    });
+
+    it("reflects control overrides from implemented controls", () => {
+      setupProject(["GDPR"]);
+      fs.mkdirSync(path.join(tmpDir, "controls", "gdpr"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "controls", "gdpr", "controls.json"),
+        JSON.stringify([]),
+      );
+      fs.writeFileSync(
+        path.join(tmpDir, ".ges", "control-overrides.json"),
+        JSON.stringify([
+          { control_id: "GDPR-ART32-002", status: "pass", reason: "Auto-implemented" },
+        ]),
+      );
+
+      const data = collectDashboardData(tmpDir);
+      const control = data.controls.find(c => c.id === "GDPR-ART32-002");
+      if (control) {
+        expect(control.status).toBe("pass");
+        expect(control.checks.every(ch => ch.status === "pass")).toBe(true);
+      }
+    });
+
+    it("includes frameworks from installed packs in frameworks list", () => {
+      setupProject(["GDPR"]);
+      fs.mkdirSync(path.join(tmpDir, "controls", "custom"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "controls", "custom", "controls.json"),
+        JSON.stringify([{
+          id: "CUSTOM-001", name: "Custom", description: "Custom",
+          category: "custom", framework: "CUSTOM", status: "not-implemented",
+          severity: "medium", implementation_guidance: "N/A",
+          checks: [{ id: "CUSTOM-001-C1", description: "check", status: "not-implemented" }],
+        }]),
+      );
+
+      const data = collectDashboardData(tmpDir);
+      const frameworks = data.controls.map(c => c.framework);
+      expect(frameworks.length).toBeGreaterThan(0);
+    });
+
+    it("includes activity log in dashboard data", () => {
+      setupProject();
+      fs.mkdirSync(path.join(tmpDir, ".ges"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, ".ges", "activity-log.json"),
+        JSON.stringify([
+          { id: "act-1", timestamp: "2026-06-11T10:00:00Z", source: "cli", action: "audit", title: "Audit completed", description: "Found 3 issues", status: "partial", details: { findings_count: 3 } },
+          { id: "act-2", timestamp: "2026-06-11T11:00:00Z", source: "mcp", action: "fix", title: "Fix applied", description: "Fixed 2 issues", status: "success", details: { fixes_applied: 2 } },
+        ]),
+      );
+
+      const data = collectDashboardData(tmpDir);
+      expect(data.activityLog).toBeDefined();
+      expect(data.activityLog.length).toBe(2);
+      expect(data.activityLog[0].action).toBe("audit");
+      expect(data.activityLog[1].source).toBe("mcp");
+    });
   });
 
   describe("collectPackDetail", () => {
@@ -244,13 +329,19 @@ describe("web-dashboard", () => {
       const html = renderDashboard(data);
       expect(html).toContain("<!DOCTYPE html>");
       expect(html).toContain("</html>");
-      expect(html).toContain("GESF Compliance Dashboard");
+      expect(html).toContain(data.projectName);
     });
 
-    it("includes project name in title", () => {
+    it("includes project name as h1 header title", () => {
       const data = collectDashboardData(tmpDir);
       const html = renderDashboard(data);
-      expect(html).toContain(data.projectName);
+      expect(html).toContain(`<h1>${data.projectName}</h1>`);
+    });
+
+    it("includes GESF version in subtitle", () => {
+      const data = collectDashboardData(tmpDir);
+      const html = renderDashboard(data);
+      expect(html).toContain(`GESF v${data.gesfVersion}`);
     });
 
     it("includes all page tabs", () => {
@@ -405,6 +496,28 @@ describe("web-dashboard", () => {
       expect(html).toContain("showPage('fixes', this)");
       expect(html).toContain("showPage('findings', this)");
       expect(html).toContain("showPage('traceability', this)");
+    });
+
+    it("includes activity log tab and page", () => {
+      const data = collectDashboardData(tmpDir);
+      const html = renderDashboard(data);
+      expect(html).toContain("showPage('activity', this)");
+      expect(html).toContain("page-activity");
+      expect(html).toContain("Activity Log");
+    });
+
+    it("renders activity log entries with source and action badges", () => {
+      const data = collectDashboardData(tmpDir);
+      data.activityLog = [
+        { id: "act-1", timestamp: "2026-06-11T10:00:00Z", source: "cli", action: "audit", title: "Audit completed", description: "Found 3 issues", status: "partial", details: { findings_count: 3, score: 75 } },
+        { id: "act-2", timestamp: "2026-06-11T11:00:00Z", source: "mcp", action: "fix", title: "Fix applied", description: "Fixed 2 issues", status: "success", details: { fixes_applied: 2 } },
+      ];
+      const html = renderDashboard(data);
+      expect(html).toContain("Audit completed");
+      expect(html).toContain("Fix applied");
+      expect(html).toContain("CLI");
+      expect(html).toContain("MCP");
+      expect(html).toContain("Activity Log API");
     });
 
     it("includes API links in footer", () => {

@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { ensureGESInitialized, readJsonFile, writeJsonFile } from "../utils/project.js";
 import type { ProjectConfig, ScoreFile, FrameworkName, Control, ControlOverride } from "@greenarmor/ges-core";
+import { recordActivity } from "@greenarmor/ges-core";
 import { getPacksForProjectType, getAllPacks } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile, formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import { runAudit, runAuditIncremental, deduplicateFindings } from "@greenarmor/ges-audit-engine";
@@ -122,6 +123,15 @@ export const auditCommand = new Command("audit")
     if (critical.length > 0) {
       console.log("  !! Critical issues must be resolved before deployment. !!\n");
     }
+
+    recordActivity(root, {
+      source: "cli",
+      action: "audit",
+      title: `Compliance audit completed`,
+      description: `Scanned ${scannedFiles} files, found ${findings.length} findings (${critical.length} critical, ${high.length} high, ${medium.length} medium, ${low.length} low). Overall score: ${scoreData.overall}%.`,
+      status: critical.length > 0 ? "failed" : findings.length > 0 ? "partial" : "success",
+      details: { findings_count: findings.length, score: scoreData.overall, files_scanned: scannedFiles },
+    });
 
     if (options.ci && critical.length > 0) {
       process.exit(1);

@@ -14,6 +14,7 @@ import type { Finding } from "@greenarmor/ges-audit-engine";
 import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, ControlStatus, ProjectConfig, FixHistoryEntry } from "@greenarmor/ges-core";
 import { GESF_VERSION, GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, PROJECT_TYPES, FRAMEWORKS, DEFAULT_FRAMEWORKS, PROJECT_TYPE_PACKS } from "@greenarmor/ges-core";
 import { appendFixHistory, createFixHistoryEntry } from "@greenarmor/ges-core";
+import { addFrameworkToConfig, removeFrameworkFromConfig, saveControlOverride, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls, getInstalledPackIds, recordActivity } from "@greenarmor/ges-core";
 import { ProjectConfigSchema } from "@greenarmor/ges-core";
 import { generateComplianceDocs, generateSecurityDocs, generateConfigJson, generateMetadataJson, generateFrameworkVersionJson, generateScoreJson } from "@greenarmor/ges-doc-generator";
 import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
@@ -2173,6 +2174,15 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           }
 
           resultText = lines.join("\n");
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "audit",
+            title: `MCP audit completed`,
+            description: `Scanned ${scannedFiles} files, found ${findings.length} findings (${critical.length} critical, ${high.length} high, ${medium.length} medium, ${low.length} low). Overall score: ${score.overall}%.`,
+            status: critical.length > 0 ? "failed" : findings.length > 0 ? "partial" : "success",
+            details: { findings_count: findings.length, score: score.overall, files_scanned: scannedFiles },
+          });
           break;
         }
         case "generate_compliance_report": {
@@ -2302,6 +2312,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           let projectControls: Control[] = [];
           try {
             const configPath = path.join(projectPath, ".ges", "config.json");
+            let inMemoryControls: Control[] = [];
             if (fs.existsSync(configPath)) {
               const cfg = JSON.parse(fs.readFileSync(configPath, "utf-8"));
               const fwLower = new Set(cfg.frameworks.map((f: string) => f.toLowerCase()));
@@ -2309,8 +2320,13 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
               const filtered = allPacks.filter((pack: { id: string }) =>
                 fwLower.has(pack.id.toLowerCase())
               );
-              projectControls = filtered.flatMap((p: { controls: Control[] }) => p.controls);
+              inMemoryControls = filtered.flatMap((p: { controls: Control[] }) => p.controls);
             }
+
+            const diskControls = loadControlsFromDisk(projectPath);
+            const seenIds = new Set(inMemoryControls.map(c => c.id));
+            const extraFromDisk = diskControls.filter(c => !seenIds.has(c.id));
+            projectControls = [...inMemoryControls, ...extraFromDisk];
           } catch { /* ignore */ }
 
           const npmInstalls = getNpmInstallsFromActions(actions);
@@ -2416,6 +2432,15 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           lines.push("5. Use `fix_recommendation` tool for detailed guidance on manual items");
 
           resultText = lines.join("\n");
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "fix",
+            title: `MCP auto-fix ${dryRun ? "planned" : "applied"}: ${applied} fixes`,
+            description: `${dryRun ? "Planned" : "Applied"} ${applied} fix(es)${failed > 0 ? ` (${failed} failed)` : ""}. Scanned ${scannedFiles} files, ${findings.length} findings found.`,
+            status: failed > 0 ? "partial" : "success",
+            details: { fixes_applied: applied, findings_count: findings.length },
+          });
           break;
         }
         case "apply_control_override": {
@@ -2469,6 +2494,14 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           ];
 
           resultText = lines.join("\n");
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "control_override",
+            title: `Control ${controlId} → ${status}`,
+            description: `MCP applied override: control ${controlId} set to ${status}. Reason: ${reason || "(none)"}`,
+            details: { controls_affected: [controlId] },
+          });
           break;
         }
         case "implement_control": {
@@ -2541,15 +2574,26 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
 
           lines.push(`**Control**: ${plan.name}\n`);
 
+          let appliedCount = 0;
+          let skippedCount = 0;
+
           for (const action of plan.actions) {
             const result = applyAutoFixAction(projectPath, action);
             if (result.applied) {
+              appliedCount++;
               lines.push(`- ✓ [${action.type}] ${action.filePath}: ${action.description}`);
             } else if (result.error === "File already exists") {
+              skippedCount++;
               lines.push(`- → [${action.type}] ${action.filePath}: Already exists (skipped)`);
             } else {
               lines.push(`- ✗ [${action.type}] ${action.filePath}: ${result.error}`);
             }
+          }
+
+          if (appliedCount > 0 || skippedCount > 0) {
+            saveControlOverride(projectPath, controlId, "pass", `Auto-implemented by GESF (${plan.name})`);
+            lines.push(`\n✅ Control **${controlId}** marked as **pass** in .ges/control-overrides.json`);
+            lines.push(`   The dashboard will reflect this immediately.`);
           }
 
           const npmInstalls = getNpmInstallsFromActions(plan.actions);
@@ -2569,9 +2613,16 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           lines.push("1. Install any npm packages listed above");
           lines.push("2. Import and integrate the generated files into your app");
           lines.push("3. Run `ges audit` to verify the control is now passing");
-          lines.push(`4. Or use \`apply_control_override\` with control_id="${controlId}" if verified manually`);
 
           resultText = lines.join("\n");
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "implement_control",
+            title: `Control implemented: ${controlId} (${plan.name})`,
+            description: `Auto-implemented control ${controlId} (${plan.name}). ${appliedCount} actions applied, ${skippedCount} skipped. Control marked as pass.`,
+            details: { controls_affected: [controlId], files_created: plan.actions.filter(a => a.type === "create").map(a => a.filePath) },
+          });
           break;
         }
         case "generate_badge": {
@@ -2755,6 +2806,14 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           lines.push(`4. Review and customize documents in compliance/ and security/`);
 
           resultText = lines.join("\n");
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "init",
+            title: `Project initialized: ${projectName}`,
+            description: `Initialized GESF for ${projectType} project with frameworks: ${frameworks.join(", ")}. Installed ${packs.length} policy packs.`,
+            details: { packs_affected: packs.map(p => p.id), frameworks_added: frameworks.map(f => String(f)) },
+          });
           break;
         }
         case "run_scans": {
@@ -2791,6 +2850,14 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           }
 
           resultText = lines.join("\n");
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "scan",
+            title: `MCP security scans completed (${results.length} tools)`,
+            description: `Ran ${results.length} scanner(s) for ${ecosystemDetail} ecosystem. ${results.filter(r => r.status === "pass").length} passed, ${failed.length} failed.`,
+            status: failed.length > 0 ? "partial" : "success",
+          });
           break;
         }
         case "doctor": {
@@ -2935,6 +3002,14 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           lines.push(hasErrors ? "\n❌ **Validation failed.** Fix the issues above." : "\n✅ **All validations passed.**");
 
           resultText = lines.join("\n");
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "validate",
+            title: `MCP validation ${hasErrors ? "failed" : "passed"}`,
+            description: hasErrors ? "Configuration or directory structure has issues." : "All validations passed.",
+            status: hasErrors ? "failed" : "success",
+          });
           break;
         }
         case "policy_list": {
@@ -2976,7 +3051,25 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           fs.mkdirSync(packDir, { recursive: true });
           fs.writeFileSync(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
 
-          resultText = `✅ Installed policy pack: **${pack.id}** (${pack.name})\n${pack.controls.length} controls written to ${CONTROLS_DIR}/${pack.id}/controls.json`;
+          const addedToConfig = addFrameworkToConfig(projectPath, pack.id.toUpperCase());
+
+          const lines = [
+            `✅ Installed policy pack: **${pack.id}** (${pack.name})`,
+            `${pack.controls.length} controls written to ${CONTROLS_DIR}/${pack.id}/controls.json`,
+          ];
+          if (addedToConfig) {
+            lines.push(`Added ${pack.id.toUpperCase()} to project frameworks in .ges/config.json`);
+          }
+          lines.push(`The web dashboard will now reflect this pack's controls.`);
+          resultText = lines.join("\n");
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "policy_install",
+            title: `MCP installed pack: ${pack.name}`,
+            description: `Installed ${pack.controls.length} controls from ${pack.id} pack.${addedToConfig ? ` Added ${pack.id.toUpperCase()} to config frameworks.` : ""}`,
+            details: { packs_affected: [pack.id], frameworks_added: addedToConfig ? [pack.id.toUpperCase()] : [] },
+          });
           break;
         }
         case "policy_remove": {
@@ -2996,7 +3089,16 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           }
 
           fs.rmSync(packDir, { recursive: true, force: true });
+          removeFrameworkFromConfig(projectPath, packId.toUpperCase());
           resultText = `✅ Removed policy pack: **${packId}** from ${projectPath}`;
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "policy_remove",
+            title: `MCP removed pack: ${packId}`,
+            description: `Removed ${packId} pack and its controls from the project.`,
+            details: { packs_affected: [packId] },
+          });
           break;
         }
         case "update_check": {
@@ -3053,6 +3155,13 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           fs.chmodSync(hookPath, 0o755);
 
           resultText = `✅ Installed pre-commit hook at ${hookPath}\n\nThe hook will run 'ges audit --ci' before allowing commits.\n- To bypass: \`git commit --no-verify\`\n- To remove: use \`install_hooks\` with action: "uninstall"`;
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "hooks_install",
+            title: `MCP installed pre-commit hook`,
+            description: `Installed pre-commit hook that runs 'ges audit --ci' before each commit.`,
+          });
           break;
         }
         case "start_dashboard": {
@@ -3096,6 +3205,13 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             lines.push(`- Audit history timeline`);
 
             resultText = lines.join("\n");
+
+            recordActivity(projectPath, {
+              source: "mcp",
+              action: "dashboard_start",
+              title: `Dashboard started on ${host}:${port}`,
+              description: `Web dashboard is running at http://${host}:${port}`,
+            });
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             resultText = `Failed to start dashboard: ${msg}\n\nMake sure port ${port} is available. Try a different port.`;

@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { ensureGESInitialized, readJsonFile, writeJsonFile } from "../utils/project.js";
 import type { ControlOverride, ControlStatus } from "@greenarmor/ges-core";
+import { recordActivity } from "@greenarmor/ges-core";
 import { getAllPacks } from "@greenarmor/ges-policy-engine";
 import * as path from "node:path";
 
@@ -49,4 +50,12 @@ export const controlCommand = new Command("control")
     console.log(`      Reason: ${options.reason || `Manually set to ${normalizedStatus}`}`);
     console.log(`\n  Override saved to: ${overridePath}`);
     console.log(`  Run 'ges audit' to see the updated compliance score.\n`);
+
+    recordActivity(root, {
+      source: "cli",
+      action: "control_override",
+      title: `Control ${controlId} → ${normalizedStatus}`,
+      description: `Manually set control ${control.name} (${controlId}) to ${normalizedStatus}. Reason: ${options.reason || `Manually set to ${normalizedStatus}`}`,
+      details: { controls_affected: [controlId] },
+    });
   });

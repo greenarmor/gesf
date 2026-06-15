@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { ensureGESInitialized } from "../utils/project.js";
 import { runAllScansWithSbom, formatScanResults, formatSbomResults, detectProject } from "@greenarmor/ges-scanner-integration";
+import { recordActivity } from "@greenarmor/ges-core";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 
 export const scanCommand = new Command("scan")
@@ -21,6 +22,14 @@ export const scanCommand = new Command("scan")
     const results = runAllScansWithSbom(detection);
     console.log(formatScanResults(results));
     console.log(formatSbomResults(results));
+
+    recordActivity(root, {
+      source: "cli",
+      action: "scan",
+      title: `Security scans completed (${results.length} tools)`,
+      description: `Ran ${results.length} scanner(s) for ${detail} ecosystem. ${results.filter(r => r.status === "pass").length} passed, ${results.filter(r => r.status === "fail").length} failed.`,
+      status: results.some(r => r.status === "fail") ? "partial" : "success",
+    });
 
     if (options.ci) {
       const failed = results.filter(r => r.status === "fail");
