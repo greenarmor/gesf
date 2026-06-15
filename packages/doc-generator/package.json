@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@greenarmor/ges-core": "1.2.4"
+    "@greenarmor/ges-core": "1.2.5"
   },
   "description": "GESF Documentation Generator - Compliance and security document templates",
   "devDependencies": {
@@ -29,5 +29,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.2.4"
+  "version": "1.2.5"
 }
