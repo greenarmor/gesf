@@ -3,19 +3,19 @@
     "ges": "./dist/cli.js"
   },
   "dependencies": {
-    "@greenarmor/ges-audit-engine": "1.2.6",
-    "@greenarmor/ges-cicd-generator": "1.2.6",
-    "@greenarmor/ges-compliance-engine": "1.2.6",
-    "@greenarmor/ges-core": "1.2.6",
-    "@greenarmor/ges-doc-generator": "1.2.6",
-    "@greenarmor/ges-git-hooks": "1.2.6",
-    "@greenarmor/ges-mcp-server": "1.2.6",
-    "@greenarmor/ges-policy-engine": "1.2.6",
-    "@greenarmor/ges-report-generator": "1.2.6",
-    "@greenarmor/ges-rules-engine": "1.2.6",
-    "@greenarmor/ges-scanner-integration": "1.2.6",
-    "@greenarmor/ges-scoring-engine": "1.2.6",
-    "@greenarmor/ges-web-dashboard": "1.2.6",
+    "@greenarmor/ges-audit-engine": "1.2.7",
+    "@greenarmor/ges-cicd-generator": "1.2.7",
+    "@greenarmor/ges-compliance-engine": "1.2.7",
+    "@greenarmor/ges-core": "1.2.7",
+    "@greenarmor/ges-doc-generator": "1.2.7",
+    "@greenarmor/ges-git-hooks": "1.2.7",
+    "@greenarmor/ges-mcp-server": "1.2.7",
+    "@greenarmor/ges-policy-engine": "1.2.7",
+    "@greenarmor/ges-report-generator": "1.2.7",
+    "@greenarmor/ges-rules-engine": "1.2.7",
+    "@greenarmor/ges-scanner-integration": "1.2.7",
+    "@greenarmor/ges-scoring-engine": "1.2.7",
+    "@greenarmor/ges-web-dashboard": "1.2.7",
     "commander": "^13.0.0"
   },
   "description": "Green Engineering Standard Framework - Compliance-as-Code CLI",
@@ -59,5 +59,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.2.6"
+  "version": "1.2.7"
 }
