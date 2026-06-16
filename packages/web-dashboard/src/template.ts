@@ -398,6 +398,41 @@ export function renderDashboard(data: DashboardData): string {
         </div>
       </div>
 
+      ${(() => {
+        const installedPacks = packs.filter(p => p.installed);
+        if (installedPacks.length === 0) return '';
+        return `<div class="card" style="margin-top:16px;">
+          <div class="card-title">Installed Policy Packs (${installedPacks.length})</div>
+          <div class="grid grid-2" style="gap:12px;margin-top:8px;">
+            ${installedPacks.map(p => {
+              const pct = p.score;
+              const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#eab308' : pct >= 40 ? '#f97316' : '#ef4444';
+              const isImplemented = p.notImplementedCount < p.controlCount;
+              const statusBadge = isImplemented
+                ? '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Implemented</span>'
+                : '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Not Implemented</span>';
+              const borderStyle = isImplemented ? '1px solid #e5e7eb' : '1px dashed #d1d5db;opacity:0.85;';
+              return `<div class="pack-mini" onclick="loadPackDetail('${p.id}')" style="cursor:pointer;padding:12px;border:${borderStyle};border-radius:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <div style="font-size:13px;font-weight:600;">${escapeHtml(p.name)}</div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    ${statusBadge}
+                    <div style="font-size:16px;font-weight:700;color:${color};">${pct}%</div>
+                  </div>
+                </div>
+                ${scoreBarHtml(pct)}
+                <div style="margin-top:6px;font-size:11px;color:#6b7280;">
+                  ${p.controlCount} controls &middot;
+                  <span style="color:#22c55e;">${p.passedCount - p.notApplicableCount} pass</span> &middot;
+                  <span style="color:#ef4444;">${p.failedCount} fail</span> &middot;
+                  <span style="color:#6b7280;">${p.notImplementedCount} not impl</span>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      })()}
+
       <div class="grid grid-2">
         <div class="card">
           <div class="card-title">Security Findings Detail (${findings.length})</div>
@@ -438,9 +473,16 @@ export function renderDashboard(data: DashboardData): string {
       </div>
 
       <div class="card">
-        <div class="card-title">Active Frameworks</div>
+        <div class="card-title">Active Frameworks &amp; Installed Packs</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
-          ${data.frameworks.map(fw => `<span class="tag" style="background:#d1fae5;color:#065f46;">${escapeHtml(fw)}</span>`).join('') || '<span style="color:#9ca3af;">No frameworks configured</span>'}
+          ${data.frameworks.map(fw => `<span class="tag" style="background:#d1fae5;color:#065f46;">${escapeHtml(fw)}</span>`).join('')}
+          ${packs.filter(p => p.installed).map(p => {
+            const isImpl = p.notImplementedCount < p.controlCount;
+            const bg = isImpl ? '#dbeafe' : '#fef3c7';
+            const cl = isImpl ? '#1e40af' : '#92400e';
+            return `<span class="tag" style="background:${bg};color:${cl};">${escapeHtml(p.name)}</span>`;
+          }).join('')}
+          ${data.frameworks.length === 0 && packs.filter(p => p.installed).length === 0 ? '<span style="color:#9ca3af;">No frameworks or packs installed</span>' : ''}
         </div>
       </div>
     </div>
