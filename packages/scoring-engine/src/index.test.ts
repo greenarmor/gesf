@@ -52,10 +52,9 @@ describe("computeGrade", () => {
 });
 
 describe("scoreByFramework", () => {
-  it("returns 0 score for framework with no controls", () => {
+  it("skips framework with no controls", () => {
     const result = scoreByFramework([], ["GDPR"]);
-    expect(result.GDPR.score).toBe(0);
-    expect(result.GDPR.total_controls).toBe(0);
+    expect(result.GDPR).toBeUndefined();
   });
 
   it("gives 100% when all controls pass", () => {

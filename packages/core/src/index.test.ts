@@ -36,6 +36,10 @@ import {
   createActivityLogEntry,
   recordActivity,
 } from "./activity-log/index.js";
+import {
+  recordAIRecommendation,
+  loadAIRecommendations,
+} from "./recommendations/index.js";
 
 describe("GESF_VERSION", () => {
   it("is defined and looks like a semver", () => {
@@ -568,5 +572,80 @@ describe("activity-log", () => {
       description: "Added AI pack",
     });
     expect(fs.existsSync(path.join(tmpDir, ".ges", "activity-log.json"))).toBe(true);
+  });
+});
+
+describe("AI recommendations", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gesf-rec-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("recordAIRecommendation writes markdown to .dev-logs/ai-recommendations", () => {
+    const rec = recordAIRecommendation(tmpDir, {
+      category: "security",
+      title: "Add rate limiting to login",
+      description: "Login endpoint lacks rate limiting, enabling brute-force attacks.",
+      severity: "high",
+      affected_controls: ["GDPR-ART32-002"],
+      affected_files: ["src/auth/login.ts"],
+      suggested_action: "Add express-rate-limit middleware to /login route.",
+    });
+    expect(rec.id).toMatch(/^ai-rec-/);
+    expect(rec.status).toBe("open");
+    expect(rec.category).toBe("security");
+
+    const recDir = path.join(tmpDir, ".dev-logs", "ai-recommendations");
+    expect(fs.existsSync(recDir)).toBe(true);
+    const files = fs.readdirSync(recDir).filter(f => f.endsWith(".md"));
+    expect(files.length).toBe(1);
+
+    const content = fs.readFileSync(path.join(recDir, files[0]), "utf-8");
+    expect(content).toContain("Add rate limiting to login");
+    expect(content).toContain("express-rate-limit");
+    expect(content).toContain("GDPR-ART32-002");
+  });
+
+  it("creates .dev-logs dir if not exists", () => {
+    expect(fs.existsSync(path.join(tmpDir, ".dev-logs"))).toBe(false);
+    recordAIRecommendation(tmpDir, {
+      category: "improvement",
+      title: "Test",
+      description: "desc",
+      suggested_action: "action",
+    });
+    expect(fs.existsSync(path.join(tmpDir, ".dev-logs", "ai-recommendations"))).toBe(true);
+  });
+
+  it("loadAIRecommendations reads back recorded entries", () => {
+    recordAIRecommendation(tmpDir, {
+      category: "compliance",
+      title: "Missing DPIA",
+      description: "DPIA not documented for new data processing.",
+      severity: "medium",
+      suggested_action: "Create privacy-impact-assessment.md.",
+    });
+    recordAIRecommendation(tmpDir, {
+      category: "bug",
+      title: "Fix audit trail",
+      description: "Audit trail missing ipAddress field.",
+      severity: "high",
+      suggested_action: "Add ipAddress to all log entries.",
+    });
+
+    const loaded = loadAIRecommendations(tmpDir);
+    expect(loaded.length).toBe(2);
+    expect(loaded.some(r => r.title === "Missing DPIA")).toBe(true);
+    expect(loaded.some(r => r.title === "Fix audit trail")).toBe(true);
+  });
+
+  it("loadAIRecommendations returns empty when dir does not exist", () => {
+    const loaded = loadAIRecommendations(tmpDir);
+    expect(loaded).toEqual([]);
   });
 });

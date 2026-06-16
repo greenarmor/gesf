@@ -46,11 +46,16 @@ policyCmd
       JSON.stringify(pack.controls, null, 2),
     );
 
-    const addedToConfig = addFrameworkToConfig(root, pack.id.toUpperCase());
+    const frameworksAdded: string[] = [];
+    for (const fw of pack.frameworks) {
+      if (addFrameworkToConfig(root, fw)) {
+        frameworksAdded.push(fw);
+      }
+    }
 
     console.log(`\n  ✓ Installed policy pack: ${pack.id} (${pack.controls.length} controls)`);
-    if (addedToConfig) {
-      console.log(`  ✓ Added ${pack.id.toUpperCase()} to project frameworks in .ges/config.json`);
+    if (frameworksAdded.length > 0) {
+      console.log(`  ✓ Added ${frameworksAdded.join(", ")} to project frameworks in .ges/config.json`);
     }
     console.log("  ✓ Dashboard will now reflect this pack's controls\n");
 
@@ -58,8 +63,8 @@ policyCmd
       source: "cli",
       action: "policy_install",
       title: `Installed pack: ${pack.name}`,
-      description: `Installed ${pack.controls.length} controls from ${pack.id} pack.${addedToConfig ? ` Added ${pack.id.toUpperCase()} to config frameworks.` : ""}`,
-      details: { packs_affected: [pack.id], frameworks_added: addedToConfig ? [pack.id.toUpperCase()] : [] },
+      description: `Installed ${pack.controls.length} controls from ${pack.id} pack.${frameworksAdded.length > 0 ? ` Added ${frameworksAdded.join(", ")} to config frameworks.` : ""}`,
+      details: { packs_affected: [pack.id], frameworks_added: frameworksAdded },
     });
 
     await showNextStepsMenu("policy-install");
@@ -78,7 +83,17 @@ policyCmd
     }
 
     fs.rmSync(packDir, { recursive: true, force: true });
-    removeFrameworkFromConfig(root, packId.toUpperCase());
+
+    const packs = getAllPacks();
+    const pack = packs.find(p => p.id === packId);
+    if (pack) {
+      for (const fw of pack.frameworks) {
+        removeFrameworkFromConfig(root, fw);
+      }
+    } else {
+      removeFrameworkFromConfig(root, packId.toUpperCase());
+    }
+
     console.log(`\n  ✓ Removed policy pack: ${packId}\n`);
 
     recordActivity(root, {

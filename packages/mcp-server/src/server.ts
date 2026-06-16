@@ -14,7 +14,7 @@ import type { Finding } from "@greenarmor/ges-audit-engine";
 import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, ControlStatus, ProjectConfig, FixHistoryEntry } from "@greenarmor/ges-core";
 import { GESF_VERSION, GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, PROJECT_TYPES, FRAMEWORKS, DEFAULT_FRAMEWORKS, PROJECT_TYPE_PACKS } from "@greenarmor/ges-core";
 import { appendFixHistory, createFixHistoryEntry } from "@greenarmor/ges-core";
-import { addFrameworkToConfig, removeFrameworkFromConfig, saveControlOverride, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls, getInstalledPackIds, recordActivity } from "@greenarmor/ges-core";
+import { addFrameworkToConfig, removeFrameworkFromConfig, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls, getInstalledPackIds, recordActivity, recordAIRecommendation } from "@greenarmor/ges-core";
 import { ProjectConfigSchema } from "@greenarmor/ges-core";
 import { generateComplianceDocs, generateSecurityDocs, generateConfigJson, generateMetadataJson, generateFrameworkVersionJson, generateScoreJson } from "@greenarmor/ges-doc-generator";
 import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
@@ -235,13 +235,13 @@ const TOOLS = [
   },
   {
     name: "apply_control_override",
-    description: "Mark a compliance control as not-applicable, pass, or another status in the project's .ges/control-overrides.json. Use this when a control doesn't apply to the project or has been verified manually.",
+    description: "Mark a compliance control as not-applicable. AI assistants CANNOT mark controls as 'pass' — that must be verified by the GESF audit engine (run_audit). Use 'not-applicable' only when a control genuinely does not apply to the project. A detailed reason is required.",
     inputSchema: {
       type: "object" as const,
       properties: {
         project_path: { type: "string", description: "Absolute path to the project root." },
         control_id: { type: "string", description: "Control ID to override (e.g. GDPR-ART32-004)" },
-        status: { type: "string", description: "New status: 'not-applicable' or 'pass'" },
+        status: { type: "string", description: "Status: only 'not-applicable' is allowed via MCP. 'pass' must come from the audit engine." },
         reason: { type: "string", description: "Reason for the override" },
       },
     },
@@ -386,6 +386,24 @@ const TOOLS = [
         port: { type: "number", description: "Port number for the dashboard (default: 3001)." },
         host: { type: "string", description: "Host to bind to (default: localhost)." },
       },
+    },
+  },
+  {
+    name: "record_recommendation",
+    description: "Record a recommendation or observation to .dev-logs/ai-recommendations/ for the GESF development team. Use this when you identify a potential improvement, weakness, or best-practice suggestion. Recommendations are NOT applied automatically — they are logged for human developers to review. This is the correct way to surface ideas instead of overriding controls.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        category: { type: "string", description: "Category: security, compliance, architecture, performance, best-practice, bug, or improvement." },
+        title: { type: "string", description: "Short title for the recommendation." },
+        description: { type: "string", description: "Detailed description of the observation." },
+        severity: { type: "string", description: "Severity: info, low, medium, or high." },
+        affected_controls: { type: "string", description: "Comma-separated control IDs affected (optional)." },
+        affected_files: { type: "string", description: "Comma-separated file paths affected (optional)." },
+        suggested_action: { type: "string", description: "What you suggest the developers do about this." },
+      },
+      required: ["project_path", "category", "title", "description", "suggested_action"],
     },
   },
 ];
@@ -2454,8 +2472,30 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             break;
           }
 
-          if (!["not-applicable", "pass"].includes(status)) {
-            resultText = `Error: status must be 'not-applicable' or 'pass'. Got: ${status}`;
+          if (status === "pass") {
+            resultText = [
+              `# Cannot Override to "pass" via MCP\n`,
+              `AI assistants cannot mark controls as "pass" — this must be verified by GESF's own audit engine.`,
+              ``,
+              `**Why**: Allowing AI to set "pass" creates false compliance scores. The audit engine scans actual source code to verify controls are implemented correctly.`,
+              ``,
+              `**Instead**:`,
+              `1. Use \`implement_control\` to generate implementation files`,
+              `2. Run \`run_audit\` — GESF will verify the implementation and update the score automatically`,
+              `3. If the control is genuinely not applicable, use status: "not-applicable" with a detailed reason`,
+              ``,
+              `**For CLI users**: \`ges control <id> pass --reason "..."'\` is available for human developers who have manually verified.`,
+            ].join("\n");
+            break;
+          }
+
+          if (!["not-applicable"].includes(status)) {
+            resultText = `Error: MCP only allows 'not-applicable'. Use 'not-applicable' for controls that don't apply to this project. Status 'pass' must come from the audit engine.`;
+            break;
+          }
+
+          if (!reason || reason.trim().length < 10) {
+            resultText = `Error: A detailed reason (at least 10 characters) is required when marking a control as not-applicable. Explain why this control does not apply to your project.`;
             break;
           }
 
@@ -2486,7 +2526,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             `# Control Override Applied\n`,
             `**Control**: ${controlId}`,
             `**Status**: ${status}`,
-            `**Reason**: ${reason || "(none provided)"}`,
+            `**Reason**: ${reason}`,
             `**File**: ${overridePath}`,
             `**Total overrides**: ${overrides.length}\n`,
             `The override will take effect on the next \`ges audit\` or \`ges score\` run.`,
@@ -2591,9 +2631,9 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           }
 
           if (appliedCount > 0 || skippedCount > 0) {
-            saveControlOverride(projectPath, controlId, "pass", `Auto-implemented by GESF (${plan.name})`);
-            lines.push(`\n✅ Control **${controlId}** marked as **pass** in .ges/control-overrides.json`);
-            lines.push(`   The dashboard will reflect this immediately.`);
+            lines.push(`\n⚠️  **Control status is NOT automatically changed.**`);
+            lines.push(`   GESF does not allow AI to self-verify implementations.`);
+            lines.push(`   The control will be verified when you run \`ges audit\`.`);
           }
 
           const npmInstalls = getNpmInstallsFromActions(plan.actions);
@@ -2612,7 +2652,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           lines.push(`\n## Next Steps`);
           lines.push("1. Install any npm packages listed above");
           lines.push("2. Import and integrate the generated files into your app");
-          lines.push("3. Run `ges audit` to verify the control is now passing");
+          lines.push("3. Run `ges audit` — GESF will verify the implementation and update the score");
 
           resultText = lines.join("\n");
 
@@ -2620,7 +2660,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             source: "mcp",
             action: "implement_control",
             title: `Control implemented: ${controlId} (${plan.name})`,
-            description: `Auto-implemented control ${controlId} (${plan.name}). ${appliedCount} actions applied, ${skippedCount} skipped. Control marked as pass.`,
+            description: `Auto-implemented control ${controlId} (${plan.name}). ${appliedCount} actions applied, ${skippedCount} skipped. Awaiting audit verification.`,
             details: { controls_affected: [controlId], files_created: plan.actions.filter(a => a.type === "create").map(a => a.filePath) },
           });
           break;
@@ -2753,10 +2793,26 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           const scoreJson = generateScoreJson();
           fs.writeFileSync(path.join(gesDir, "score.json"), scoreJson.content);
 
-          const dirs = [COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR];
+          const dirs = [COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, ".dev-logs"];
           for (const dir of dirs) {
             fs.mkdirSync(path.join(projectPath, dir), { recursive: true });
           }
+
+          const gitignorePath = path.join(projectPath, ".gitignore");
+          const devLogsIgnore = ".dev-logs/\n";
+          if (fs.existsSync(gitignorePath)) {
+            const existingGitignore = fs.readFileSync(gitignorePath, "utf-8");
+            if (!existingGitignore.includes(".dev-logs/")) {
+              fs.appendFileSync(gitignorePath, `\n# GESF developer logs (not for remote)\n${devLogsIgnore}`);
+            }
+          } else {
+            fs.writeFileSync(gitignorePath, `# GESF developer logs (not for remote)\n${devLogsIgnore}\n`);
+          }
+
+          fs.writeFileSync(
+            path.join(projectPath, ".dev-logs", "README.md"),
+            `# Developer Logs\n\nThis directory is for GESF development notes, session logs, AI recommendations, and release notes.\n\n**This directory is gitignored and intended for developers only. Do not submit to remote.**\n`,
+          );
 
           const complianceDocs = generateComplianceDocs(projectName, projectType);
           for (const doc of complianceDocs) {
@@ -3051,14 +3107,19 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           fs.mkdirSync(packDir, { recursive: true });
           fs.writeFileSync(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
 
-          const addedToConfig = addFrameworkToConfig(projectPath, pack.id.toUpperCase());
+          const frameworksAdded: string[] = [];
+          for (const fw of pack.frameworks) {
+            if (addFrameworkToConfig(projectPath, fw)) {
+              frameworksAdded.push(fw);
+            }
+          }
 
           const lines = [
             `✅ Installed policy pack: **${pack.id}** (${pack.name})`,
             `${pack.controls.length} controls written to ${CONTROLS_DIR}/${pack.id}/controls.json`,
           ];
-          if (addedToConfig) {
-            lines.push(`Added ${pack.id.toUpperCase()} to project frameworks in .ges/config.json`);
+          if (frameworksAdded.length > 0) {
+            lines.push(`Added ${frameworksAdded.join(", ")} to project frameworks in .ges/config.json`);
           }
           lines.push(`The web dashboard will now reflect this pack's controls.`);
           resultText = lines.join("\n");
@@ -3067,8 +3128,8 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             source: "mcp",
             action: "policy_install",
             title: `MCP installed pack: ${pack.name}`,
-            description: `Installed ${pack.controls.length} controls from ${pack.id} pack.${addedToConfig ? ` Added ${pack.id.toUpperCase()} to config frameworks.` : ""}`,
-            details: { packs_affected: [pack.id], frameworks_added: addedToConfig ? [pack.id.toUpperCase()] : [] },
+            description: `Installed ${pack.controls.length} controls from ${pack.id} pack.${frameworksAdded.length > 0 ? ` Added ${frameworksAdded.join(", ")} to config frameworks.` : ""}`,
+            details: { packs_affected: [pack.id], frameworks_added: frameworksAdded },
           });
           break;
         }
@@ -3089,7 +3150,16 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           }
 
           fs.rmSync(packDir, { recursive: true, force: true });
-          removeFrameworkFromConfig(projectPath, packId.toUpperCase());
+
+          const allPacks = getAllPacks();
+          const removedPack = allPacks.find(p => p.id === packId);
+          if (removedPack) {
+            for (const fw of removedPack.frameworks) {
+              removeFrameworkFromConfig(projectPath, fw);
+            }
+          } else {
+            removeFrameworkFromConfig(projectPath, packId.toUpperCase());
+          }
           resultText = `✅ Removed policy pack: **${packId}** from ${projectPath}`;
 
           recordActivity(projectPath, {
@@ -3216,6 +3286,51 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             const msg = err instanceof Error ? err.message : String(err);
             resultText = `Failed to start dashboard: ${msg}\n\nMake sure port ${port} is available. Try a different port.`;
           }
+          break;
+        }
+        case "record_recommendation": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const category = (args.category || "improvement") as "security" | "compliance" | "architecture" | "performance" | "best-practice" | "bug" | "improvement";
+          const title = args.title || "";
+          const description = args.description || "";
+          const severity = (args.severity || "info") as "info" | "low" | "medium" | "high";
+          const suggestedAction = args.suggested_action || "";
+          const affectedControls = args.affected_controls ? args.affected_controls.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const affectedFiles = args.affected_files ? args.affected_files.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+
+          if (!title || !description || !suggestedAction) {
+            resultText = "Error: title, description, and suggested_action are all required.";
+            break;
+          }
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const rec = recordAIRecommendation(projectPath, {
+            category,
+            title,
+            description,
+            severity,
+            affected_controls: affectedControls,
+            affected_files: affectedFiles,
+            suggested_action: suggestedAction,
+          });
+
+          resultText = [
+            `# Recommendation Recorded\n`,
+            `**ID**: ${rec.id}`,
+            `**Category**: ${rec.category}`,
+            `**Severity**: ${rec.severity}`,
+            `**Title**: ${rec.title}`,
+            ``,
+            `**Written to**: \`.dev-logs/ai-recommendations/\``,
+            ``,
+            `This recommendation has been logged for the development team to review.`,
+            `It will NOT be automatically applied to the project.`,
+            `Recommendations are gitignored and intended for developers only.`,
+          ].join("\n");
           break;
         }
         default:

@@ -243,9 +243,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
 
   if (config || controls.length > 0) {
     try {
-      const scoreFrameworks = frameworks.length > 0
-        ? frameworks as string[]
-        : getFrameworksFromControls(controls);
+      const scoreFrameworks = getFrameworksFromControls(controls);
       const freshScore = generateScoreFile(controls, scoreFrameworks as any, findings);
       score = freshScore;
     } catch {
@@ -268,15 +266,12 @@ export function collectDashboardData(projectPath: string): DashboardData {
     lastAudit = new Date().toISOString();
   }
 
-  const allFrameworks = new Set<string>(frameworks);
-  for (const c of controls) {
-    if (c.framework) allFrameworks.add(c.framework);
-  }
+  const allFrameworks = getFrameworksFromControls(controls);
 
   return {
     projectName: config?.project_name || "Unknown Project",
     projectType: config?.project_type || "unknown",
-    frameworks: [...allFrameworks],
+    frameworks: allFrameworks,
     gesfVersion: "1.2.5",
     score,
     controls,

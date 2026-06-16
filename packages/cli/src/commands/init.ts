@@ -103,10 +103,26 @@ export const initCommand = new Command("init")
       version: CLI_VERSION,
     };
 
-    const dirs = [GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR];
+    const dirs = [GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, ".dev-logs"];
     for (const dir of dirs) {
       fs.mkdirSync(path.join(process.cwd(), dir), { recursive: true });
     }
+
+    const gitignorePath = path.join(process.cwd(), ".gitignore");
+    const devLogsIgnore = ".dev-logs/\n";
+    if (fs.existsSync(gitignorePath)) {
+      const existing = fs.readFileSync(gitignorePath, "utf-8");
+      if (!existing.includes(".dev-logs/")) {
+        fs.appendFileSync(gitignorePath, `\n# GESF developer logs (not for remote)\n${devLogsIgnore}`);
+      }
+    } else {
+      writeFileSync(gitignorePath, `# GESF developer logs (not for remote)\n${devLogsIgnore}\n`);
+    }
+
+    writeFileSync(
+      path.join(process.cwd(), ".dev-logs", "README.md"),
+      `# Developer Logs\n\nThis directory is for GESF development notes, session logs, AI recommendations, and release notes.\n\n**This directory is gitignored and intended for developers only. Do not submit to remote.**\n\n## Structure\n\n- \`session-*.md\` — Session logs\n- \`release-notes-*.md\` — Release notes\n- \`ai-recommendations/\` — Recommendations from AI assistants using the MCP server\n`,
+    );
 
     const configJson = generateConfigJson(config);
     writeFileSync(path.join(process.cwd(), configJson.filePath), configJson.content);
@@ -156,6 +172,7 @@ export const initCommand = new Command("init")
     console.log("  ✓ Security documents created");
     console.log("  ✓ Control packs installed:", packs.map(p => p.id).join(", "));
     console.log("  ✓ GitHub Actions workflows generated");
+    console.log("  ✓ Developer logs directory created (.dev-logs/)");
     console.log(`\n  GESF initialized for "${projectName}" (${projectType})`);
     console.log("  Next steps:");
     console.log("    1. Review generated compliance documents");

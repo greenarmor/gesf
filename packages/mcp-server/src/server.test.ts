@@ -45,10 +45,10 @@ describe("MCP Protocol", () => {
     expect(res).toBeNull();
   });
 
-  it("responds to tools/list with 29 tools", () => {
+  it("responds to tools/list with 30 tools", () => {
     const res = handleRequest(req("tools/list"));
     const tools = (res as { result: { tools: { name: string }[] } }).result.tools;
-    expect(tools.length).toBe(29);
+    expect(tools.length).toBe(30);
   });
 
   it("returns error for unknown method", () => {
@@ -91,6 +91,7 @@ describe("tools/list content", () => {
     expect(names).toContain("update_check");
     expect(names).toContain("install_hooks");
     expect(names).toContain("start_dashboard");
+    expect(names).toContain("record_recommendation");
   });
 });
 
@@ -176,6 +177,44 @@ describe("fix_recommendation tool", () => {
     const res = handleRequest(callTool("fix_recommendation", { control_id: "GDPR-ART32-002" }));
     const text = getResultText(res);
     expect(text.length).toBeGreaterThan(0);
+  });
+});
+
+describe("apply_control_override tool", () => {
+  it("rejects status pass for AI", () => {
+    const res = handleRequest(callTool("apply_control_override", {
+      control_id: "GDPR-ART32-002",
+      status: "pass",
+      project_path: "/tmp/test-gesf",
+      reason: "Test reason here",
+    }));
+    const text = getResultText(res);
+    expect(text.toLowerCase()).toContain("cannot");
+  });
+
+  it("rejects not-applicable without reason", () => {
+    const res = handleRequest(callTool("apply_control_override", {
+      control_id: "GDPR-ART32-002",
+      status: "not-applicable",
+      project_path: "/tmp/test-gesf",
+    }));
+    const text = getResultText(res);
+    expect(text.toLowerCase()).toContain("reason");
+  });
+});
+
+describe("record_recommendation tool", () => {
+  it("writes a recommendation to .dev-logs", () => {
+    const res = handleRequest(callTool("record_recommendation", {
+      project_path: "/Users/tata/gesf",
+      title: "Test Improvement Idea",
+      description: "This is a test recommendation description.",
+      suggested_action: "Implement the improvement in next sprint.",
+      category: "security",
+    }));
+    const text = getResultText(res);
+    expect(text.length).toBeGreaterThan(0);
+    expect(text.toLowerCase()).toContain("recommendation");
   });
 });
 

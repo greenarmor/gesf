@@ -102,6 +102,7 @@ export function scoreByFramework(
 
   for (const fw of frameworks) {
     const fwControls = controls.filter((c) => c.framework === fw);
+    if (fwControls.length === 0) continue;
     const { score, maxPossible } = computeWeightedScore(fwControls);
     const breakdown = buildSeverityBreakdown(fwControls);
 

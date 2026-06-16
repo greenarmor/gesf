@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { ensureGESInitialized, readJsonFile, writeJsonFile } from "../utils/project.js";
 import type { ProjectConfig, ScoreFile, FrameworkName, Control, ControlOverride } from "@greenarmor/ges-core";
-import { recordActivity } from "@greenarmor/ges-core";
+import { recordActivity, loadControlsFromDisk } from "@greenarmor/ges-core";
 import { getPacksForProjectType, getAllPacks } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile, formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import { runAudit, runAuditIncremental, deduplicateFindings } from "@greenarmor/ges-audit-engine";
@@ -45,16 +45,23 @@ export const auditCommand = new Command("audit")
     const findings = deduplicateFindings(rawFindings);
     console.log("");
 
-    const frameworks = (config?.frameworks || ["GDPR", "OWASP"]) as FrameworkName[];
+    const configFrameworks = (config?.frameworks || ["GDPR", "OWASP"]) as FrameworkName[];
 
     const projectPacks = getPacksForProjectType(config?.project_type || "generic-web-application");
     const packIds = new Set(projectPacks.map(p => p.id));
-    const fwLower = new Set(frameworks.map(f => f.toLowerCase()));
+    const fwLower = new Set(configFrameworks.map(f => f.toLowerCase()));
     const allPacks = getAllPacks();
     for (const p of allPacks) {
       if (fwLower.has(p.id)) packIds.add(p.id);
     }
-    const controls = allPacks.filter(p => packIds.has(p.id)).flatMap(p => p.controls);
+    const memoryControls = allPacks.filter(p => packIds.has(p.id)).flatMap(p => p.controls);
+
+    const diskControls = loadControlsFromDisk(root);
+    const seenIds = new Set(memoryControls.map(c => c.id));
+    const extraFromDisk = diskControls.filter(c => !seenIds.has(c.id));
+    const controls = [...memoryControls, ...extraFromDisk];
+
+    const frameworks = [...new Set(controls.map(c => c.framework).filter(Boolean))] as FrameworkName[];
 
     const overrides = loadControlOverrides(root);
     const updatedControls = applyControlOverrides(controls, overrides);
