@@ -7,9 +7,9 @@ import {
 } from "./index.js";
 
 describe("getAllPacks", () => {
-  it("returns all 10 packs", () => {
+  it("returns all 11 packs", () => {
     const packs = getAllPacks();
-    expect(packs.length).toBe(10);
+    expect(packs.length).toBe(11);
   });
 
   it("includes GDPR, OWASP, CIS, NIST, AI, blockchain, government, ISO 27001, ISO 27701, HIPAA", () => {
@@ -89,9 +89,9 @@ describe("getPacksForProjectType", () => {
 });
 
 describe("listPackIds", () => {
-  it("returns all 10 pack ids", () => {
+  it("returns all 11 pack ids", () => {
     const ids = listPackIds();
-    expect(ids.length).toBe(10);
+    expect(ids.length).toBe(11);
     expect(ids).toContain("gdpr");
     expect(ids).toContain("owasp");
     expect(ids).toContain("iso27001");

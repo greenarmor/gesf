@@ -79,8 +79,8 @@ export function createGovernmentPolicyPack(): PolicyPack {
 
   return {
     id: "government",
-    name: "Government Policy Pack",
-    description: "Additional controls for government systems including data sovereignty and chain of custody.",
+    name: "Government Policy Pack (GESF Initiative)",
+    description: "GESF-defined government controls for data sovereignty, chain of custody, tamper evidence, record integrity, and auditability. This is a GESF initiative — not based on an external standard. For official government compliance frameworks, install the NIST SP 800-53 Rev 5 pack (`nist-800-53`).",
     version: "1.0.0",
     project_types: ["government-system"],
     controls,

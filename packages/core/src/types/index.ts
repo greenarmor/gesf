@@ -18,6 +18,7 @@ export type FrameworkName =
   | "OWASP"
   | "CIS"
   | "NIST"
+  | "NIST-800-53"
   | "ISO27001"
   | "ISO27701"
   | "HIPAA";
