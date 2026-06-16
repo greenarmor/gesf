@@ -21,6 +21,7 @@ export const FrameworkNameSchema = z.enum([
   "OWASP",
   "CIS",
   "NIST",
+  "NIST-800-53",
   "ISO27001",
   "ISO27701",
   "HIPAA",
