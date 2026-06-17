@@ -97,14 +97,18 @@ export function generateConfigYaml(config: ProjectConfig): GeneratedFile {
 }
 
 export function generateMetadataJson(config: ProjectConfig): GeneratedFile {
+  const meta: Record<string, string> = {
+    project_name: config.project_name,
+    project_type: config.project_type,
+    initialized_at: config.created_at,
+    gesf_version: GESF_VERSION,
+  };
+  if (config.country) {
+    meta.country = config.country;
+  }
   return {
     filePath: path.join(GES_DIR, "metadata.json"),
-    content: JSON.stringify({
-      project_name: config.project_name,
-      project_type: config.project_type,
-      initialized_at: config.created_at,
-      gesf_version: GESF_VERSION,
-    }, null, 2),
+    content: JSON.stringify(meta, null, 2),
   };
 }
 

@@ -10,6 +10,18 @@ import { createNIST80053PolicyPack } from "./packs/nist-800-53.js";
 import { createISO27001PolicyPack } from "./packs/iso27001.js";
 import { createISO27701PolicyPack } from "./packs/iso27701.js";
 import { createHIPAAPolicyPack } from "./packs/hipaa.js";
+import { createPrivacyCorePolicyPack } from "./packs/privacy-core.js";
+import { createUKGDPRPolicyPack, createSwissFADPPolicyPack } from "./packs/privacy-europe.js";
+import {
+  createSingaporePDPAPolicyPack,
+  createPhilippinesDPAPolicyPack,
+  createJapanAPPIPolicyPack,
+  createSouthKoreaPIPAPolicyPack,
+  createChinaPIPLPolicyPack,
+  createIndiaDPDPAPolicyPack,
+} from "./packs/privacy-asia.js";
+import { createBrazilLGPDPolicyPack, createCanadaPIPEDAPolicyPack, createCaliforniaCRPAPolicyPack } from "./packs/privacy-americas.js";
+import { createSouthAfricaPOPIAPolicyPack, createUAEPDPLPolicyPack, createSaudiArabiaPDPLPolicyPack } from "./packs/privacy-africa-me.js";
 
 const ALL_PACKS: (() => PolicyPack)[] = [
   createGDPRPolicyPack,
@@ -23,6 +35,26 @@ const ALL_PACKS: (() => PolicyPack)[] = [
   createISO27001PolicyPack,
   createISO27701PolicyPack,
   createHIPAAPolicyPack,
+  // Global Privacy Framework
+  createPrivacyCorePolicyPack,
+  // Europe
+  createUKGDPRPolicyPack,
+  createSwissFADPPolicyPack,
+  // Asia-Pacific
+  createSingaporePDPAPolicyPack,
+  createPhilippinesDPAPolicyPack,
+  createJapanAPPIPolicyPack,
+  createSouthKoreaPIPAPolicyPack,
+  createChinaPIPLPolicyPack,
+  createIndiaDPDPAPolicyPack,
+  // Americas
+  createBrazilLGPDPolicyPack,
+  createCanadaPIPEDAPolicyPack,
+  createCaliforniaCRPAPolicyPack,
+  // Africa + Middle East
+  createSouthAfricaPOPIAPolicyPack,
+  createUAEPDPLPolicyPack,
+  createSaudiArabiaPDPLPolicyPack,
 ];
 
 const PACK_MAP: Record<string, () => PolicyPack> = {
@@ -37,6 +69,26 @@ const PACK_MAP: Record<string, () => PolicyPack> = {
   iso27001: createISO27001PolicyPack,
   iso27701: createISO27701PolicyPack,
   hipaa: createHIPAAPolicyPack,
+  // Global Privacy Framework
+  "privacy-core": createPrivacyCorePolicyPack,
+  // Europe
+  "uk-gdpr": createUKGDPRPolicyPack,
+  "ch-fadp": createSwissFADPPolicyPack,
+  // Asia-Pacific
+  "sg-pdpa": createSingaporePDPAPolicyPack,
+  "ph-dpa": createPhilippinesDPAPolicyPack,
+  "jp-appi": createJapanAPPIPolicyPack,
+  "kr-pipa": createSouthKoreaPIPAPolicyPack,
+  "cn-pipl": createChinaPIPLPolicyPack,
+  "in-dpdpa": createIndiaDPDPAPolicyPack,
+  // Americas
+  "br-lgpd": createBrazilLGPDPolicyPack,
+  "ca-pipeda": createCanadaPIPEDAPolicyPack,
+  "us-cpra": createCaliforniaCRPAPolicyPack,
+  // Africa + Middle East
+  "za-popia": createSouthAfricaPOPIAPolicyPack,
+  "ae-pdpl": createUAEPDPLPolicyPack,
+  "sa-pdpl": createSaudiArabiaPDPLPolicyPack,
 };
 
 export function getAllPacks(): PolicyPack[] {
@@ -67,3 +119,17 @@ export { createNIST80053PolicyPack } from "./packs/nist-800-53.js";
 export { createISO27001PolicyPack } from "./packs/iso27001.js";
 export { createISO27701PolicyPack } from "./packs/iso27701.js";
 export { createHIPAAPolicyPack } from "./packs/hipaa.js";
+export { createPrivacyCorePolicyPack } from "./packs/privacy-core.js";
+export { createUKGDPRPolicyPack, createSwissFADPPolicyPack } from "./packs/privacy-europe.js";
+export {
+  createSingaporePDPAPolicyPack,
+  createPhilippinesDPAPolicyPack,
+  createJapanAPPIPolicyPack,
+  createSouthKoreaPIPAPolicyPack,
+  createChinaPIPLPolicyPack,
+  createIndiaDPDPAPolicyPack,
+} from "./packs/privacy-asia.js";
+export { createBrazilLGPDPolicyPack, createCanadaPIPEDAPolicyPack, createCaliforniaCRPAPolicyPack } from "./packs/privacy-americas.js";
+export { createSouthAfricaPOPIAPolicyPack, createUAEPDPLPolicyPack, createSaudiArabiaPDPLPolicyPack } from "./packs/privacy-africa-me.js";
+export { PRIVACY_COUNTRIES, getCountryByCode, getCountryPackId, getCountriesByRegion } from "./packs/countries.js";
+export type { CountryPrivacyPack } from "./packs/countries.js";

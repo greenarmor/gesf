@@ -21,7 +21,30 @@ export type FrameworkName =
   | "NIST-800-53"
   | "ISO27001"
   | "ISO27701"
-  | "HIPAA";
+  | "HIPAA"
+  | "PRIVACY-CORE"
+  | "UK-GDPR"
+  | "LGPD"
+  | "PDPA-SG"
+  | "DPA-PH"
+  | "PDPA-TH"
+  | "APPI"
+  | "PIPA"
+  | "PIPL"
+  | "PDPO-HK"
+  | "PIPEDA"
+  | "CPRA"
+  | "POPIA"
+  | "PDPL-UAE"
+  | "PDPL-SA"
+  | "DPDPA"
+  | "FADP"
+  | "PDPA-MY"
+  | "PDP-ID"
+  | "PDP-VN"
+  | "NDPA-NG"
+  | "DPA-KE"
+  | "PDPA-QA";
 
 export type DataClassification = "public" | "internal" | "confidential" | "restricted";
 
@@ -35,6 +58,7 @@ export interface ProjectConfig {
   project_name: string;
   project_type: ProjectType;
   frameworks: FrameworkName[];
+  country?: string;
   requirements: Requirements;
   created_at: string;
   version: string;

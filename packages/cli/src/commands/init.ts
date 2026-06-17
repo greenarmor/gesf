@@ -16,7 +16,7 @@ import {
 import { CLI_VERSION } from "../utils/version.js";
 import type { ProjectConfig, ProjectType, FrameworkName } from "@greenarmor/ges-core";
 import { recordActivity } from "@greenarmor/ges-core";
-import { getPacksForProjectType } from "@greenarmor/ges-policy-engine";
+import { getPacksForProjectType, getPack, PRIVACY_COUNTRIES, getCountryByCode } from "@greenarmor/ges-policy-engine";
 import {
   generateComplianceDocs,
   generateSecurityDocs,
@@ -36,6 +36,7 @@ export const initCommand = new Command("init")
   .option("-n, --name <name>", "Project name")
   .option("-t, --type <type>", "Project type")
   .option("-f, --frameworks <frameworks>", "Comma-separated frameworks")
+  .option("-c, --country <country>", "Country of origin (e.g., BR, CA, US-CA, GB, SG)")
   .option("--force", "Re-initialize even if GESF is already set up")
   .action(async (options) => {
     console.log("\n  Green Engineering Standard Framework (GESF) v" + CLI_VERSION);
@@ -77,11 +78,90 @@ export const initCommand = new Command("init")
       process.exit(1);
     }
 
+    // --- Mandatory: Country of Origin ---
+    let countryCode = options.country || "";
+
+    if (!countryCode) {
+      const regions = ["Europe", "Asia-Pacific", "Americas", "Africa", "Middle East", "Global / EU-wide"];
+      const selectedRegion = await select({
+        message: "Select your project's primary country/region of operation:",
+        choices: regions.map(r => ({ value: r, name: r })),
+      });
+
+      if (selectedRegion === "Global / EU-wide") {
+        countryCode = "EU";
+      } else {
+        const countriesInRegion = PRIVACY_COUNTRIES.filter(c => c.region === selectedRegion);
+        const countryChoice = await select({
+          message: "Select the country:",
+          choices: [
+            ...countriesInRegion.map(c => ({
+              value: c.code,
+              name: `${c.name} — ${c.lawName}`,
+            })),
+            { value: "OTHER", name: "Other / Not listed (skip privacy pack)" },
+          ],
+        });
+        countryCode = countryChoice;
+      }
+    }
+
+    countryCode = countryCode.toUpperCase();
+    const countryInfo = getCountryByCode(countryCode);
+
+    if (options.country && !countryInfo && countryCode !== "EU") {
+      console.warn(`  ⚠ Country code '${options.country}' not recognized. No privacy pack will be auto-installed.`);
+      console.warn(`    Available codes: ${PRIVACY_COUNTRIES.map(c => c.code).join(", ")}, EU`);
+    }
+
+    // --- Optional: Additional privacy packs ---
+    const additionalPacks = await checkbox({
+      message: "Select additional privacy packs (optional — you can add more later with 'ges policy install'):",
+      choices: PRIVACY_COUNTRIES
+        .filter(c => c.code !== countryCode)
+        .map(c => ({
+          value: c.packId,
+          name: `${c.name} (${c.lawName})`,
+          checked: false,
+        })),
+    });
+
+    // --- Determine which packs to install ---
+    const installedPackIds = new Set<string>();
+
+    // Domain packs from project type
+    const allProjectPacks = getPacksForProjectType(projectType);
+    const fwLower = new Set(selectedFrameworks.map((f: string) => f.toLowerCase()));
+    const DOMAIN_PACKS = new Set(["ai", "blockchain", "government"]);
+    for (const pack of allProjectPacks) {
+      if (DOMAIN_PACKS.has(pack.id.toLowerCase()) || fwLower.has(pack.id.toLowerCase())) {
+        installedPackIds.add(pack.id);
+      }
+    }
+
+    // Privacy core (always installed)
+    installedPackIds.add("privacy-core");
+
+    // Country pack (auto-selected from country of origin)
+    if (countryInfo) {
+      installedPackIds.add(countryInfo.packId);
+      // EU maps to GDPR which is already in default frameworks
+    } else if (countryCode === "EU") {
+      installedPackIds.add("gdpr");
+    }
+
+    // Additional packs selected by user
+    for (const packId of additionalPacks) {
+      installedPackIds.add(packId);
+    }
+
+    // Build config
     const now = new Date().toISOString();
     const config: ProjectConfig = {
       project_name: projectName,
       project_type: projectType,
       frameworks: selectedFrameworks,
+      country: countryCode,
       requirements: {
         encryption: { required: true, level: "mandatory" },
         mfa: { required: true, level: "mandatory" },
@@ -146,19 +226,19 @@ export const initCommand = new Command("init")
       writeFileSync(path.join(process.cwd(), doc.filePath), doc.content);
     }
 
-    const allProjectPacks = getPacksForProjectType(projectType);
-    const fwLower = new Set(selectedFrameworks.map((f: string) => f.toLowerCase()));
-    const DOMAIN_PACKS = new Set(["ai", "blockchain", "government"]);
-    const packs = allProjectPacks.filter(pack =>
-      DOMAIN_PACKS.has(pack.id.toLowerCase()) || fwLower.has(pack.id.toLowerCase())
-    );
-    for (const pack of packs) {
-      const packDir = path.join(process.cwd(), CONTROLS_DIR, pack.id);
-      fs.mkdirSync(packDir, { recursive: true });
-      writeFileSync(
-        path.join(packDir, "controls.json"),
-        JSON.stringify(pack.controls, null, 2),
-      );
+    // Install all selected packs
+    const packs = [];
+    for (const packId of installedPackIds) {
+      const pack = getPack(packId);
+      if (pack) {
+        const packDir = path.join(process.cwd(), CONTROLS_DIR, pack.id);
+        fs.mkdirSync(packDir, { recursive: true });
+        writeFileSync(
+          path.join(packDir, "controls.json"),
+          JSON.stringify(pack.controls, null, 2),
+        );
+        packs.push(pack);
+      }
     }
 
     const workflows = generateAllWorkflows(config);
@@ -170,21 +250,33 @@ export const initCommand = new Command("init")
     console.log("  ✓ Configuration files generated");
     console.log("  ✓ Compliance documents created");
     console.log("  ✓ Security documents created");
+    if (countryInfo) {
+      console.log(`  ✓ Country privacy pack auto-installed: ${countryInfo.packId} (${countryInfo.name})`);
+    } else if (countryCode === "EU") {
+      console.log("  ✓ EU GDPR privacy pack auto-installed");
+    }
+    if (additionalPacks.length > 0) {
+      console.log(`  ✓ Additional privacy packs installed: ${additionalPacks.join(", ")}`);
+    }
     console.log("  ✓ Control packs installed:", packs.map(p => p.id).join(", "));
     console.log("  ✓ GitHub Actions workflows generated");
     console.log("  ✓ Developer logs directory created (.dev-logs/)");
     console.log(`\n  GESF initialized for "${projectName}" (${projectType})`);
+    if (countryInfo) {
+      console.log(`  Country: ${countryInfo.name} — ${countryInfo.lawName}`);
+    }
     console.log("  Next steps:");
     console.log("    1. Review generated compliance documents");
     console.log("    2. Run 'ges audit' to evaluate your project");
-    console.log("    3. Run 'ges score' to see your compliance score\n");
+    console.log("    3. Run 'ges score' to see your compliance score");
+    console.log("    4. Add more packs with 'ges policy install <pack-id>'\n");
 
     recordActivity(process.cwd(), {
       source: "cli",
       action: "init",
       title: `Project initialized: ${projectName}`,
-      description: `Initialized GESF for ${projectType} project with frameworks: ${selectedFrameworks.join(", ")}. Installed ${packs.length} policy packs: ${packs.map(p => p.id).join(", ")}.`,
-      details: { packs_affected: packs.map(p => p.id), frameworks_added: selectedFrameworks.map((f: FrameworkName) => String(f)) },
+      description: `Initialized GESF for ${projectType} project${countryInfo ? ` in ${countryInfo.name}` : ""} with frameworks: ${selectedFrameworks.join(", ")}. Installed ${packs.length} policy packs: ${packs.map(p => p.id).join(", ")}.`,
+      details: { packs_affected: packs.map(p => p.id), frameworks_added: selectedFrameworks.map((f: FrameworkName) => String(f)), country: countryCode },
     });
 
     await showNextStepsMenu("init");

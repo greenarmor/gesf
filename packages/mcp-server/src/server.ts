@@ -3,7 +3,7 @@
 import * as readline from "node:readline";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getAllPacks, getPacksForProjectType, getPack, listPackIds } from "@greenarmor/ges-policy-engine";
+import { getAllPacks, getPacksForProjectType, getPack, listPackIds, PRIVACY_COUNTRIES, getCountryByCode, getCountryPackId } from "@greenarmor/ges-policy-engine";
 
 const PE = ["process", "env"].join(".");
 const HT = ["http", "//"].join(":");
@@ -281,7 +281,7 @@ const TOOLS = [
   },
   {
     name: "init_project",
-    description: "Initialize GESF in a project directory. Creates the .ges/ directory structure, compliance/security documentation, controls, CI/CD workflows, and configuration files.",
+    description: "Initialize GESF in a project directory. Creates the .ges/ directory structure, compliance/security documentation, controls, CI/CD workflows, and configuration files. Automatically installs the privacy pack for the specified country of origin.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -289,7 +289,22 @@ const TOOLS = [
         project_name: { type: "string", description: "Project name (defaults to directory name)." },
         project_type: { type: "string", description: "Project type (saas, ai-application, mcp-server, blockchain, wallet, government-system, healthcare-system, event-platform, photo-storage-platform, vulnerability-scanner, generic-web-application, api-backend, mobile-application)." },
         frameworks: { type: "string", description: "Comma-separated framework names (default: GDPR,OWASP,CIS,NIST)." },
+        country: { type: "string", description: "Country/region code of origin (e.g., BR, CA, US-CA, GB, CH, SG, PH, JP, KR, CN, IN, ZA, AE, SA, EU). Determines which privacy pack is auto-installed." },
+        additional_packs: { type: "string", description: "Comma-separated additional privacy pack IDs to install (e.g., uk-gdpr,br-lgpd). Optional." },
         force: { type: "boolean", description: "Re-initialize even if GESF is already set up (default: false)." },
+      },
+      required: ["project_path"],
+    },
+  },
+  {
+    name: "suggest_packs",
+    description: "Analyze the project and recommend which privacy/compliance policy packs to install. Examines project type, country of origin, installed packs, codebase patterns (dependencies, file structure), and data processing indicators. Returns ranked recommendations with rationale. Does NOT install packs — use policy_install to act on suggestions.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        country: { type: "string", description: "Optional country/region code to factor into recommendations (e.g., BR, US-CA, EU)." },
+        project_type: { type: "string", description: "Optional project type override (if not set, reads from config or infers from codebase)." },
       },
       required: ["project_path"],
     },
@@ -2752,12 +2767,18 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           const projectType = (args.project_type || "generic-web-application") as ProjectType;
           const frameworksStr = args.frameworks || DEFAULT_FRAMEWORKS.join(",");
           const frameworks = frameworksStr.split(",").map(f => f.trim() as import("@greenarmor/ges-core").FrameworkName);
+          const countryCode = (args.country || "").toUpperCase();
+          const countryInfo = countryCode ? getCountryByCode(countryCode) : undefined;
+          const additionalPackIds: string[] = args.additional_packs
+            ? String(args.additional_packs).split(",").map((s: string) => s.trim()).filter(Boolean)
+            : [];
           const now = new Date().toISOString();
 
           const config: ProjectConfig = {
             project_name: projectName,
             project_type: projectType,
             frameworks,
+            country: countryCode || undefined,
             requirements: {
               encryption: { required: true },
               mfa: { required: true },
@@ -2828,11 +2849,42 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             fs.writeFileSync(filePath, doc.content);
           }
 
-          const packs = getPacksForProjectType(projectType);
-          for (const pack of packs) {
-            const packDir = path.join(projectPath, CONTROLS_DIR, pack.id);
-            fs.mkdirSync(packDir, { recursive: true });
-            fs.writeFileSync(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
+          const installedPackIds = new Set<string>();
+
+          // Domain packs from project type
+          const projectPacks = getPacksForProjectType(projectType);
+          const fwLower = new Set(frameworks.map((f: string) => f.toLowerCase()));
+          const DOMAIN_PACKS = new Set(["ai", "blockchain", "government"]);
+          for (const pack of projectPacks) {
+            if (DOMAIN_PACKS.has(pack.id.toLowerCase()) || fwLower.has(pack.id.toLowerCase())) {
+              installedPackIds.add(pack.id);
+            }
+          }
+
+          // Privacy core (always installed)
+          installedPackIds.add("privacy-core");
+
+          // Country privacy pack (auto-selected)
+          if (countryInfo) {
+            installedPackIds.add(countryInfo.packId);
+          } else if (countryCode === "EU") {
+            installedPackIds.add("gdpr");
+          }
+
+          // Additional user-selected packs
+          for (const packId of additionalPackIds) {
+            installedPackIds.add(packId);
+          }
+
+          const packs: typeof projectPacks = [];
+          for (const packId of installedPackIds) {
+            const pack = getPack(packId);
+            if (pack) {
+              const packDir = path.join(projectPath, CONTROLS_DIR, pack.id);
+              fs.mkdirSync(packDir, { recursive: true });
+              fs.writeFileSync(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
+              packs.push(pack);
+            }
           }
 
           const workflows = generateAllWorkflows(config);
@@ -2847,6 +2899,11 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           lines.push(`**Project**: ${projectName}`);
           lines.push(`**Type**: ${projectType}`);
           lines.push(`**Frameworks**: ${frameworks.join(", ")}`);
+          if (countryInfo) {
+            lines.push(`**Country**: ${countryInfo.name} — ${countryInfo.lawName}`);
+          } else if (countryCode === "EU") {
+            lines.push(`**Region**: European Union (EU GDPR)`);
+          }
           lines.push(`**Path**: ${projectPath}\n`);
           lines.push(`## Created Structure`);
           lines.push(`- \`.ges/\` — Configuration and score files`);
@@ -2867,9 +2924,211 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             source: "mcp",
             action: "init",
             title: `Project initialized: ${projectName}`,
-            description: `Initialized GESF for ${projectType} project with frameworks: ${frameworks.join(", ")}. Installed ${packs.length} policy packs.`,
-            details: { packs_affected: packs.map(p => p.id), frameworks_added: frameworks.map(f => String(f)) },
+            description: `Initialized GESF for ${projectType} project${countryInfo ? ` in ${countryInfo.name}` : ""} with frameworks: ${frameworks.join(", ")}. Installed ${packs.length} policy packs: ${packs.map(p => p.id).join(", ")}.`,
+            details: { packs_affected: packs.map(p => p.id), frameworks_added: frameworks.map(f => String(f)), country: countryCode || undefined },
           });
+          break;
+        }
+        case "suggest_packs": {
+          const projectPath = resolveProjectPath(args.project_path);
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const allPacks = getAllPacks();
+          const allPackIds = new Set(allPacks.map(p => p.id));
+
+          // Read existing config
+          const configPath = path.join(projectPath, GES_DIR, "config.json");
+          let existingConfig: ProjectConfig | null = null;
+          let detectedCountry = "";
+          let detectedProjectType = "";
+
+          if (fs.existsSync(configPath)) {
+            try {
+              const parsed = JSON.parse(fs.readFileSync(configPath, "utf-8")) as ProjectConfig;
+              existingConfig = parsed;
+              detectedCountry = parsed.country || "";
+              detectedProjectType = parsed.project_type;
+            } catch { /* ignore parse errors */ }
+          }
+
+          // Override with args
+          if (args.country) detectedCountry = String(args.country).toUpperCase();
+          if (args.project_type) detectedProjectType = String(args.project_type);
+
+          // Already installed packs
+          const installedPackIdsSet = getInstalledPackIds(projectPath);
+          const installedPackIds = [...installedPackIdsSet];
+          const installedSet = installedPackIdsSet;
+
+          // Codebase analysis
+          const codebaseIndicators: string[] = [];
+          const recommendations: { packId: string; reason: string; priority: "critical" | "high" | "medium" | "low"; }[] = [];
+
+          // Check for package.json (Node.js)
+          const pkgJsonPath = path.join(projectPath, "package.json");
+          let hasAI = false, hasBlockchain = false, hasHealthcare = false;
+          if (fs.existsSync(pkgJsonPath)) {
+            codebaseIndicators.push("Node.js project (package.json detected)");
+            try {
+              const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, "utf-8"));
+              const allDeps = Object.keys({ ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) });
+              const depLower = allDeps.join(" ").toLowerCase();
+              if (depLower.includes("openai") || depLower.includes("langchain") || depLower.includes("anthropic") || depLower.includes("llm") || depLower.includes("ai-sdk")) {
+                hasAI = true;
+                codebaseIndicators.push("AI/LLM dependencies detected (openai/langchain/anthropic)");
+              }
+              if (depLower.includes("ethers") || depLower.includes("web3") || depLower.includes("solana") || depLower.includes("hardhat")) {
+                hasBlockchain = true;
+                codebaseIndicators.push("Blockchain dependencies detected (ethers/web3/hardhat)");
+              }
+              if (depLower.includes("fhir") || depLower.includes("hl7") || depLower.includes("medical")) {
+                hasHealthcare = true;
+                codebaseIndicators.push("Healthcare dependencies detected");
+              }
+            } catch { /* ignore */ }
+          }
+
+          // Check for Python
+          const reqPath = path.join(projectPath, "requirements.txt");
+          const pyprojPath = path.join(projectPath, "pyproject.toml");
+          if (fs.existsSync(reqPath) || fs.existsSync(pyprojPath)) {
+            codebaseIndicators.push("Python project detected");
+            try {
+              const pyContent = fs.existsSync(reqPath)
+                ? fs.readFileSync(reqPath, "utf-8").toLowerCase()
+                : fs.readFileSync(pyprojPath, "utf-8").toLowerCase();
+              if (pyContent.includes("openai") || pyContent.includes("langchain") || pyContent.includes("anthropic") || pyContent.includes("torch")) {
+                hasAI = true;
+                codebaseIndicators.push("AI/ML Python dependencies detected");
+              }
+            } catch { /* ignore */ }
+          }
+
+          // Check for mobile
+          if (fs.existsSync(path.join(projectPath, "android")) || fs.existsSync(path.join(projectPath, "ios"))) {
+            codebaseIndicators.push("Mobile project detected (android/ios directories)");
+          }
+
+          // Check for Docker/deployment (indicates production data processing)
+          if (fs.existsSync(path.join(projectPath, "Dockerfile")) || fs.existsSync(path.join(projectPath, "docker-compose.yml"))) {
+            codebaseIndicators.push("Docker deployment detected (likely processes personal data in production)");
+          }
+
+          // --- Build recommendations ---
+
+          // 1. Privacy core (always recommended)
+          if (!installedSet.has("privacy-core")) {
+            recommendations.push({ packId: "privacy-core", reason: "Universal baseline privacy controls (10 domains, 40 controls). Applicable to any project processing personal data.", priority: "critical" });
+          }
+
+          // 2. Country pack
+          if (detectedCountry) {
+            const countryInfo = getCountryByCode(detectedCountry);
+            if (countryInfo) {
+              if (!installedSet.has(countryInfo.packId)) {
+                recommendations.push({ packId: countryInfo.packId, reason: `${countryInfo.name} privacy law: ${countryInfo.lawName}. Required for compliance with ${countryInfo.regulator}.`, priority: "critical" });
+              }
+            } else if (detectedCountry === "EU") {
+              if (!installedSet.has("gdpr")) {
+                recommendations.push({ packId: "gdpr", reason: "EU GDPR is the baseline for all European Economic Area data protection.", priority: "critical" });
+              }
+            }
+          }
+
+          // 3. AI pack
+          if (hasAI && !installedSet.has("ai")) {
+            recommendations.push({ packId: "ai", reason: "AI/LLM application detected. The AI policy pack adds controls for prompt logging, output validation, PII detection, and rate limiting.", priority: "high" });
+          }
+
+          // 4. Blockchain pack
+          if (hasBlockchain && !installedSet.has("blockchain")) {
+            recommendations.push({ packId: "blockchain", reason: "Blockchain application detected. Adds controls for cryptographic signatures, key rotation, and on-chain data protection.", priority: "high" });
+          }
+
+          // 5. HIPAA for healthcare
+          if (hasHealthcare && !installedSet.has("hipaa")) {
+            recommendations.push({ packId: "hipaa", reason: "Healthcare indicators detected. HIPAA controls are required for protected health information (PHI).", priority: "high" });
+          }
+
+          // 6. ISO 27001/27701 for production deployments
+          if (!installedSet.has("iso27001") && codebaseIndicators.some(i => i.includes("Docker") || i.includes("production"))) {
+            recommendations.push({ packId: "iso27001", reason: "Production deployment detected. ISO 27001 provides internationally recognized information security management controls.", priority: "medium" });
+          }
+
+          // 7. ISO 27701 (privacy extension)
+          if (!installedSet.has("iso27701")) {
+            recommendations.push({ packId: "iso27701", reason: "ISO 27701 extends ISO 27001 with privacy information management. Recommended for any organization acting as a data controller or processor.", priority: "medium" });
+          }
+
+          // --- Build output ---
+          const lines: string[] = [];
+          lines.push("# Policy Pack Recommendations\n");
+
+          if (codebaseIndicators.length > 0) {
+            lines.push("## Codebase Analysis");
+            for (const indicator of codebaseIndicators) {
+              lines.push(`- ${indicator}`);
+            }
+            lines.push("");
+          }
+
+          if (detectedCountry) {
+            const countryInfo = getCountryByCode(detectedCountry);
+            lines.push(`## Project Context`);
+            lines.push(`- **Country/Region**: ${countryInfo ? `${countryInfo.name} (${detectedCountry})` : detectedCountry === "EU" ? "European Union" : detectedCountry}`);
+            if (detectedProjectType) lines.push(`- **Project Type**: ${detectedProjectType}`);
+            if (existingConfig) lines.push(`- **Frameworks Configured**: ${existingConfig.frameworks.join(", ")}`);
+            lines.push("");
+          }
+
+          if (installedSet.size > 0) {
+            lines.push(`## Already Installed (${installedPackIds.length} packs)`);
+            lines.push(installedPackIds.map((id: string) => `- \`${id}\``).join("\n"));
+            lines.push("");
+          }
+
+          if (recommendations.length === 0) {
+            lines.push("## ✅ All Recommended Packs Installed");
+            lines.push("No additional packs are recommended at this time. Your project has comprehensive coverage.");
+          } else {
+            const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+            recommendations.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+            lines.push(`## Recommended Packs (${recommendations.length})\n`);
+            lines.push("| Priority | Pack ID | Reason |");
+            lines.push("|----------|---------|--------|");
+            for (const rec of recommendations) {
+              const pack = allPacks.find(p => p.id === rec.packId);
+              const packName = pack ? pack.name : rec.packId;
+              lines.push(`| ${rec.priority.toUpperCase()} | \`${rec.packId}\` (${packName}) | ${rec.reason} |`);
+            }
+            lines.push("");
+            lines.push("### How to Install");
+            lines.push("Use `policy_install` with the pack ID:");
+            for (const rec of recommendations.slice(0, 3)) {
+              lines.push(`- \`policy_install\` with pack_id: \`${rec.packId}\``);
+            }
+            if (recommendations.length > 3) {
+              lines.push(`- ... and ${recommendations.length - 3} more`);
+            }
+          }
+
+          lines.push("");
+          lines.push("### Available Country Packs");
+          const grouped = PRIVACY_COUNTRIES.reduce((acc, c) => {
+            if (!acc[c.region]) acc[c.region] = [];
+            acc[c.region].push(c);
+            return acc;
+          }, {} as Record<string, typeof PRIVACY_COUNTRIES>);
+          for (const [region, countries] of Object.entries(grouped)) {
+            lines.push(`- **${region}**: ${countries.map(c => `\`${c.packId}\` (${c.name})`).join(", ")}`);
+          }
+
+          resultText = lines.join("\n");
           break;
         }
         case "run_scans": {
