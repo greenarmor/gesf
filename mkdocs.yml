@@ -109,4 +109,11 @@ nav:
       - Dependency Analysis: reference/dependency-analysis.md
       - GDPR Controls: reference/gdpr-controls.md
       - Engineering Standards: reference/engineering-standards.md
+  - Privacy Packs:
+      - Overview: privacy-packs/index.md
+      - Privacy Core (Global Baseline): privacy-packs/privacy-core.md
+      - Europe: privacy-packs/europe.md
+      - Asia-Pacific: privacy-packs/asia-pacific.md
+      - Americas: privacy-packs/americas.md
+      - Africa and Middle East: privacy-packs/africa-middle-east.md
   - FAQ: faq.md

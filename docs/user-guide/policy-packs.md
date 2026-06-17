@@ -171,6 +171,37 @@ This deletes the `controls/blockchain/` directory.
 | 164.502 | Minimum necessary standard | High |
 | 164.530 | Administrative requirements | High |
 
+## Global Privacy Packs
+
+GESF includes 15 country-specific privacy packs plus a universal `privacy-core` baseline pack. These are documented in detail in the [Privacy Packs](../privacy-packs/index.md) section with every control, legal article reference, and interactive exercises.
+
+| Pack | Country | Controls |
+|------|---------|----------|
+| `privacy-core` | Universal baseline | 40 |
+| `uk-gdpr` | United Kingdom | 14 |
+| `ch-fadp` | Switzerland | 8 |
+| `sg-pdpa` | Singapore | 12 |
+| `ph-dpa` | Philippines | 10 |
+| `jp-appi` | Japan | 10 |
+| `kr-pipa` | South Korea | 10 |
+| `cn-pipl` | China | 11 |
+| `in-dpdpa` | India | 8 |
+| `br-lgpd` | Brazil | 10 |
+| `ca-pipeda` | Canada | 10 |
+| `us-cpra` | California (USA) | 9 |
+| `za-popia` | South Africa | 8 |
+| `ae-pdpl` | UAE | 6 |
+| `sa-pdpl` | Saudi Arabia | 6 |
+
+Install a country pack:
+
+```bash
+ges policy install br-lgpd
+ges policy install sg-pdpa
+```
+
+When you run `ges init --country BR`, the matching privacy pack is auto-installed.
+
 !!! example "Exercise: Install and Remove Packs"
 
     1. Initialize a new project:
