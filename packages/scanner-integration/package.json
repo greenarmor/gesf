@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@greenarmor/ges-core": "1.4.2"
+    "@greenarmor/ges-core": "1.4.3"
   },
   "description": "GESF Scanner Integration - Trivy, Gitleaks, Semgrep, npm audit",
   "devDependencies": {
@@ -29,5 +29,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.4.2"
+  "version": "1.4.3"
 }
