@@ -26,7 +26,10 @@
     "vitest": "^4.1.8"
   },
   "optionalDependencies": {
-    "@inquirer/prompts": "^7.10.1"
+    "@inquirer/checkbox": "^5.2.1",
+    "@inquirer/confirm": "^6.1.1",
+    "@inquirer/input": "^5.1.2",
+    "@inquirer/select": "^5.2.1"
   },
   "engines": {
     "node": ">=20.0.0"

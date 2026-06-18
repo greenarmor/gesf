@@ -9,19 +9,35 @@ function createRL(): readline.Interface {
   return readline.createInterface({ input: process.stdin, output: process.stdout });
 }
 
+type InputFn = (options: { message: string; default?: string; transformer?: (val: string) => string }) => Promise<string>;
+type SelectFn = <T = string>(options: { message: string; choices: { name: string; value: T; description?: string; short?: string }[]; theme?: unknown; pageSize?: number }) => Promise<T>;
+type CheckboxFn = <T = string>(options: { message: string; choices: { name: string; value: T; checked?: boolean; description?: string }[]; theme?: unknown; pageSize?: number }) => Promise<T[]>;
+type ConfirmFn = (options: { message: string; default?: boolean; theme?: unknown }) => Promise<boolean>;
+
 interface InquirerModule {
-  input(options: { message: string; default?: string; transformer?: (val: string) => string }): Promise<string>;
-  select<T>(options: { message: string; choices: { name: string; value: T; description?: string; short?: string }[]; theme?: unknown; pageSize?: number }): Promise<T>;
-  checkbox<T>(options: { message: string; choices: { name: string; value: T; checked?: boolean; description?: string }[]; theme?: unknown; pageSize?: number }): Promise<T[]>;
-  confirm(options: { message: string; default?: boolean; theme?: unknown }): Promise<boolean>;
+  input: InputFn;
+  select: SelectFn;
+  checkbox: CheckboxFn;
+  confirm: ConfirmFn;
 }
+
 let cachedInquirer: InquirerModule | null | undefined;
 
 async function getInquirer(): Promise<InquirerModule | null> {
   if (cachedInquirer !== undefined) return cachedInquirer;
   try {
-    const mod: InquirerModule = await import(String("@inquirer/prompts"));
-    cachedInquirer = mod;
+    const [inputMod, selectMod, checkboxMod, confirmMod] = await Promise.all([
+      import(String("@inquirer/input")),
+      import(String("@inquirer/select")),
+      import(String("@inquirer/checkbox")),
+      import(String("@inquirer/confirm")),
+    ]);
+    cachedInquirer = {
+      input: inputMod.default as InputFn,
+      select: selectMod.default as SelectFn,
+      checkbox: checkboxMod.default as CheckboxFn,
+      confirm: confirmMod.default as ConfirmFn,
+    };
   } catch {
     cachedInquirer = null;
   }

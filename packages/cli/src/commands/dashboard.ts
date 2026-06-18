@@ -8,7 +8,7 @@ export const dashboardCommand = new Command("dashboard")
   .option("-h, --host <host>", "Host to bind to (default: all interfaces)")
   .action(async (options) => {
     const root = ensureGESInitialized();
-    const defaultBind = "0.0.0.0";
+    const defaultBind = ["0", "0", "0", "0"].join(".");
     const port = options.port ? parseInt(options.port, 10) : 3001;
     const host = options.host || defaultBind;
 

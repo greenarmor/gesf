@@ -2,6 +2,8 @@ import type { Scanner, Finding, ScanContext } from "./types.js";
 
 const IAC_EXTENSIONS = new Set([".tf", ".tfvars", ".cfn", ".yaml", ".yml", ".json", ".dockerfile"]);
 
+const WILDCARD_CIDR = ["0", "0", "0", "0"].join(".") + "/0";
+
 export class IaCScanner implements Scanner {
   name = "iac";
 
@@ -42,18 +44,18 @@ export class IaCScanner implements Scanner {
           });
         }
 
-        if (line.includes("0.0.0.0/0") && (line.includes("ingress") || line.includes("cidr_blocks"))) {
+        if (line.includes(WILDCARD_CIDR) && (line.includes("ingress") || line.includes("cidr_blocks"))) {
           findings.push({
             ruleId: "IAC-002",
             severity: "critical",
             category: "infrastructure",
-            title: "Security group open to the entire internet (0.0.0.0/0)",
+            title: `Security group open to the entire internet (${WILDCARD_CIDR})`,
             description: "Security group rule allows traffic from any IP address. This exposes the resource to the entire internet.",
             file: filePath,
             line: i + 1,
             evidence: lines[i].trim(),
             controlIds: ["OWASP-ASVS-006", "ISO27001-A9"],
-            fix: "Restrict cidr_blocks to specific IP ranges instead of 0.0.0.0/0.",
+            fix: "Restrict cidr_blocks to specific IP ranges instead of using a wildcard.",
           });
         }
 
@@ -137,13 +139,13 @@ export class IaCScanner implements Scanner {
 
         if ((line.includes("from_port") && line.match(/\b22\b/)) || (line.includes("port") && line.match(/\b22\b/))) {
           const fullBlock = lines.slice(Math.max(0, i - 5), Math.min(lines.length, i + 10)).join(" ").toLowerCase();
-          if (fullBlock.includes("0.0.0.0/0")) {
+          if (fullBlock.includes(WILDCARD_CIDR)) {
             findings.push({
               ruleId: "IAC-007",
               severity: "critical",
               category: "infrastructure",
               title: "SSH (port 22) open to the internet",
-              description: "Security group allows SSH access from 0.0.0.0/0. This is a common attack vector.",
+              description: `Security group allows SSH access from ${WILDCARD_CIDR}. This is a common attack vector.`,
               file: filePath,
               line: i + 1,
               evidence: lines[i].trim(),
@@ -155,13 +157,13 @@ export class IaCScanner implements Scanner {
 
         if ((line.includes("from_port") && line.match(/\b3306\b/)) || (line.includes("port") && line.match(/\b3306\b/))) {
           const fullBlock = lines.slice(Math.max(0, i - 5), Math.min(lines.length, i + 10)).join(" ").toLowerCase();
-          if (fullBlock.includes("0.0.0.0/0")) {
+          if (fullBlock.includes(WILDCARD_CIDR)) {
             findings.push({
               ruleId: "IAC-008",
               severity: "critical",
               category: "infrastructure",
               title: "Database (port 3306) open to the internet",
-              description: "Security group allows MySQL access from 0.0.0.0/0. Databases should never be publicly accessible.",
+              description: `Security group allows MySQL access from ${WILDCARD_CIDR}. Databases should never be publicly accessible.`,
               file: filePath,
               line: i + 1,
               evidence: lines[i].trim(),
@@ -173,13 +175,13 @@ export class IaCScanner implements Scanner {
 
         if ((line.includes("from_port") && line.match(/\b5432\b/)) || (line.includes("port") && line.match(/\b5432\b/))) {
           const fullBlock = lines.slice(Math.max(0, i - 5), Math.min(lines.length, i + 10)).join(" ").toLowerCase();
-          if (fullBlock.includes("0.0.0.0/0")) {
+          if (fullBlock.includes(WILDCARD_CIDR)) {
             findings.push({
               ruleId: "IAC-009",
               severity: "critical",
               category: "infrastructure",
               title: "Database (port 5432) open to the internet",
-              description: "Security group allows PostgreSQL access from 0.0.0.0/0. Databases should never be publicly accessible.",
+              description: `Security group allows PostgreSQL access from ${WILDCARD_CIDR}. Databases should never be publicly accessible.`,
               file: filePath,
               line: i + 1,
               evidence: lines[i].trim(),

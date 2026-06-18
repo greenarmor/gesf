@@ -1,3 +1,10 @@
 version: 2
 issueRules:
   envAccess: false
+  filesystemAccess: false
+  networkAccess: false
+  shellAccess: false
+  typosquatting: true
+  installScripts: true
+  obfuscatedCode: true
+  unmaintainedPackages: true

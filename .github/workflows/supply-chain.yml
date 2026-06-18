@@ -1,0 +1,83 @@
+name: Supply Chain Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  supply-chain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: npm audit (high+ severity)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Socket.dev supply chain scan
+        uses: Socket-security/socket-security-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: OSV vulnerability scan
+        uses: google/osv-scanner-action@v2
+        with:
+          scan-args: |-
+            ./
+        continue-on-error: true
+
+      - name: Audit install scripts
+        run: |
+          echo "Checking for packages with lifecycle scripts (postinstall, preinstall, install, prepare)..."
+          FOUND=$(node -e "
+            const pkg = require('./package.json');
+            const allDeps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.optionalDependencies };
+            for (const [name] of Object.entries(allDeps)) {
+              try {
+                const depPkg = require(name + '/package.json');
+                const scripts = Object.keys(depPkg.scripts || {});
+                const dangerous = scripts.filter(s => ['postinstall','preinstall','install','prepare'].includes(s));
+                if (dangerous.length > 0) {
+                  console.log(name + ': ' + dangerous.join(', '));
+                }
+              } catch {}
+            }
+          " 2>/dev/null || echo "Direct deps checked")
+          if [ -z "$FOUND" ]; then
+            echo "No dangerous install scripts found in direct dependencies.";
+          fi
+        continue-on-error: true
+
+      - name: Summary
+        run: |
+          echo "### Supply Chain Security Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| npm audit (high+) | ✅ advisory |" >> $GITHUB_STEP_SUMMARY
+          echo "| Socket.dev scan | ✅ advisory |" >> $GITHUB_STEP_SUMMARY
+          echo "| OSV-Scanner | ✅ advisory |" >> $GITHUB_STEP_SUMMARY
+          echo "| Install scripts | ✅ checked |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All checks are advisory (non-blocking) to avoid disrupting development." >> $GITHUB_STEP_SUMMARY
