@@ -15,6 +15,24 @@ import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, C
 import { GESF_VERSION, GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, PROJECT_TYPES, FRAMEWORKS, DEFAULT_FRAMEWORKS, PROJECT_TYPE_PACKS } from "@greenarmor/ges-core";
 import { appendFixHistory, createFixHistoryEntry } from "@greenarmor/ges-core";
 import { addFrameworkToConfig, removeFrameworkFromConfig, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls, getInstalledPackIds, recordActivity, recordAIRecommendation } from "@greenarmor/ges-core";
+import {
+  loadGovernanceRecords,
+  createGovernanceRecord,
+  addGovernanceRecord,
+  findGovernanceRecord,
+  setGovernanceApproval,
+  addGovernanceEvidence,
+  createEvidenceRef,
+  verifyGovernanceRecord,
+  verifyAllGovernanceRecords,
+  setGovernanceRiskAssessment,
+  setGovernancePolicyBasis,
+  setGovernanceReviewCycle,
+  setGovernanceDataInventory,
+  setGovernanceComplianceLinks,
+  setGovernanceCommittee,
+} from "@greenarmor/ges-core";
+import type { GovernanceRecord, GovernanceSystemType, GovernanceRiskLevel, EvidenceType, EvidenceSourceSystem } from "@greenarmor/ges-core";
 import { ProjectConfigSchema } from "@greenarmor/ges-core";
 import { generateComplianceDocs, generateSecurityDocs, generateConfigJson, generateMetadataJson, generateFrameworkVersionJson, generateScoreJson } from "@greenarmor/ges-doc-generator";
 import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
@@ -58,6 +76,93 @@ export interface MCPResponse {
   id?: number | string | null;
   result?: unknown;
   error?: { code: number; message: string; data?: unknown };
+}
+
+function formatGovernanceRecordOutput(record: GovernanceRecord, verification: import("@greenarmor/ges-core").GovernanceVerificationResult): string {
+  const lines: string[] = [
+    `# Governance Record: ${record.system_name}\n`,
+    `**ID**: ${record.id}`,
+    `**Type**: ${record.system_type}`,
+    `**Version**: ${record.system_version || "(none)"}`,
+    `**Status**: ${record.status}`,
+    `**Risk Level**: ${record.risk_level}`,
+    `**Verification**: ${verification.valid ? "✓ VALID" : "✕ ISSUES"} | Approval: ${verification.approval_status}`,
+    ``,
+    `## Risk Assessment`,
+  ];
+
+  if (record.risk_assessment) {
+    const ra = record.risk_assessment;
+    lines.push(`- **Assessor**: ${ra.assessor}`);
+    lines.push(`- **Methodology**: ${ra.methodology}`);
+    lines.push(`- **Risk Score**: ${ra.risk_score} | **Residual**: ${ra.residual_risk}`);
+    lines.push(`- **Date**: ${ra.assessment_date}`);
+  } else {
+    lines.push(`⚠ NOT RECORDED`);
+  }
+
+  lines.push(`\n## Policy Basis`);
+  if (record.policy_basis) {
+    const pb = record.policy_basis;
+    lines.push(`- **Policy**: ${pb.policy_name} (${pb.policy_id} v${pb.version})`);
+    lines.push(`- **Standard**: ${pb.standard}`);
+    if (pb.clauses.length) lines.push(`- **Clauses**: ${pb.clauses.join(", ")}`);
+  } else {
+    lines.push(`⚠ NOT RECORDED`);
+  }
+
+  lines.push(`\n## Approval Decision`);
+  if (record.approval) {
+    const a = record.approval;
+    lines.push(`- **Approver**: ${a.approver_name} (${a.approver_role})`);
+    lines.push(`- **Authority**: ${a.approval_authority}`);
+    lines.push(`- **Decision**: ${a.decision.toUpperCase()}`);
+    lines.push(`- **Date**: ${a.decision_date}`);
+    lines.push(`- **Validity**: ${a.valid_from} → ${a.valid_until || "indefinite"}`);
+    if (a.conditions.length) lines.push(`- **Conditions**: ${a.conditions.join("; ")}`);
+    if (a.rationale) lines.push(`- **Rationale**: ${a.rationale}`);
+  } else {
+    lines.push(`⚠ NOT RECORDED`);
+  }
+
+  lines.push(`\n## Committee Approval`);
+  if (record.committee) {
+    const c = record.committee;
+    lines.push(`- **Committee**: ${c.committee_name}`);
+    lines.push(`- **Meeting**: ${c.meeting_date} (${c.meeting_reference})`);
+    if (c.attendees.length) lines.push(`- **Attendees**: ${c.attendees.join(", ")}`);
+  } else {
+    lines.push(`(not required or not recorded)`);
+  }
+
+  lines.push(`\n## Evidence Chain (${record.evidence.length})`);
+  if (record.evidence.length === 0) {
+    lines.push(`⚠ NO EVIDENCE REFERENCES`);
+  } else {
+    record.evidence.forEach((e, i) => {
+      lines.push(`${i + 1}. **${e.title}** — ${e.source_system}: ${e.reference}`);
+    });
+  }
+
+  lines.push(`\n## Review Cycle`);
+  if (record.review_cycle) {
+    const rc = record.review_cycle;
+    lines.push(`- **Frequency**: ${rc.frequency}`);
+    lines.push(`- **Last**: ${rc.last_review} | **Next**: ${rc.next_review}`);
+  } else {
+    lines.push(`⚠ NOT DEFINED`);
+  }
+
+  if (verification.issues.length > 0) {
+    lines.push(`\n## Blocking Issues`);
+    verification.issues.forEach(i => lines.push(`- ✕ ${i}`));
+  }
+  if (verification.warnings.length > 0) {
+    lines.push(`\n## Warnings`);
+    verification.warnings.forEach(w => lines.push(`- △ ${w}`));
+  }
+
+  return lines.join("\n");
 }
 
 const TOOLS = [
@@ -419,6 +524,213 @@ const TOOLS = [
         suggested_action: { type: "string", description: "What you suggest the developers do about this." },
       },
       required: ["project_path", "category", "title", "description", "suggested_action"],
+    },
+  },
+  {
+    name: "create_governance_record",
+    description: "Create a new governance provenance record for an AI system, application, data process, or model. Establishes the root of the approval provenance chain (System → Risk → Policy → Approval → Evidence → Review). The record starts in 'draft' status — use approve_governance_record to record an approval decision and add_governance_evidence to attach supporting evidence.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        system_name: { type: "string", description: "Name of the system being governed (e.g., 'Customer Support Chatbot')." },
+        system_type: { type: "string", description: "System type: ai-system, application, data-process, api, model, infrastructure, or third-party-service." },
+        system_description: { type: "string", description: "Description of what the system does." },
+        system_version: { type: "string", description: "Version of the system (e.g., '1.2.0')." },
+        risk_level: { type: "string", description: "Risk level: low, medium, high, or critical." },
+        created_by: { type: "string", description: "Who is creating this record (name or role)." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "system_name"],
+    },
+  },
+  {
+    name: "approve_governance_record",
+    description: "Record an approval decision on a governance record. Captures who approved the system, under what authority, when, the validity period, and any conditions. This is a critical link in the provenance chain — it answers 'Who approved this AI system? Under which authority? When? Is it still valid?'",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+        approver_name: { type: "string", description: "Full name of the approver." },
+        approver_role: { type: "string", description: "Role/title of the approver (e.g., 'DPO', 'CISO')." },
+        approver_email: { type: "string", description: "Email of the approver." },
+        approval_authority: { type: "string", description: "The authority under which approval is granted (e.g., 'AI Ethics Board', 'Data Protection Committee')." },
+        decision: { type: "string", description: "Decision: approved, rejected, or conditional." },
+        valid_from: { type: "string", description: "Approval start date (YYYY-MM-DD). Defaults to today." },
+        valid_until: { type: "string", description: "Approval expiry date (YYYY-MM-DD). Leave empty for indefinite validity." },
+        conditions: { type: "string", description: "Conditions attached to approval (comma-separated)." },
+        rationale: { type: "string", description: "Rationale for the decision." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "record_id", "approver_name", "approver_role", "approval_authority", "decision"],
+    },
+  },
+  {
+    name: "add_governance_evidence",
+    description: "Add an evidence reference to a governance record. Evidence references point to supporting documentation in external systems (Jira, Confluence, ServiceNow, SharePoint, GRC platforms, etc.) WITHOUT duplicating their content. This maintains a single source of truth while providing a unified governance view. Each evidence entry answers 'What evidence exists to support the decision?'",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+        title: { type: "string", description: "Title of the evidence (e.g., 'DPIA Report Q4 2026')." },
+        type: { type: "string", description: "Evidence type: document, ticket, meeting-record, email, report, certificate, log, dashboard, contract, or other." },
+        source_system: { type: "string", description: "Source system: jira, servicenow, confluence, sharepoint, grc-platform, email, git, file, url, or other." },
+        reference: { type: "string", description: "Reference identifier (ticket ID, URL, document name, or path)." },
+        location_description: { type: "string", description: "Human-readable description of where to find the evidence." },
+        added_by: { type: "string", description: "Who is adding this evidence." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "record_id", "title", "source_system", "reference"],
+    },
+  },
+  {
+    name: "list_governance_records",
+    description: "List all governance provenance records in a project. Returns a summary of each record including system name, status, risk level, approval status, and evidence count. Use this to see all governed systems and their current compliance state.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+      },
+      required: ["project_path"],
+    },
+  },
+  {
+    name: "get_governance_record",
+    description: "Get the full provenance chain for a single governance record. Returns all linked dimensions: system identity, risk assessment, policy basis, approval decision, committee approval, evidence chain, review cycle, data inventory, and compliance links. This provides the complete 'single defensible answer' for auditors — the full chain from AI System → Risk Assessment → Policy → Approval → Evidence → Review Cycle.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+      },
+      required: ["project_path", "record_id"],
+    },
+  },
+  {
+    name: "verify_governance_record",
+    description: "Verify the provenance chain completeness of a governance record. Checks all dimensions: approval exists and is not expired, risk assessment present, evidence attached, review cycle defined, data inventory complete. Returns a verification result with completeness checklist, blocking issues, warnings, and approval expiry status. This is the 'single defensible answer' function for auditors.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+      },
+      required: ["project_path", "record_id"],
+    },
+  },
+  {
+    name: "set_governance_risk_assessment",
+    description: "Link a risk assessment to a governance record. Captures assessor, methodology, risk score, identified risks, residual risk, and mitigation measures. This is a required dimension for provenance chain completeness — without it, verification will report a blocking issue.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+        assessor: { type: "string", description: "Name of the risk assessor." },
+        methodology: { type: "string", description: "Assessment methodology used (e.g., NIST RMF, ISO 27005)." },
+        risk_score: { type: "string", description: "Risk score (e.g., '7.5/10', 'High')." },
+        residual_risk: { type: "string", description: "Residual risk after mitigations." },
+        identified_risks: { type: "string", description: "Identified risks (comma-separated)." },
+        mitigation_measures: { type: "string", description: "Mitigation measures (comma-separated)." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "record_id", "assessor", "methodology", "risk_score"],
+    },
+  },
+  {
+    name: "set_governance_policy_basis",
+    description: "Document the policy or standard under which a system is approved. Captures policy ID, name, version, applicable clauses, and the standard reference. This provides the regulatory basis for the approval decision.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+        policy_id: { type: "string", description: "Policy identifier." },
+        policy_name: { type: "string", description: "Policy name." },
+        version: { type: "string", description: "Policy version." },
+        standard: { type: "string", description: "Standard reference (e.g., GDPR, ISO 27001)." },
+        clauses: { type: "string", description: "Applicable clauses (comma-separated)." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "record_id", "policy_name", "standard"],
+    },
+  },
+  {
+    name: "set_governance_review_cycle",
+    description: "Set up a periodic review cycle for a governance record. Defines how often the approval must be re-reviewed and when the next review is due. Enables continuous compliance monitoring.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+        frequency: { type: "string", description: "Review frequency: quarterly, semi-annual, annual, or biennial." },
+        next_review: { type: "string", description: "Next review date (YYYY-MM-DD)." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "record_id", "frequency"],
+    },
+  },
+  {
+    name: "set_governance_data_inventory",
+    description: "Document the data inventory for a governance record. Captures personal data categories, processing purposes, data subjects, cross-border transfers, and retention period.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+        personal_data_categories: { type: "string", description: "Personal data categories (comma-separated, e.g., names, emails, IP addresses)." },
+        processing_purposes: { type: "string", description: "Processing purposes (comma-separated)." },
+        data_subjects: { type: "string", description: "Data subject types (comma-separated, e.g., customers, employees)." },
+        cross_border_transfers: { type: "string", description: "Cross-border transfer destinations (comma-separated)." },
+        retention_period: { type: "string", description: "Data retention period." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "record_id"],
+    },
+  },
+  {
+    name: "set_governance_committee",
+    description: "Record committee approval details for a governance record. Captures committee name, meeting date, meeting reference, attendees, and decision summary.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+        committee_name: { type: "string", description: "Name of the approving committee." },
+        meeting_date: { type: "string", description: "Meeting date (YYYY-MM-DD)." },
+        meeting_reference: { type: "string", description: "Meeting reference or minutes ID." },
+        attendees: { type: "string", description: "Attendee names (comma-separated)." },
+        decision_summary: { type: "string", description: "Summary of the committee decision." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "record_id", "committee_name"],
+    },
+  },
+  {
+    name: "set_governance_compliance_links",
+    description: "Map compliance frameworks and controls to a governance record. Links the record to GDPR, OWASP, CIS, NIST, etc., and references which controls are satisfied by this system's governance.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        record_id: { type: "string", description: "Governance record ID or system name." },
+        frameworks: { type: "string", description: "Compliance frameworks (comma-separated, e.g., GDPR,OWASP)." },
+        controls_satisfied: { type: "string", description: "Control IDs satisfied (comma-separated)." },
+        control_pack_ids: { type: "string", description: "Control pack IDs (comma-separated)." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "record_id"],
     },
   },
 ];
@@ -3590,6 +3902,394 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             `It will NOT be automatically applied to the project.`,
             `Recommendations are gitignored and intended for developers only.`,
           ].join("\n");
+          break;
+        }
+        case "create_governance_record": {
+          const projectPath = resolveProjectPath(args.project_path);
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const systemName = args.system_name || "";
+          if (!systemName) {
+            resultText = "Error: system_name is required.";
+            break;
+          }
+
+          const systemType = (args.system_type || "ai-system") as GovernanceSystemType;
+          const riskLevel = (args.risk_level || "medium") as GovernanceRiskLevel;
+
+          const record = createGovernanceRecord({
+            system_name: systemName,
+            system_description: args.system_description || "",
+            system_type: systemType,
+            system_version: args.system_version || "",
+            risk_level: riskLevel,
+            created_by: args.created_by || "mcp",
+          });
+          addGovernanceRecord(projectPath, record);
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "control_override",
+            title: `Governance record created: ${systemName}`,
+            description: `Created governance record for ${systemName} (${systemType}, risk: ${riskLevel}). Record ID: ${record.id}`,
+            details: { governance_record_id: record.id },
+            actor_name: args.actor_name,
+            actor_role: args.actor_role,
+          });
+
+          resultText = [
+            `# Governance Record Created\n`,
+            `**ID**: ${record.id}`,
+            `**System**: ${record.system_name}`,
+            `**Type**: ${record.system_type}`,
+            `**Risk Level**: ${record.risk_level}`,
+            `**Status**: ${record.status}`,
+            ``,
+            `## Next Steps`,
+            `- Use \`approve_governance_record\` to record an approval decision`,
+            `- Use \`add_governance_evidence\` to attach supporting evidence references`,
+            `- Use \`verify_governance_record\` to check provenance completeness`,
+            ``,
+            `The record is stored in \`.ges/governance-records.json\`.`,
+          ].join("\n");
+          break;
+        }
+        case "approve_governance_record": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) {
+            resultText = `Error: Governance record "${recordId}" not found. Use list_governance_records to see available records.`;
+            break;
+          }
+
+          const approverName = args.approver_name || "";
+          const approverRole = args.approver_role || "";
+          if (!approverName || !approverRole) {
+            resultText = "Error: approver_name and approver_role are required.";
+            break;
+          }
+
+          const decision = (args.decision || "approved") as "approved" | "rejected" | "conditional";
+          const validFrom = args.valid_from || new Date().toISOString().split("T")[0];
+
+          const updated = setGovernanceApproval(projectPath, record.id, {
+            approver_name: approverName,
+            approver_role: approverRole,
+            approver_email: args.approver_email || "",
+            approval_authority: args.approval_authority || "",
+            decision,
+            decision_date: new Date().toISOString(),
+            valid_from: validFrom,
+            valid_until: args.valid_until || null,
+            conditions: args.conditions ? String(args.conditions).split(",").map((s: string) => s.trim()).filter(Boolean) : [],
+            rationale: args.rationale || "",
+          }, "mcp");
+
+          if (!updated) {
+            resultText = `Error: Failed to update record.`;
+            break;
+          }
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "control_override",
+            title: `Governance approval: ${updated.system_name} → ${decision}`,
+            description: `${approverName} (${approverRole}) marked ${updated.system_name} as ${decision}. Valid until: ${args.valid_until || "indefinite"}.`,
+            details: { governance_record_id: updated.id, decision },
+            actor_name: args.actor_name,
+            actor_role: args.actor_role,
+          });
+
+          resultText = [
+            `# Approval Recorded\n`,
+            `**System**: ${updated.system_name}`,
+            `**Decision**: ${decision.toUpperCase()}`,
+            `**Approver**: ${approverName} (${approverRole})`,
+            `**Authority**: ${args.approval_authority || "(not specified)"}`,
+            `**Valid**: ${validFrom} → ${args.valid_until || "indefinite"}`,
+            ``,
+            `The approval decision is now part of the provenance chain.`,
+          ].join("\n");
+          break;
+        }
+        case "add_governance_evidence": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) {
+            resultText = `Error: Governance record "${recordId}" not found.`;
+            break;
+          }
+
+          const title = args.title || "";
+          const sourceSystem = (args.source_system || "other") as EvidenceSourceSystem;
+          const reference = args.reference || "";
+
+          if (!title || !reference) {
+            resultText = "Error: title and reference are required.";
+            break;
+          }
+
+          const evidenceType = (args.type || "document") as EvidenceType;
+          const evidence = createEvidenceRef({
+            type: evidenceType,
+            title,
+            source_system: sourceSystem,
+            reference,
+            location_description: args.location_description || "",
+            added_by: args.added_by || "mcp",
+          });
+
+          const updated = addGovernanceEvidence(projectPath, record.id, evidence, "mcp");
+          if (!updated) {
+            resultText = `Error: Failed to add evidence.`;
+            break;
+          }
+
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "control_override",
+            title: `Evidence added: ${evidence.title}`,
+            description: `Added evidence reference "${evidence.title}" (${evidence.source_system}: ${evidence.reference}) to governance record ${updated.system_name}.`,
+            details: { governance_record_id: updated.id, evidence_id: evidence.id },
+            actor_name: args.actor_name,
+            actor_role: args.actor_role,
+          });
+
+          resultText = [
+            `# Evidence Added\n`,
+            `**System**: ${updated.system_name}`,
+            `**Evidence**: ${evidence.title}`,
+            `**Source**: ${evidence.source_system}`,
+            `**Reference**: ${evidence.reference}`,
+            `**Total Evidence**: ${updated.evidence.length} reference(s)`,
+          ].join("\n");
+          break;
+        }
+        case "list_governance_records": {
+          const projectPath = resolveProjectPath(args.project_path);
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const records = loadGovernanceRecords(projectPath);
+          if (records.length === 0) {
+            resultText = "No governance records found. Use create_governance_record to create one.";
+            break;
+          }
+
+          const lines: string[] = [`# Governance Records (${records.length})\n`];
+          records.forEach(r => {
+            const approvalInfo = r.approval
+              ? `${r.approval.decision} by ${r.approval.approver_name} → ${r.approval.valid_until || "indefinite"}`
+              : "NOT RECORDED";
+            lines.push(`- **${r.system_name}** (${r.id})`);
+            lines.push(`  - Type: ${r.system_type} | Risk: ${r.risk_level} | Status: ${r.status}`);
+            lines.push(`  - Approval: ${approvalInfo}`);
+            lines.push(`  - Evidence: ${r.evidence.length} reference(s)`);
+          });
+
+          resultText = lines.join("\n");
+          break;
+        }
+        case "get_governance_record": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) {
+            resultText = `Error: Governance record "${recordId}" not found.`;
+            break;
+          }
+
+          const verification = verifyGovernanceRecord(record);
+          resultText = formatGovernanceRecordOutput(record, verification);
+          break;
+        }
+        case "verify_governance_record": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+
+          if (!fs.existsSync(projectPath)) {
+            resultText = `Project path does not exist: ${projectPath}`;
+            break;
+          }
+
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) {
+            resultText = `Error: Governance record "${recordId}" not found.`;
+            break;
+          }
+
+          const result = verifyGovernanceRecord(record);
+
+          const lines: string[] = [
+            `# Governance Verification: ${record.system_name}\n`,
+            `**Overall**: ${result.valid ? "✓ VALID" : "✕ ISSUES FOUND"}`,
+            `**Approval Status**: ${result.approval_status.toUpperCase()}`,
+          ];
+
+          if (result.days_until_expiry !== null) {
+            const dayLabel = result.days_until_expiry < 0
+              ? `${Math.abs(result.days_until_expiry)} days AGO (EXPIRED)`
+              : `${result.days_until_expiry} days remaining`;
+            lines.push(`**Expiry**: ${dayLabel}`);
+          }
+
+          lines.push(`\n## Completeness Checklist`);
+          lines.push(`- ${result.completeness.has_approval ? "✓" : "✕"} Approval Decision`);
+          lines.push(`- ${result.completeness.has_risk_assessment ? "✓" : "✕"} Risk Assessment`);
+          lines.push(`- ${result.completeness.has_policy_basis ? "✓" : "✕"} Policy Basis`);
+          lines.push(`- ${result.completeness.has_evidence ? "✓" : "✕"} Evidence Chain (${result.completeness.evidence_count} refs)`);
+          lines.push(`- ${result.completeness.has_review_cycle ? "✓" : "△"} Review Cycle`);
+          lines.push(`- ${result.completeness.has_data_inventory ? "✓" : "△"} Data Inventory`);
+          lines.push(`- ${result.completeness.has_compliance_links ? "✓" : "△"} Compliance Links`);
+          lines.push(`- ${result.completeness.is_current ? "✓" : "✕"} Currently Valid`);
+
+          if (result.issues.length > 0) {
+            lines.push(`\n## Blocking Issues`);
+            result.issues.forEach(i => lines.push(`- ✕ ${i}`));
+          }
+          if (result.warnings.length > 0) {
+            lines.push(`\n## Warnings`);
+            result.warnings.forEach(w => lines.push(`- △ ${w}`));
+          }
+
+          resultText = lines.join("\n");
+          break;
+        }
+        case "set_governance_risk_assessment": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) { resultText = `Error: Governance record "${recordId}" not found.`; break; }
+          const assessor = args.assessor || "";
+          const methodology = args.methodology || "";
+          const riskScore = args.risk_score || "";
+          const residualRisk = args.residual_risk || "";
+          const identifiedRisks = args.identified_risks ? String(args.identified_risks).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const mitigations = args.mitigation_measures ? String(args.mitigation_measures).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+
+          const updated = setGovernanceRiskAssessment(projectPath, record.id, {
+            id: `risk-${Date.now()}`,
+            assessor,
+            assessment_date: new Date().toISOString(),
+            methodology,
+            risk_score: riskScore,
+            identified_risks: identifiedRisks,
+            residual_risk: residualRisk,
+            mitigation_measures: mitigations,
+            evidence: [],
+          }, args.actor_name || "mcp");
+
+          if (!updated) { resultText = "Error: Failed to update record."; break; }
+          recordActivity(projectPath, { source: "mcp", action: "control_override", title: `Risk assessment: ${updated.system_name}`, description: `Risk assessment by ${assessor} linked. Score: ${riskScore}, Residual: ${residualRisk}.`, details: { governance_record_id: updated.id }, actor_name: args.actor_name, actor_role: args.actor_role });
+          resultText = `# Risk Assessment Linked\n\n**System**: ${updated.system_name}\n**Assessor**: ${assessor}\n**Methodology**: ${methodology}\n**Score**: ${riskScore} | **Residual**: ${residualRisk}`;
+          break;
+        }
+        case "set_governance_policy_basis": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) { resultText = `Error: Governance record "${recordId}" not found.`; break; }
+          const policyId = args.policy_id || "";
+          const policyName = args.policy_name || "";
+          const version = args.version || "1.0";
+          const standard = args.standard || "";
+          const clauses = args.clauses ? String(args.clauses).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+
+          const updated = setGovernancePolicyBasis(projectPath, record.id, { policy_id: policyId, policy_name: policyName, version, clauses, standard, evidence: [] }, args.actor_name || "mcp");
+          if (!updated) { resultText = "Error: Failed to update record."; break; }
+          recordActivity(projectPath, { source: "mcp", action: "control_override", title: `Policy basis: ${updated.system_name}`, description: `Policy ${policyName} (${policyId} v${version}) documented.`, details: { governance_record_id: updated.id }, actor_name: args.actor_name, actor_role: args.actor_role });
+          resultText = `# Policy Basis Documented\n\n**System**: ${updated.system_name}\n**Policy**: ${policyName} (${policyId} v${version})\n**Standard**: ${standard}`;
+          break;
+        }
+        case "set_governance_review_cycle": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) { resultText = `Error: Governance record "${recordId}" not found.`; break; }
+          const frequency = (args.frequency || "annual") as "quarterly" | "semi-annual" | "annual" | "biennial";
+          const today = new Date().toISOString().split("T")[0];
+          const nextReview = args.next_review || today;
+
+          const updated = setGovernanceReviewCycle(projectPath, record.id, { frequency, last_review: today, next_review: nextReview, review_history: [] }, args.actor_name || "mcp");
+          if (!updated) { resultText = "Error: Failed to update record."; break; }
+          recordActivity(projectPath, { source: "mcp", action: "control_override", title: `Review cycle: ${updated.system_name}`, description: `Review cycle (${frequency}) set. Next: ${nextReview}.`, details: { governance_record_id: updated.id }, actor_name: args.actor_name, actor_role: args.actor_role });
+          resultText = `# Review Cycle Set\n\n**System**: ${updated.system_name}\n**Frequency**: ${frequency}\n**Next Review**: ${nextReview}`;
+          break;
+        }
+        case "set_governance_data_inventory": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) { resultText = `Error: Governance record "${recordId}" not found.`; break; }
+          const categories = args.personal_data_categories ? String(args.personal_data_categories).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const purposes = args.processing_purposes ? String(args.processing_purposes).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const subjects = args.data_subjects ? String(args.data_subjects).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const transfers = args.cross_border_transfers ? String(args.cross_border_transfers).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const retention = args.retention_period || "";
+
+          const updated = setGovernanceDataInventory(projectPath, record.id, { personal_data_categories: categories, processing_purposes: purposes, data_subjects: subjects, cross_border_transfers: transfers, retention_period: retention }, args.actor_name || "mcp");
+          if (!updated) { resultText = "Error: Failed to update record."; break; }
+          recordActivity(projectPath, { source: "mcp", action: "control_override", title: `Data inventory: ${updated.system_name}`, description: `Data inventory documented (${categories.length} categories).`, details: { governance_record_id: updated.id }, actor_name: args.actor_name, actor_role: args.actor_role });
+          resultText = `# Data Inventory Documented\n\n**System**: ${updated.system_name}\n**Categories**: ${categories.length}\n**Retention**: ${retention || "(not set)"}`;
+          break;
+        }
+        case "set_governance_committee": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) { resultText = `Error: Governance record "${recordId}" not found.`; break; }
+          const committeeName = args.committee_name || "";
+          const meetingDate = args.meeting_date || "";
+          const meetingRef = args.meeting_reference || "";
+          const attendees = args.attendees ? String(args.attendees).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const summary = args.decision_summary || "";
+
+          const updated = setGovernanceCommittee(projectPath, record.id, { committee_name: committeeName, meeting_date: meetingDate, meeting_reference: meetingRef, attendees, decision_summary: summary, evidence: [] }, args.actor_name || "mcp");
+          if (!updated) { resultText = "Error: Failed to update record."; break; }
+          recordActivity(projectPath, { source: "mcp", action: "control_override", title: `Committee: ${updated.system_name}`, description: `Committee ${committeeName} (${meetingRef}) recorded.`, details: { governance_record_id: updated.id }, actor_name: args.actor_name, actor_role: args.actor_role });
+          resultText = `# Committee Approval Recorded\n\n**System**: ${updated.system_name}\n**Committee**: ${committeeName}\n**Meeting**: ${meetingDate} (${meetingRef})`;
+          break;
+        }
+        case "set_governance_compliance_links": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const recordId = args.record_id || "";
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) { resultText = `Error: Governance record "${recordId}" not found.`; break; }
+          const frameworks = args.frameworks ? String(args.frameworks).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const controls = args.controls_satisfied ? String(args.controls_satisfied).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const packIds = args.control_pack_ids ? String(args.control_pack_ids).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+
+          const updated = setGovernanceComplianceLinks(projectPath, record.id, { frameworks, controls_satisfied: controls, control_pack_ids: packIds }, args.actor_name || "mcp");
+          if (!updated) { resultText = "Error: Failed to update record."; break; }
+          recordActivity(projectPath, { source: "mcp", action: "control_override", title: `Compliance links: ${updated.system_name}`, description: `Frameworks mapped: ${frameworks.join(", ")}.`, details: { governance_record_id: updated.id }, actor_name: args.actor_name, actor_role: args.actor_role });
+          resultText = `# Compliance Links Mapped\n\n**System**: ${updated.system_name}\n**Frameworks**: ${frameworks.join(", ") || "(none)"}\n**Controls**: ${controls.length}`;
           break;
         }
         default:

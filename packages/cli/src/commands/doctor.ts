@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { findProjectRoot, readJsonFile } from "../utils/project.js";
 import type { ProjectConfig } from "@greenarmor/ges-core";
 import { CLI_VERSION } from "../utils/version.js";
-import { GES_DIR } from "@greenarmor/ges-core";
+import { GES_DIR, loadGovernanceRecords, verifyGovernanceRecord } from "@greenarmor/ges-core";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -57,6 +57,36 @@ export const doctorCommand = new Command("doctor")
       if (config) {
         checks.push({ name: "Project", status: "OK", detail: `${config.project_name} (${config.project_type})` });
         checks.push({ name: "Frameworks", status: "OK", detail: config.frameworks.join(", ") });
+      }
+
+      const govRecords = loadGovernanceRecords(root);
+      if (govRecords.length > 0) {
+        let approved = 0;
+        let blockingIssues = 0;
+        let expiredApprovals = 0;
+        let missingReviewCycles = 0;
+
+        for (const record of govRecords) {
+          const verification = verifyGovernanceRecord(record);
+          if (verification.completeness.has_approval && record.approval && record.approval.decision === "approved") approved++;
+          if (verification.issues.length > 0) blockingIssues++;
+          if (verification.approval_status === "expired") expiredApprovals++;
+          if (!record.review_cycle) missingReviewCycles++;
+        }
+
+        checks.push({
+          name: "Governance records",
+          status: blockingIssues > 0 || expiredApprovals > 0 ? "WARN" : "OK",
+          detail: `${govRecords.length} record(s), ${approved} approved, ${blockingIssues} with blocking issues`,
+        });
+
+        if (expiredApprovals > 0) {
+          checks.push({ name: "Governance approvals", status: "WARN", detail: `${expiredApprovals} expired approval(s)` });
+        }
+
+        if (missingReviewCycles > 0) {
+          checks.push({ name: "Governance review cycles", status: "WARN", detail: `${missingReviewCycles} record(s) without review cycle` });
+        }
       }
     }
 

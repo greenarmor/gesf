@@ -43,12 +43,16 @@ export function createActivityLogEntry(opts: {
   description: string;
   status?: ActivityStatus;
   details?: ActivityLogEntry["details"];
+  actor_name?: string;
+  actor_role?: string;
 }): ActivityLogEntry {
   activityCounter++;
   return {
     id: `activity-${Date.now()}-${activityCounter}`,
     timestamp: new Date().toISOString(),
     source: opts.source,
+    actor_name: opts.actor_name,
+    actor_role: opts.actor_role,
     action: opts.action,
     title: opts.title,
     description: opts.description,
@@ -64,6 +68,8 @@ export function recordActivity(projectPath: string, opts: {
   description: string;
   status?: ActivityStatus;
   details?: ActivityLogEntry["details"];
+  actor_name?: string;
+  actor_role?: string;
 }): void {
   const entry = createActivityLogEntry(opts);
   try {

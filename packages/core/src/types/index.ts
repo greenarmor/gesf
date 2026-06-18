@@ -201,6 +201,8 @@ export interface FixHistoryEntry {
   id: string;
   timestamp: string;
   source: "cli" | "mcp";
+  actor_name?: string;
+  actor_role?: string;
   dry_run: boolean;
   finding: {
     rule_id: string;
@@ -257,6 +259,8 @@ export interface ActivityLogEntry {
   id: string;
   timestamp: string;
   source: "cli" | "mcp";
+  actor_name?: string;
+  actor_role?: string;
   action: ActivityAction;
   title: string;
   description: string;
@@ -272,4 +276,180 @@ export interface ActivityLogEntry {
     frameworks_added?: string[];
     [key: string]: unknown;
   };
+}
+
+// ============================================================
+// GOVERNANCE APPROVAL PROVENANCE CHAIN
+// ============================================================
+
+export type GovernanceSystemType =
+  | "ai-system"
+  | "application"
+  | "data-process"
+  | "api"
+  | "model"
+  | "infrastructure"
+  | "third-party-service";
+
+export type GovernanceStatus =
+  | "draft"
+  | "pending-review"
+  | "approved"
+  | "rejected"
+  | "conditional"
+  | "expired"
+  | "revoked";
+
+export type GovernanceRiskLevel = "low" | "medium" | "high" | "critical";
+
+export type EvidenceType =
+  | "document"
+  | "ticket"
+  | "meeting-record"
+  | "email"
+  | "report"
+  | "certificate"
+  | "log"
+  | "dashboard"
+  | "contract"
+  | "other";
+
+export type EvidenceSourceSystem =
+  | "jira"
+  | "servicenow"
+  | "confluence"
+  | "sharepoint"
+  | "grc-platform"
+  | "email"
+  | "git"
+  | "file"
+  | "url"
+  | "other";
+
+export interface EvidenceRef {
+  id: string;
+  type: EvidenceType;
+  title: string;
+  source_system: EvidenceSourceSystem;
+  reference: string;
+  location_description: string;
+  added_by: string;
+  added_at: string;
+}
+
+export interface ApprovalDecision {
+  approver_name: string;
+  approver_role: string;
+  approver_email: string;
+  approval_authority: string;
+  decision: "approved" | "rejected" | "conditional";
+  decision_date: string;
+  valid_from: string;
+  valid_until: string | null;
+  conditions: string[];
+  rationale: string;
+}
+
+export interface RiskAssessmentRef {
+  id: string;
+  assessor: string;
+  assessment_date: string;
+  methodology: string;
+  risk_score: string;
+  identified_risks: string[];
+  residual_risk: string;
+  mitigation_measures: string[];
+  evidence: EvidenceRef[];
+}
+
+export interface PolicyBasisRef {
+  policy_id: string;
+  policy_name: string;
+  version: string;
+  clauses: string[];
+  standard: string;
+  evidence: EvidenceRef[];
+}
+
+export interface CommitteeApprovalRef {
+  committee_name: string;
+  meeting_date: string;
+  meeting_reference: string;
+  attendees: string[];
+  decision_summary: string;
+  evidence: EvidenceRef[];
+}
+
+export interface ReviewCycleEntry {
+  date: string;
+  reviewer: string;
+  outcome: "continued" | "modified" | "revoked" | "expired";
+  notes: string;
+}
+
+export interface ReviewCycle {
+  frequency: "quarterly" | "semi-annual" | "annual" | "biennial";
+  last_review: string;
+  next_review: string;
+  review_history: ReviewCycleEntry[];
+}
+
+export interface GovernanceDataInventory {
+  personal_data_categories: string[];
+  processing_purposes: string[];
+  data_subjects: string[];
+  cross_border_transfers: string[];
+  retention_period: string;
+}
+
+export interface GovernanceComplianceLinks {
+  frameworks: string[];
+  controls_satisfied: string[];
+  control_pack_ids: string[];
+}
+
+export interface GovernanceRecord {
+  id: string;
+  system_name: string;
+  system_description: string;
+  system_type: GovernanceSystemType;
+  system_version: string;
+  status: GovernanceStatus;
+  risk_level: GovernanceRiskLevel;
+
+  approval: ApprovalDecision | null;
+  risk_assessment: RiskAssessmentRef | null;
+  policy_basis: PolicyBasisRef | null;
+  committee: CommitteeApprovalRef | null;
+  evidence: EvidenceRef[];
+  review_cycle: ReviewCycle | null;
+  data_inventory: GovernanceDataInventory | null;
+  compliance: GovernanceComplianceLinks | null;
+
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  record_version: number;
+}
+
+export interface GovernanceVerificationResult {
+  record_id: string;
+  system_name: string;
+  valid: boolean;
+  issues: string[];
+  warnings: string[];
+  completeness: {
+    has_approval: boolean;
+    has_risk_assessment: boolean;
+    has_policy_basis: boolean;
+    has_evidence: boolean;
+    has_review_cycle: boolean;
+    has_data_inventory: boolean;
+    has_compliance_links: boolean;
+    evidence_count: number;
+    is_current: boolean;
+  };
+  approval_status: "valid" | "expired" | "pending" | "none";
+  days_until_expiry: number | null;
 }

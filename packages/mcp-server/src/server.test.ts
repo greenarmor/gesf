@@ -45,10 +45,10 @@ describe("MCP Protocol", () => {
     expect(res).toBeNull();
   });
 
-  it("responds to tools/list with 31 tools", () => {
+  it("responds to tools/list with 43 tools", () => {
     const res = handleRequest(req("tools/list"));
     const tools = (res as { result: { tools: { name: string }[] } }).result.tools;
-    expect(tools.length).toBe(31);
+    expect(tools.length).toBe(43);
   });
 
   it("returns error for unknown method", () => {

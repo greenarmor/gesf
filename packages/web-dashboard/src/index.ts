@@ -4,9 +4,11 @@ import * as path from "node:path";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import { getAllPacks, getPacksForProjectType, getPack } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile } from "@greenarmor/ges-scoring-engine";
-import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry, ActivityLogEntry } from "@greenarmor/ges-core";
+import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry, ActivityLogEntry, GovernanceRecord, GovernanceVerificationResult } from "@greenarmor/ges-core";
 import { loadFixHistory, loadActivityLog, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls } from "@greenarmor/ges-core";
+import { loadGovernanceRecords, verifyGovernanceRecord, verifyAllGovernanceRecords } from "@greenarmor/ges-core";
 import { getInstalledPackIds as getInstalledPackIdsFromDisk } from "@greenarmor/ges-core";
+import { generateMarkdownReport, generateHtmlReport } from "@greenarmor/ges-report-generator";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { renderDashboard } from "./template.js";
 
@@ -69,7 +71,24 @@ export interface DashboardData {
   packs: PackSummary[];
   fixHistory: FixHistoryEntry[];
   activityLog: ActivityLogEntry[];
+  governance: GovernanceData;
   lastAudit: string;
+}
+
+export interface GovernanceData {
+  records: GovernanceRecord[];
+  verifications: GovernanceVerificationResult[];
+  summary: {
+    total: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+    expired: number;
+    validWithIssues: number;
+    criticalRisk: number;
+    highRisk: number;
+    totalEvidence: number;
+  };
 }
 
 function loadConfig(projectPath: string): ProjectConfig | null {
@@ -256,6 +275,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
   const packs = allPacks.map(p => buildPackSummary(p, controls, findings, installedPacks));
   const fixHistory = loadFixHistory(projectPath);
   const activityLog = loadActivityLog(projectPath);
+  const governance = collectGovernanceData(projectPath);
 
   const metadataPath = path.join(projectPath, ".ges", "metadata.json");
   let lastAudit = "";
@@ -279,6 +299,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
     packs,
     fixHistory,
     activityLog,
+    governance,
     lastAudit,
   };
 }
@@ -411,6 +432,25 @@ export function collectControlDetail(projectPath: string, controlId: string): Co
   };
 }
 
+export function collectGovernanceData(projectPath: string): GovernanceData {
+  const records = loadGovernanceRecords(projectPath);
+  const verifications = verifyAllGovernanceRecords(projectPath);
+
+  const summary = {
+    total: records.length,
+    approved: records.filter(r => r.status === "approved").length,
+    pending: records.filter(r => r.status === "draft" || r.status === "pending-review").length,
+    rejected: records.filter(r => r.status === "rejected" || r.status === "revoked").length,
+    expired: records.filter(r => r.status === "expired").length,
+    validWithIssues: verifications.filter(v => !v.valid && v.completeness.has_approval).length,
+    criticalRisk: records.filter(r => r.risk_level === "critical").length,
+    highRisk: records.filter(r => r.risk_level === "high").length,
+    totalEvidence: records.reduce((sum, r) => sum + r.evidence.length, 0),
+  };
+
+  return { records, verifications, summary };
+}
+
 function jsonResponse(res: http.ServerResponse, data: unknown, status = 200): void {
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify(data));
@@ -494,6 +534,35 @@ export function startDashboard(options: DashboardOptions): http.Server {
       return;
     }
 
+    if (pathname === "/api/governance") {
+      try {
+        const data = collectDashboardData(options.projectPath);
+        jsonResponse(res, data.governance);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    const governanceMatch = pathname.match(/^\/api\/governance\/(.+)$/);
+    if (governanceMatch) {
+      try {
+        const govData = collectGovernanceData(options.projectPath);
+        const record = govData.records.find(
+          r => r.id === governanceMatch[1] || r.system_name.toLowerCase() === decodeURIComponent(governanceMatch[1]).toLowerCase(),
+        );
+        if (!record) {
+          jsonError(res, `Governance record not found: ${governanceMatch[1]}`, 404);
+          return;
+        }
+        const verification = verifyGovernanceRecord(record);
+        jsonResponse(res, { record, verification });
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
     const packMatch = pathname.match(/^\/api\/packs\/([a-z0-9-]+)$/);
     if (packMatch) {
       try {
@@ -554,6 +623,64 @@ export function startDashboard(options: DashboardOptions): http.Server {
       return;
     }
 
+    const governanceDetailMatch = pathname.match(/^\/api\/governance\/(.+)$/);
+    if (governanceDetailMatch) {
+      try {
+        const govData = collectGovernanceData(options.projectPath);
+        const record = govData.records.find(
+          r => r.id === governanceDetailMatch[1] || r.system_name.toLowerCase() === decodeURIComponent(governanceDetailMatch[1]).toLowerCase(),
+        );
+        if (!record) {
+          jsonError(res, `Governance record not found: ${governanceDetailMatch[1]}`, 404);
+          return;
+        }
+        const verification = verifyGovernanceRecord(record);
+        jsonResponse(res, { record, verification });
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (pathname === "/api/report/compliance") {
+      try {
+        const data = collectDashboardData(options.projectPath);
+        const format = url.searchParams.get("format") || "markdown";
+        const reportOptions = {
+          format,
+          title: `Compliance Report - ${data.projectName}`,
+          include_executive_summary: true,
+          include_risk_assessment: true,
+          include_compliance: true,
+          include_security: true,
+        };
+        if (format === "html") {
+          const html = generateHtmlReport(reportOptions as any, data.score!, data.controls, data.findings);
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Content-Disposition": `attachment; filename="compliance-report.html"` });
+          res.end(html);
+        } else {
+          const md = generateMarkdownReport(reportOptions as any, data.score!, data.controls, data.findings);
+          res.writeHead(200, { "Content-Type": "text/markdown; charset=utf-8", "Content-Disposition": `attachment; filename="compliance-report.md"` });
+          res.end(md);
+        }
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (pathname === "/api/report/governance") {
+      try {
+        const govData = collectGovernanceData(options.projectPath);
+        const md = generateGovernanceMarkdownReport(govData, collectDashboardData(options.projectPath).projectName);
+        res.writeHead(200, { "Content-Type": "text/markdown; charset=utf-8", "Content-Disposition": `attachment; filename="governance-provenance-report.md"` });
+        res.end(md);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
     if (pathname === "/health") {
       jsonResponse(res, { status: "ok", timestamp: new Date().toISOString() });
       return;
@@ -566,4 +693,120 @@ export function startDashboard(options: DashboardOptions): http.Server {
   server.listen(port, host);
 
   return server;
+}
+
+function generateGovernanceMarkdownReport(data: GovernanceData, projectName: string): string {
+  const lines: string[] = [];
+  lines.push(`# Governance Provenance Report`);
+  lines.push(`\n**Project**: ${projectName}`);
+  lines.push(`**Generated**: ${new Date().toISOString()}\n`);
+
+  const s = data.summary;
+  lines.push(`## Summary\n`);
+  lines.push(`| Metric | Value |`);
+  lines.push(`|--------|-------|`);
+  lines.push(`| Total Systems | ${s.total} |`);
+  lines.push(`| Approved | ${s.approved} |`);
+  lines.push(`| Pending | ${s.pending} |`);
+  lines.push(`| Expired / With Issues | ${s.expired + s.validWithIssues} |`);
+  lines.push(`| Critical Risk | ${s.criticalRisk} |`);
+  lines.push(`| High Risk | ${s.highRisk} |`);
+  lines.push(`| Total Evidence References | ${s.totalEvidence} |`);
+
+  if (data.records.length === 0) {
+    lines.push(`\n_No governance records found._`);
+    return lines.join("\n");
+  }
+
+  for (let i = 0; i < data.records.length; i++) {
+    const r = data.records[i];
+    const v = data.verifications[i] || data.verifications.find(vv => vv.record_id === r.id);
+    lines.push(`\n---\n`);
+    lines.push(`## ${r.system_name}\n`);
+    lines.push(`| Field | Value |`);
+    lines.push(`|-------|-------|`);
+    lines.push(`| ID | ${r.id} |`);
+    lines.push(`| Type | ${r.system_type} |`);
+    lines.push(`| Version | ${r.system_version || "(none)"} |`);
+    lines.push(`| Status | ${r.status} |`);
+    lines.push(`| Risk Level | ${r.risk_level} |`);
+    if (v) {
+      lines.push(`| Verification | ${v.valid ? "VALID" : "ISSUES"} |`);
+      lines.push(`| Approval Status | ${v.approval_status} |`);
+      if (v.days_until_expiry !== null) {
+        lines.push(`| Days Until Expiry | ${v.days_until_expiry} |`);
+      }
+    }
+
+    if (r.approval) {
+      const a = r.approval;
+      lines.push(`\n### Approval Decision\n`);
+      lines.push(`- **Approver**: ${a.approver_name} (${a.approver_role})`);
+      lines.push(`- **Authority**: ${a.approval_authority}`);
+      lines.push(`- **Decision**: ${a.decision.toUpperCase()}`);
+      lines.push(`- **Date**: ${a.decision_date}`);
+      lines.push(`- **Validity**: ${a.valid_from} → ${a.valid_until || "indefinite"}`);
+      if (a.conditions.length > 0) lines.push(`- **Conditions**: ${a.conditions.join("; ")}`);
+      if (a.rationale) lines.push(`- **Rationale**: ${a.rationale}`);
+    }
+
+    if (r.risk_assessment) {
+      const ra = r.risk_assessment;
+      lines.push(`\n### Risk Assessment\n`);
+      lines.push(`- **Assessor**: ${ra.assessor}`);
+      lines.push(`- **Methodology**: ${ra.methodology}`);
+      lines.push(`- **Risk Score**: ${ra.risk_score}`);
+      lines.push(`- **Residual Risk**: ${ra.residual_risk}`);
+      lines.push(`- **Date**: ${ra.assessment_date}`);
+      if (ra.identified_risks.length > 0) lines.push(`- **Identified Risks**: ${ra.identified_risks.join(", ")}`);
+    }
+
+    if (r.policy_basis) {
+      const pb = r.policy_basis;
+      lines.push(`\n### Policy Basis\n`);
+      lines.push(`- **Policy**: ${pb.policy_name} (${pb.policy_id} v${pb.version})`);
+      lines.push(`- **Standard**: ${pb.standard}`);
+      if (pb.clauses.length > 0) lines.push(`- **Clauses**: ${pb.clauses.join(", ")}`);
+    }
+
+    lines.push(`\n### Evidence Chain (${r.evidence.length})\n`);
+    if (r.evidence.length === 0) {
+      lines.push(`_No evidence references._`);
+    } else {
+      lines.push(`| # | Title | Type | Source | Reference |`);
+      lines.push(`|---|-------|------|--------|-----------|`);
+      r.evidence.forEach((e, j) => {
+        lines.push(`| ${j + 1} | ${e.title} | ${e.type} | ${e.source_system} | ${e.reference} |`);
+      });
+    }
+
+    if (r.review_cycle) {
+      const rc = r.review_cycle;
+      lines.push(`\n### Review Cycle\n`);
+      lines.push(`- **Frequency**: ${rc.frequency}`);
+      lines.push(`- **Last Review**: ${rc.last_review}`);
+      lines.push(`- **Next Review**: ${rc.next_review}`);
+    }
+
+    if (r.committee) {
+      const c = r.committee;
+      lines.push(`\n### Committee Approval\n`);
+      lines.push(`- **Committee**: ${c.committee_name}`);
+      lines.push(`- **Meeting**: ${c.meeting_date} (${c.meeting_reference})`);
+      if (c.attendees.length > 0) lines.push(`- **Attendees**: ${c.attendees.join(", ")}`);
+    }
+
+    if (v && v.issues.length > 0) {
+      lines.push(`\n### Blocking Issues\n`);
+      for (const iss of v.issues) lines.push(`- ${iss}`);
+    }
+    if (v && v.warnings.length > 0) {
+      lines.push(`\n### Warnings\n`);
+      for (const w of v.warnings) lines.push(`- ${w}`);
+    }
+
+    lines.push(`\n_Created: ${r.created_at} by ${r.created_by} | Updated: ${r.updated_at} by ${r.updated_by} (v${r.record_version})_`);
+  }
+
+  return lines.join("\n");
 }

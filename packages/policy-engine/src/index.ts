@@ -22,6 +22,7 @@ import {
 } from "./packs/privacy-asia.js";
 import { createBrazilLGPDPolicyPack, createCanadaPIPEDAPolicyPack, createCaliforniaCRPAPolicyPack } from "./packs/privacy-americas.js";
 import { createSouthAfricaPOPIAPolicyPack, createUAEPDPLPolicyPack, createSaudiArabiaPDPLPolicyPack } from "./packs/privacy-africa-me.js";
+import { createGovernancePolicyPack } from "./packs/governance.js";
 
 const ALL_PACKS: (() => PolicyPack)[] = [
   createGDPRPolicyPack,
@@ -55,6 +56,8 @@ const ALL_PACKS: (() => PolicyPack)[] = [
   createSouthAfricaPOPIAPolicyPack,
   createUAEPDPLPolicyPack,
   createSaudiArabiaPDPLPolicyPack,
+  // Governance
+  createGovernancePolicyPack,
 ];
 
 const PACK_MAP: Record<string, () => PolicyPack> = {
@@ -89,6 +92,8 @@ const PACK_MAP: Record<string, () => PolicyPack> = {
   "za-popia": createSouthAfricaPOPIAPolicyPack,
   "ae-pdpl": createUAEPDPLPolicyPack,
   "sa-pdpl": createSaudiArabiaPDPLPolicyPack,
+  // Governance
+  "governance": createGovernancePolicyPack,
 };
 
 export function getAllPacks(): PolicyPack[] {
@@ -131,5 +136,6 @@ export {
 } from "./packs/privacy-asia.js";
 export { createBrazilLGPDPolicyPack, createCanadaPIPEDAPolicyPack, createCaliforniaCRPAPolicyPack } from "./packs/privacy-americas.js";
 export { createSouthAfricaPOPIAPolicyPack, createUAEPDPLPolicyPack, createSaudiArabiaPDPLPolicyPack } from "./packs/privacy-africa-me.js";
+export { createGovernancePolicyPack } from "./packs/governance.js";
 export { PRIVACY_COUNTRIES, getCountryByCode, getCountryPackId, getCountriesByRegion } from "./packs/countries.js";
 export type { CountryPrivacyPack } from "./packs/countries.js";

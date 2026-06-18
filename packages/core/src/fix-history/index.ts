@@ -66,6 +66,8 @@ export interface FixActionLike {
 
 export function createFixHistoryEntry(opts: {
   source: "cli" | "mcp";
+  actor_name?: string;
+  actor_role?: string;
   dry_run: boolean;
   finding: FindingLike;
   action: FixActionLike;
@@ -79,6 +81,8 @@ export function createFixHistoryEntry(opts: {
     id: `fix-${Date.now()}-${entryCounter}`,
     timestamp: new Date().toISOString(),
     source: opts.source,
+    actor_name: opts.actor_name,
+    actor_role: opts.actor_role,
     dry_run: opts.dry_run,
     finding: {
       rule_id: opts.finding.ruleId,
