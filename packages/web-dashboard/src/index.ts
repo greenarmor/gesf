@@ -4,9 +4,27 @@ import * as path from "node:path";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import { getAllPacks, getPacksForProjectType, getPack } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile } from "@greenarmor/ges-scoring-engine";
-import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry, ActivityLogEntry, GovernanceRecord, GovernanceVerificationResult } from "@greenarmor/ges-core";
+import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry, ActivityLogEntry, GovernanceRecord, GovernanceVerificationResult, GovernanceSystemType, GovernanceRiskLevel } from "@greenarmor/ges-core";
 import { loadFixHistory, loadActivityLog, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls } from "@greenarmor/ges-core";
-import { loadGovernanceRecords, verifyGovernanceRecord, verifyAllGovernanceRecords } from "@greenarmor/ges-core";
+import {
+  loadGovernanceRecords,
+  verifyGovernanceRecord,
+  verifyAllGovernanceRecords,
+  createGovernanceRecord,
+  addGovernanceRecord,
+  findGovernanceRecord,
+  setGovernanceApproval,
+  addGovernanceEvidence,
+  createEvidenceRef,
+  deleteGovernanceRecord,
+  setGovernanceRiskAssessment,
+  setGovernancePolicyBasis,
+  setGovernanceReviewCycle,
+  setGovernanceDataInventory,
+  setGovernanceComplianceLinks,
+  setGovernanceCommittee,
+  recordActivity,
+} from "@greenarmor/ges-core";
 import { getInstalledPackIds as getInstalledPackIdsFromDisk } from "@greenarmor/ges-core";
 import { generateMarkdownReport, generateHtmlReport } from "@greenarmor/ges-report-generator";
 import type { Finding } from "@greenarmor/ges-audit-engine";
@@ -292,7 +310,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
     projectName: config?.project_name || "Unknown Project",
     projectType: config?.project_type || "unknown",
     frameworks: allFrameworks,
-    gesfVersion: "1.4.1",
+    gesfVersion: "1.4.2",
     score,
     controls,
     findings,
@@ -461,12 +479,33 @@ function jsonError(res: http.ServerResponse, message: string, status = 500): voi
   res.end(JSON.stringify({ error: message }));
 }
 
+function readBody(req: http.IncomingMessage): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        reject(new Error("Invalid JSON body"));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function parseList(val: unknown): string[] {
+  if (Array.isArray(val)) return val.map(v => String(v).trim()).filter(Boolean);
+  if (typeof val === "string") return val.split(",").map(s => s.trim()).filter(Boolean);
+  return [];
+}
+
 export function startDashboard(options: DashboardOptions): http.Server {
   const port = options.port ?? 3001;
   const host = options.host || "localhost";
   const proto = ["http", "//"].join(":");
 
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     if (!req.url) {
       res.writeHead(400);
       res.end("Bad request");
@@ -475,6 +514,158 @@ export function startDashboard(options: DashboardOptions): http.Server {
 
     const url = new URL(req.url, `${proto}${host}:${port}`);
     const pathname = url.pathname;
+
+    if (req.method === "POST" && pathname === "/api/governance/create") {
+      try {
+        const body = await readBody(req);
+        const systemName = String(body.system_name || "").trim();
+        if (!systemName) { jsonError(res, "system_name is required", 400); return; }
+        const record = createGovernanceRecord({
+          system_name: systemName,
+          system_description: String(body.system_description || ""),
+          system_type: ((body.system_type as string) || "ai-system") as GovernanceSystemType,
+          risk_level: ((body.risk_level as string) || "medium") as GovernanceRiskLevel,
+        });
+        addGovernanceRecord(options.projectPath, record);
+        recordActivity(options.projectPath, {
+          source: "cli",
+          action: "control_override",
+          title: `Governance record created: ${record.system_name}`,
+          description: `Created governance record for ${record.system_name} (${record.system_type}, risk: ${record.risk_level}). Record ID: ${record.id}`,
+          details: { governance_record_id: record.id },
+          actor_name: body.actor_name ? String(body.actor_name) : undefined,
+          actor_role: body.actor_role ? String(body.actor_role) : undefined,
+        });
+        jsonResponse(res, { success: true, record });
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    const govPostMatch = req.method === "POST" ? pathname.match(/^\/api\/governance\/([^/]+)\/(approve|evidence|risk-assessment|policy-basis|review-cycle|data-inventory|committee|compliance-links|delete)$/) : null;
+    if (govPostMatch) {
+      try {
+        const id = decodeURIComponent(govPostMatch[1]);
+        const action = govPostMatch[2];
+        const body = await readBody(req);
+        const pp = options.projectPath;
+
+        if (action === "delete") {
+          const ok = deleteGovernanceRecord(pp, id);
+          if (!ok) { jsonError(res, "Record not found", 404); return; }
+          recordActivity(pp, {
+            source: "cli",
+            action: "control_override",
+            title: `Governance record deleted: ${id}`,
+            description: `Deleted governance record ${id}.`,
+            details: { governance_record_id: id },
+            actor_name: body.actor_name ? String(body.actor_name) : undefined,
+            actor_role: body.actor_role ? String(body.actor_role) : undefined,
+          });
+          jsonResponse(res, { success: true });
+          return;
+        }
+
+        const record = findGovernanceRecord(pp, id);
+        if (!record) { jsonError(res, `Record not found: ${id}`, 404); return; }
+        let updated = record;
+
+        if (action === "approve") {
+          const decision = (body.decision as string) || "approved";
+          updated = setGovernanceApproval(pp, record.id, {
+            approver_name: String(body.approver_name || ""),
+            approver_role: String(body.approver_role || ""),
+            approver_email: String(body.approver_email || ""),
+            approval_authority: String(body.approval_authority || ""),
+            decision: decision as "approved" | "rejected" | "conditional",
+            decision_date: new Date().toISOString(),
+            valid_from: String(body.valid_from || new Date().toISOString().split("T")[0]),
+            valid_until: body.valid_until ? String(body.valid_until) : null,
+            conditions: parseList(body.conditions),
+            rationale: String(body.rationale || ""),
+          }, "dashboard-user") || record;
+        } else if (action === "evidence") {
+          const evType = (body.type as string) || "document";
+          const evSource = (body.source_system as string) || "other";
+          const evidence = createEvidenceRef({
+            type: evType as any,
+            title: String(body.title || ""),
+            source_system: evSource as any,
+            reference: String(body.reference || ""),
+            location_description: String(body.location_description || ""),
+            added_by: "dashboard-user",
+          });
+          updated = addGovernanceEvidence(pp, record.id, evidence, "dashboard-user") || record;
+        } else if (action === "risk-assessment") {
+          updated = setGovernanceRiskAssessment(pp, record.id, {
+            id: `risk-${Date.now()}`,
+            assessor: String(body.assessor || ""),
+            assessment_date: new Date().toISOString(),
+            methodology: String(body.methodology || ""),
+            risk_score: String(body.risk_score || ""),
+            identified_risks: parseList(body.identified_risks),
+            residual_risk: String(body.residual_risk || ""),
+            mitigation_measures: parseList(body.mitigation_measures),
+            evidence: [],
+          }, "dashboard-user") || record;
+        } else if (action === "policy-basis") {
+          updated = setGovernancePolicyBasis(pp, record.id, {
+            policy_id: String(body.policy_id || ""),
+            policy_name: String(body.policy_name || ""),
+            version: String(body.version || "1.0"),
+            clauses: parseList(body.clauses),
+            standard: String(body.standard || ""),
+            evidence: [],
+          }, "dashboard-user") || record;
+        } else if (action === "review-cycle") {
+          const today = new Date().toISOString().split("T")[0];
+          updated = setGovernanceReviewCycle(pp, record.id, {
+            frequency: ((body.frequency as string) || "annual") as "quarterly" | "semi-annual" | "annual" | "biennial",
+            last_review: today,
+            next_review: String(body.next_review || today),
+            review_history: [],
+          }, "dashboard-user") || record;
+        } else if (action === "data-inventory") {
+          updated = setGovernanceDataInventory(pp, record.id, {
+            personal_data_categories: parseList(body.personal_data_categories),
+            processing_purposes: parseList(body.processing_purposes),
+            data_subjects: parseList(body.data_subjects),
+            cross_border_transfers: parseList(body.cross_border_transfers),
+            retention_period: String(body.retention_period || ""),
+          }, "dashboard-user") || record;
+        } else if (action === "committee") {
+          updated = setGovernanceCommittee(pp, record.id, {
+            committee_name: String(body.committee_name || ""),
+            meeting_date: String(body.meeting_date || ""),
+            meeting_reference: String(body.meeting_reference || ""),
+            attendees: parseList(body.attendees),
+            decision_summary: String(body.decision_summary || ""),
+            evidence: [],
+          }, "dashboard-user") || record;
+        } else if (action === "compliance-links") {
+          updated = setGovernanceComplianceLinks(pp, record.id, {
+            frameworks: parseList(body.frameworks),
+            controls_satisfied: parseList(body.controls_satisfied),
+            control_pack_ids: parseList(body.control_pack_ids),
+          }, "dashboard-user") || record;
+        }
+
+        recordActivity(pp, {
+          source: "cli",
+          action: "control_override",
+          title: `Governance ${action}: ${updated.system_name}`,
+          description: `Action "${action}" performed on governance record ${updated.system_name}.`,
+          details: { governance_record_id: updated.id, action },
+          actor_name: body.actor_name ? String(body.actor_name) : undefined,
+          actor_role: body.actor_role ? String(body.actor_role) : undefined,
+        });
+        jsonResponse(res, { success: true, record: updated });
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
 
     if (req.method !== "GET") {
       jsonError(res, "Method not allowed", 405);

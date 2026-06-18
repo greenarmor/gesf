@@ -327,6 +327,47 @@ export function renderDashboard(data: DashboardData): string {
     .container { padding: 16px; }
     .nav-tabs { width: 100%; overflow-x: auto; }
   }
+
+  /* Governance toolbar */
+  .gov-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .gov-btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+  .gov-btn-primary { background: #6366f1; color: white; }
+  .gov-btn-primary:hover { background: #5558e9; }
+  .gov-btn-outline { background: white; color: #6366f1; border: 1px solid #c7d2fe; }
+  .gov-btn-outline:hover { background: #eef2ff; }
+  .gov-btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .gov-btn-danger:hover { background: #fee2e2; }
+
+  /* Per-record action buttons */
+  .gov-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f3f4f6; }
+  .gov-action-btn { padding: 3px 8px; border-radius: 4px; border: 1px solid #e5e7eb; background: #f9fafb; color: #4b5563; font-size: 11px; cursor: pointer; }
+  .gov-action-btn:hover { background: #eef2ff; border-color: #c7d2fe; color: #4f46e5; }
+
+  /* Modal overlay */
+  .gov-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 60px; }
+  .gov-modal-overlay.active { display: flex; }
+  .gov-modal { background: white; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); max-width: 520px; width: 90%; max-height: 80vh; overflow-y: auto; }
+  .gov-modal-header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; border-radius: 10px 10px 0 0; z-index: 1; }
+  .gov-modal-title { font-size: 15px; font-weight: 700; color: #1f2937; }
+  .gov-modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #9ca3af; padding: 0 4px; line-height: 1; }
+  .gov-modal-close:hover { color: #ef4444; }
+  .gov-modal-body { padding: 20px; }
+  .gov-modal-body label { display: block; font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 4px; margin-top: 12px; }
+  .gov-modal-body label:first-child { margin-top: 0; }
+  .gov-modal-body input, .gov-modal-body select, .gov-modal-body textarea {
+    width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; box-sizing: border-box;
+  }
+  .gov-modal-body input:focus, .gov-modal-body select:focus, .gov-modal-body textarea:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+  .gov-modal-body textarea { resize: vertical; min-height: 60px; }
+  .gov-modal-footer { padding: 12px 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; position: sticky; bottom: 0; background: white; border-radius: 0 0 10px 10px; }
+  .gov-form-hint { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+  /* Toast notifications */
+  .gov-toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+  .gov-toast { padding: 12px 18px; border-radius: 8px; color: white; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 8px; animation: govToastSlide 0.3s ease; max-width: 360px; }
+  .gov-toast.success { background: #22c55e; }
+  .gov-toast.error { background: #ef4444; }
+  @keyframes govToastSlide { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
 </style>
 </head>
 <body>
@@ -980,6 +1021,144 @@ export function renderDashboard(data: DashboardData): string {
     d.textContent = str;
     return d.innerHTML;
   }
+
+  // --- Governance action toolbar ---
+  var govAction = null;
+  var govRecordId = null;
+  var govTitles = {
+    'create': 'Create Governance Record',
+    'approve': 'Record Approval Decision',
+    'evidence': 'Add Evidence Reference',
+    'risk-assessment': 'Link Risk Assessment',
+    'policy-basis': 'Document Policy Basis',
+    'review-cycle': 'Set Review Cycle',
+    'data-inventory': 'Document Data Inventory',
+    'committee': 'Record Committee Approval',
+    'compliance-links': 'Map Compliance Links'
+  };
+  function govF(name, label, inputHtml) {
+    return '<label>' + label + '</label>' + inputHtml;
+  }
+  function govI(name, label, ph) {
+    return govF(name, label, '<input type="text" name="' + name + '" placeholder="' + (ph||'') + '">');
+  }
+  function govS(name, label, opts) {
+    var o = '';
+    for (var i = 0; i < opts.length; i++) o += '<option value="' + opts[i][0] + '">' + opts[i][1] + '</option>';
+    return govF(name, label, '<select name="' + name + '">' + o + '</select>');
+  }
+  function govT(name, label, ph) {
+    return govF(name, label, '<textarea name="' + name + '" placeholder="' + (ph||'') + '"></textarea>');
+  }
+
+  window.openGovModal = function(action, recordId) {
+    govAction = action;
+    govRecordId = recordId || null;
+    var m = document.getElementById('gov-modal');
+    var h = '<div class="gov-modal-header"><div class="gov-modal-title">' + (govTitles[action]||action) + '</div><button class="gov-modal-close" onclick="closeGovModal()">&times;</button></div><div class="gov-modal-body">';
+    if (action === 'create') {
+      h += govI('system_name','System Name *','e.g., Payment API Gateway');
+      h += govS('system_type','System Type',[['ai-system','AI System'],['application','Application'],['data-process','Data Process'],['api','API'],['model','Model'],['infrastructure','Infrastructure'],['third-party-service','Third-Party Service']]);
+      h += govS('risk_level','Risk Level',[['low','Low'],['medium','Medium'],['high','High'],['critical','Critical']]);
+      h += govT('system_description','Description','Brief description');
+    } else if (action === 'approve') {
+      h += govI('approver_name','Approver Name *','e.g., Jane Smith');
+      h += govI('approver_role','Approver Role','e.g., CISO');
+      h += govI('approver_email','Approver Email','e.g., jane@company.com');
+      h += govI('approval_authority','Approval Authority','e.g., CISO Office');
+      h += govS('decision','Decision',[['approved','Approved'],['conditional','Conditional'],['rejected','Rejected']]);
+      h += govI('valid_from','Valid From','YYYY-MM-DD');
+      h += govI('valid_until','Valid Until','YYYY-MM-DD (blank = indefinite)');
+      h += govI('conditions','Conditions','comma-separated');
+      h += govT('rationale','Rationale','Reason for decision');
+    } else if (action === 'evidence') {
+      h += govI('title','Title *','e.g., DPIA Report 2024');
+      h += govS('type','Evidence Type',[['document','Document'],['ticket','Ticket'],['meeting-record','Meeting Record'],['report','Report'],['certificate','Certificate'],['contract','Contract'],['log','Log'],['dashboard','Dashboard'],['email','Email'],['other','Other']]);
+      h += govS('source_system','Source System',[['jira','Jira'],['confluence','Confluence'],['servicenow','ServiceNow'],['sharepoint','SharePoint'],['grc-platform','GRC Platform'],['git','Git'],['file','File'],['url','URL'],['email','Email'],['other','Other']]);
+      h += govI('reference','Reference *','Ticket ID, URL, doc name');
+      h += govI('location_description','Location','Where to find it');
+    } else if (action === 'risk-assessment') {
+      h += govI('assessor','Assessor Name *','e.g., John Doe');
+      h += govI('methodology','Methodology','e.g., NIST RMF');
+      h += govI('risk_score','Risk Score','e.g., 7.5/10');
+      h += govI('residual_risk','Residual Risk','low / medium / high / critical');
+      h += govI('identified_risks','Identified Risks','comma-separated');
+      h += govI('mitigation_measures','Mitigation Measures','comma-separated');
+    } else if (action === 'policy-basis') {
+      h += govI('policy_id','Policy ID','e.g., POL-001');
+      h += govI('policy_name','Policy Name *','e.g., InfoSec Policy');
+      h += govI('version','Version','e.g., 2.0');
+      h += govI('standard','Standard','e.g., ISO 27001, GDPR');
+      h += govI('clauses','Applicable Clauses','comma-separated');
+    } else if (action === 'review-cycle') {
+      h += govS('frequency','Review Frequency',[['quarterly','Quarterly'],['semi-annual','Semi-Annual'],['annual','Annual'],['biennial','Biennial']]);
+      h += govI('next_review','Next Review Date','YYYY-MM-DD');
+    } else if (action === 'data-inventory') {
+      h += govI('personal_data_categories','Data Categories','comma-separated');
+      h += govI('processing_purposes','Processing Purposes','comma-separated');
+      h += govI('data_subjects','Data Subjects','comma-separated');
+      h += govI('cross_border_transfers','Cross-Border Transfers','comma-separated');
+      h += govI('retention_period','Retention Period','e.g., 7 years');
+    } else if (action === 'committee') {
+      h += govI('committee_name','Committee Name *','e.g., Data Governance Board');
+      h += govI('meeting_date','Meeting Date','YYYY-MM-DD');
+      h += govI('meeting_reference','Meeting Reference','e.g., MIN-2024-001');
+      h += govI('attendees','Attendees','comma-separated');
+      h += govT('decision_summary','Decision Summary','Summary of committee decision');
+    } else if (action === 'compliance-links') {
+      h += govI('frameworks','Frameworks','comma-separated (GDPR, OWASP...)');
+      h += govI('controls_satisfied','Controls Satisfied','comma-separated control IDs');
+      h += govI('control_pack_ids','Control Pack IDs','comma-separated pack IDs');
+    }
+    h += '<label>Your Name</label><input type="text" name="actor_name" placeholder="Optional"><div class="gov-form-hint">For activity log attribution</div>';
+    h += '<label>Your Role</label><input type="text" name="actor_role" placeholder="Optional">';
+    h += '</div>';
+    h += '<div class="gov-modal-footer"><button class="gov-btn gov-btn-outline" onclick="closeGovModal()">Cancel</button><button class="gov-btn gov-btn-primary" onclick="submitGovForm()">Save</button></div>';
+    m.innerHTML = h;
+    document.getElementById('gov-modal-overlay').classList.add('active');
+  };
+
+  window.closeGovModal = function() {
+    document.getElementById('gov-modal-overlay').classList.remove('active');
+    document.getElementById('gov-modal').innerHTML = '';
+  };
+
+  window.submitGovForm = function() {
+    var inputs = document.querySelectorAll('#gov-modal .gov-modal-body input[name], #gov-modal .gov-modal-body select[name], #gov-modal .gov-modal-body textarea[name]');
+    var body = {};
+    for (var i = 0; i < inputs.length; i++) body[inputs[i].name] = inputs[i].value;
+    var url = govRecordId ? '/api/governance/' + encodeURIComponent(govRecordId) + '/' + govAction : '/api/governance/create';
+    var btn = document.querySelector('#gov-modal .gov-modal-footer .gov-btn-primary');
+    if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) { closeGovModal(); showToast('Saved! Reloading...', 'success'); setTimeout(function() { location.reload(); }, 800); }
+        else { showToast(d.error || 'Failed', 'error'); if (btn) { btn.textContent = 'Save'; btn.disabled = false; } }
+      })
+      .catch(function(e) { showToast('Error: ' + (e.message||'network'), 'error'); if (btn) { btn.textContent = 'Save'; btn.disabled = false; } });
+  };
+
+  window.govDeleteRecord = function(recordId, systemName) {
+    if (!confirm('Delete governance record "' + systemName + '"? This action cannot be undone.')) return;
+    fetch('/api/governance/' + encodeURIComponent(recordId) + '/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) { showToast('Deleted! Reloading...', 'success'); setTimeout(function() { location.reload(); }, 800); }
+        else { showToast(d.error || 'Failed', 'error'); }
+      })
+      .catch(function(e) { showToast('Error: ' + (e.message||'network'), 'error'); });
+  };
+
+  window.showToast = function(msg, type) {
+    var c = document.getElementById('gov-toast-container');
+    if (!c) return;
+    var t = document.createElement('div');
+    t.className = 'gov-toast ' + (type||'success');
+    t.innerHTML = (type === 'error' ? '&#10007; ' : '&#10003; ') + msg;
+    c.appendChild(t);
+    setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { if(t.parentNode) t.remove(); }, 300); }, 3000);
+  };
 })();
 </script>
 
@@ -1654,11 +1833,16 @@ function renderGovernanceSection(data: GovernanceData): string {
       <div class="empty-state">
         <div class="icon">&#128203;</div>
         <div class="msg">No governance records found</div>
-        <div class="sub">Create records using <code>ges governance add</code> or the MCP <code>create_governance_record</code> tool</div>
+        <div class="sub">Create your first governance record to start building the provenance chain</div>
         <div class="sub" style="margin-top:12px;">The governance tab provides end-to-end traceability for auditors:<br>
           System &rarr; Risk Assessment &rarr; Policy &rarr; Approval &rarr; Evidence &rarr; Review Cycle</div>
+        <div style="margin-top:16px;">
+          <button class="gov-btn gov-btn-primary" onclick="openGovModal('create')">&#43; Create First Record</button>
+        </div>
       </div>
-    </div>`;
+    </div>
+    ${renderGovModals()}
+    ${renderGovToastContainer()}`;
   }
 
   let html = "";
@@ -1666,7 +1850,7 @@ function renderGovernanceSection(data: GovernanceData): string {
   html += `<div style="margin-bottom:20px;">`;
   html += `<h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Governance Provenance Chain</h2>`;
   html += `<p style="color:#6b7280;font-size:14px;margin-bottom:16px;">End-to-end approval traceability for auditors and regulators. Each record links: System &rarr; Risk Assessment &rarr; Policy &rarr; Approval &rarr; Evidence &rarr; Review Cycle.</p>`;
-  html += `<div style="margin-bottom:12px;"><a href="/api/report/governance" style="background:#6366f1;color:white;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">&#128203; Export Provenance Report</a></div>`;
+  html += `<div class="gov-toolbar"><button class="gov-btn gov-btn-primary" onclick="openGovModal('create')">&#43; New Record</button><a href="/api/report/governance" class="gov-btn gov-btn-outline">&#128203; Export Report</a></div>`;
   html += `<div class="grid grid-4" style="margin-bottom:20px;">`;
   html += `<div class="card stat"><div class="num">${summary.total}</div><div class="label">Total Systems</div></div>`;
   html += `<div class="card stat"><div class="num" style="color:#22c55e;">${summary.approved}</div><div class="label">Approved</div></div>`;
@@ -1851,6 +2035,18 @@ function renderGovernanceSection(data: GovernanceData): string {
       html += `</div>`;
     }
 
+    html += `<div class="gov-actions">`;
+    html += `<button class="gov-action-btn" onclick="event.stopPropagation();openGovModal('approve','${escapeHtml(r.id)}')">Approve</button>`;
+    html += `<button class="gov-action-btn" onclick="event.stopPropagation();openGovModal('evidence','${escapeHtml(r.id)}')">Evidence</button>`;
+    html += `<button class="gov-action-btn" onclick="event.stopPropagation();openGovModal('risk-assessment','${escapeHtml(r.id)}')">Risk</button>`;
+    html += `<button class="gov-action-btn" onclick="event.stopPropagation();openGovModal('policy-basis','${escapeHtml(r.id)}')">Policy</button>`;
+    html += `<button class="gov-action-btn" onclick="event.stopPropagation();openGovModal('review-cycle','${escapeHtml(r.id)}')">Review</button>`;
+    html += `<button class="gov-action-btn" onclick="event.stopPropagation();openGovModal('data-inventory','${escapeHtml(r.id)}')">Data Inv</button>`;
+    html += `<button class="gov-action-btn" onclick="event.stopPropagation();openGovModal('committee','${escapeHtml(r.id)}')">Committee</button>`;
+    html += `<button class="gov-action-btn" onclick="event.stopPropagation();openGovModal('compliance-links','${escapeHtml(r.id)}')">Compliance</button>`;
+    html += `<button class="gov-action-btn" style="color:#dc2626;" onclick="event.stopPropagation();govDeleteRecord('${escapeHtml(r.id)}','${escapeHtml(r.system_name)}')">Delete</button>`;
+    html += `</div>`;
+
     html += `<div style="margin-top:8px;font-size:11px;color:#9ca3af;">Created: ${escapeHtml(r.created_at)} by ${escapeHtml(r.created_by)} | Updated: ${escapeHtml(r.updated_at)} (v${r.record_version})</div>`;
 
     html += `</div>`;
@@ -1858,6 +2054,8 @@ function renderGovernanceSection(data: GovernanceData): string {
   }
 
   html += `</div>`;
+  html += renderGovModals();
+  html += renderGovToastContainer();
   return html;
 }
 
@@ -1868,4 +2066,14 @@ function escapeHtml(str: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function renderGovModals(): string {
+  return `<div class="gov-modal-overlay" id="gov-modal-overlay" onclick="if(event.target===this)closeGovModal()">
+    <div class="gov-modal" id="gov-modal"></div>
+  </div>`;
+}
+
+function renderGovToastContainer(): string {
+  return `<div class="gov-toast-container" id="gov-toast-container"></div>`;
 }

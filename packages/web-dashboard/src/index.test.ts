@@ -651,6 +651,20 @@ describe("web-dashboard", () => {
       });
     }
 
+    async function post(port: number, path: string, data: Record<string, unknown>): Promise<{ status: number; body: string }> {
+      return new Promise((resolve, reject) => {
+        const payload = JSON.stringify(data);
+        const req = http.request({ hostname: "127.0.0.1", port, path, method: "POST", headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) } }, (res) => {
+          let body = "";
+          res.on("data", (chunk) => { body += chunk; });
+          res.on("end", () => resolve({ status: res.statusCode || 0, body }));
+        });
+        req.on("error", reject);
+        req.write(payload);
+        req.end();
+      });
+    }
+
     it("starts dashboard server and responds to /api/packs", async () => {
       setupProject();
       const { server, port } = await startServer(tmpDir);
@@ -757,16 +771,128 @@ describe("web-dashboard", () => {
       await close(server);
     });
 
-    it("returns 405 for POST requests", async () => {
+    it("returns 405 for POST to non-governance routes", async () => {
       const { server, port } = await startServer(tmpDir);
-      const result = await new Promise<{ status: number }>((resolve, reject) => {
-        const req = http.request({ hostname: "127.0.0.1", port, path: "/api/packs", method: "POST" }, (res) => {
-          resolve({ status: res.statusCode || 0 });
-        });
-        req.on("error", reject);
-        req.end();
-      });
+      const result = await post(port, "/api/packs", {});
       expect(result.status).toBe(405);
+      await close(server);
+    });
+
+    it("POST /api/governance/create creates a governance record", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const { status, body } = await post(port, "/api/governance/create", {
+        system_name: "Test API",
+        system_type: "api",
+        risk_level: "high",
+        system_description: "A test system",
+      });
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(parsed.success).toBe(true);
+      expect(parsed.record.system_name).toBe("Test API");
+      expect(parsed.record.system_type).toBe("api");
+      expect(parsed.record.risk_level).toBe("high");
+      expect(parsed.record.id).toMatch(/^gov-/);
+      await close(server);
+    });
+
+    it("POST /api/governance/create rejects missing system_name", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const { status, body } = await post(port, "/api/governance/create", {});
+      expect(status).toBe(400);
+      const parsed = JSON.parse(body);
+      expect(parsed.error).toContain("system_name");
+      await close(server);
+    });
+
+    it("POST /api/governance/:id/approve records an approval", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Approve Test", system_type: "application" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      const { status, body } = await post(port, `/api/governance/${recordId}/approve`, {
+        approver_name: "Jane",
+        approver_role: "CISO",
+        decision: "approved",
+        valid_until: "2027-01-01",
+      });
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(parsed.success).toBe(true);
+      expect(parsed.record.approval).not.toBeNull();
+      expect(parsed.record.approval.approver_name).toBe("Jane");
+      expect(parsed.record.approval.decision).toBe("approved");
+      expect(parsed.record.status).toBe("approved");
+      await close(server);
+    });
+
+    it("POST /api/governance/:id/evidence adds evidence", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Evidence Test" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      const { status, body } = await post(port, `/api/governance/${recordId}/evidence`, {
+        title: "DPIA Report",
+        type: "report",
+        source_system: "confluence",
+        reference: "DPIA-2024-001",
+      });
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(parsed.success).toBe(true);
+      expect(parsed.record.evidence).toHaveLength(1);
+      expect(parsed.record.evidence[0].title).toBe("DPIA Report");
+      await close(server);
+    });
+
+    it("POST /api/governance/:id/risk-assessment links a risk assessment", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Risk Test" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      const { status, body } = await post(port, `/api/governance/${recordId}/risk-assessment`, {
+        assessor: "John",
+        methodology: "NIST RMF",
+        risk_score: "7/10",
+        residual_risk: "medium",
+      });
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(parsed.success).toBe(true);
+      expect(parsed.record.risk_assessment).not.toBeNull();
+      expect(parsed.record.risk_assessment.assessor).toBe("John");
+      await close(server);
+    });
+
+    it("POST /api/governance/:id/delete removes a record", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Delete Test" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      const { status, body } = await post(port, `/api/governance/${recordId}/delete`, {});
+      expect(status).toBe(200);
+      expect(JSON.parse(body).success).toBe(true);
+      const govRes = await get(port, "/api/governance");
+      const govData = JSON.parse(govRes.body);
+      expect(govData.records.find((r: { id: string }) => r.id === recordId)).toBeUndefined();
+      await close(server);
+    });
+
+    it("POST /api/governance/:id/review-cycle sets review cycle", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Review Test" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      const { status, body } = await post(port, `/api/governance/${recordId}/review-cycle`, {
+        frequency: "annual",
+        next_review: "2027-01-01",
+      });
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(parsed.record.review_cycle).not.toBeNull();
+      expect(parsed.record.review_cycle.frequency).toBe("annual");
       await close(server);
     });
   });

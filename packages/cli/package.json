@@ -3,19 +3,19 @@
     "ges": "./dist/cli.js"
   },
   "dependencies": {
-    "@greenarmor/ges-audit-engine": "1.4.1",
-    "@greenarmor/ges-cicd-generator": "1.4.1",
-    "@greenarmor/ges-compliance-engine": "1.4.1",
-    "@greenarmor/ges-core": "1.4.1",
-    "@greenarmor/ges-doc-generator": "1.4.1",
-    "@greenarmor/ges-git-hooks": "1.4.1",
-    "@greenarmor/ges-mcp-server": "1.4.1",
-    "@greenarmor/ges-policy-engine": "1.4.1",
-    "@greenarmor/ges-report-generator": "1.4.1",
-    "@greenarmor/ges-rules-engine": "1.4.1",
-    "@greenarmor/ges-scanner-integration": "1.4.1",
-    "@greenarmor/ges-scoring-engine": "1.4.1",
-    "@greenarmor/ges-web-dashboard": "1.4.1",
+    "@greenarmor/ges-audit-engine": "1.4.2",
+    "@greenarmor/ges-cicd-generator": "1.4.2",
+    "@greenarmor/ges-compliance-engine": "1.4.2",
+    "@greenarmor/ges-core": "1.4.2",
+    "@greenarmor/ges-doc-generator": "1.4.2",
+    "@greenarmor/ges-git-hooks": "1.4.2",
+    "@greenarmor/ges-mcp-server": "1.4.2",
+    "@greenarmor/ges-policy-engine": "1.4.2",
+    "@greenarmor/ges-report-generator": "1.4.2",
+    "@greenarmor/ges-rules-engine": "1.4.2",
+    "@greenarmor/ges-scanner-integration": "1.4.2",
+    "@greenarmor/ges-scoring-engine": "1.4.2",
+    "@greenarmor/ges-web-dashboard": "1.4.2",
     "chalk": "^5.6.2",
     "commander": "^13.0.0"
   },
@@ -63,5 +63,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.4.1"
+  "version": "1.4.2"
 }
