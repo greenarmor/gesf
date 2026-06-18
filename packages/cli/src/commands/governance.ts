@@ -2,6 +2,27 @@ import { Command } from "commander";
 import { ensureGESInitialized } from "../utils/project.js";
 import { input, select } from "../utils/prompts.js";
 import {
+  banner,
+  divider,
+  blank,
+  success,
+  error,
+  warn,
+  info,
+  kv,
+  label,
+  item,
+  statusBadge,
+  severityBadge,
+  BOLD,
+  CYAN,
+  DIM,
+  GREEN,
+  RED,
+  YELLOW,
+  GRAY,
+} from "../utils/ui.js";
+import {
   loadGovernanceRecords,
   createGovernanceRecord,
   addGovernanceRecord,
@@ -45,16 +66,16 @@ const RISK_COLOR: Record<string, string> = {
 };
 
 function printRecordSummary(record: GovernanceRecord): void {
-  const badge = STATUS_BADGE[record.status] || "?";
-  console.log(`  ${badge} ${record.id}  ${record.system_name}`);
-  console.log(`     Type: ${record.system_type}  |  Risk: ${RISK_COLOR[record.risk_level] || record.risk_level}  |  Status: ${record.status}`);
+  console.log(`  ${statusBadge(record.status)} ${BOLD(record.system_name)}`);
+  console.log(`     ${DIM("ID")}     ${record.id}`);
+  console.log(`     ${DIM("Type")}   ${record.system_type}  ${GRAY("|")}  ${DIM("Risk")} ${severityBadge(record.risk_level)}`);
   if (record.approval) {
-    console.log(`     Approved by: ${record.approval.approver_name} (${record.approval.approver_role})`);
-    console.log(`     Valid: ${record.approval.valid_from} → ${record.approval.valid_until || "indefinite"}`);
+    console.log(`     ${DIM("By")}     ${record.approval.approver_name} (${record.approval.approver_role})`);
+    console.log(`     ${DIM("Valid")} ${record.approval.valid_from} ${GRAY("→")} ${record.approval.valid_until || "indefinite"}`);
   } else {
-    console.log(`     Approval: NOT RECORDED`);
+    console.log(`     ${DIM("By")}     ${GRAY("NOT RECORDED")}`);
   }
-  console.log(`     Evidence: ${record.evidence.length} reference(s)`);
+  console.log(`     ${DIM("Ev")}     ${record.evidence.length} reference(s)`);
 }
 
 export const governanceCommand = new Command("governance")
@@ -110,13 +131,15 @@ export const governanceCommand = new Command("governance")
         });
         addGovernanceRecord(root, record);
 
-        console.log(`\n  [✓] Governance record created`);
-        console.log(`      ID: ${record.id}`);
+        blank();
+        success("Governance record created");
+        kv("ID", record.id, 6);
+        console.log();
         printRecordSummary(record);
-        console.log(`\n  Next steps:`);
-        console.log(`    ges governance approve ${record.id}     — Record approval decision`);
-        console.log(`    ges governance evidence ${record.id}    — Add evidence reference`);
-        console.log(`    ges governance verify ${record.id}      — Verify provenance chain\n`);
+        console.log(`\n  ${DIM("Next steps:")}`);
+        console.log(`    ${GRAY("–")} ${GREEN("ges governance approve")} ${record.id}     ${DIM("Record approval decision")}`);
+        console.log(`    ${GRAY("–")} ${GREEN("ges governance evidence")} ${record.id}    ${DIM("Add evidence reference")}`);
+        console.log(`    ${GRAY("–")} ${GREEN("ges governance verify")} ${record.id}      ${DIM("Verify provenance chain")}\n`);
 
         recordActivity(root, {
           source: "cli",
@@ -188,10 +211,12 @@ export const governanceCommand = new Command("governance")
           process.exit(1);
         }
 
-        console.log(`\n  [✓] Approval recorded for ${updated.system_name}`);
-        console.log(`      Decision: ${decision.toUpperCase()}`);
-        console.log(`      Approver: ${approverName} (${approverRole})`);
-        console.log(`      Valid: ${validFrom} → ${validUntil || "indefinite"}\n`);
+        blank();
+        success("Approval recorded", `for ${updated.system_name}`);
+        kv("Decision", decision.toUpperCase(), 6);
+        kv("Approver", `${approverName} (${approverRole})`, 6);
+        kv("Valid", `${validFrom} → ${validUntil || "indefinite"}`, 6);
+        console.log();
 
         recordActivity(root, {
           source: "cli",
@@ -271,10 +296,13 @@ export const governanceCommand = new Command("governance")
           process.exit(1);
         }
 
-        console.log(`\n  [✓] Evidence added to ${updated.system_name}`);
-        console.log(`      ${evidence.title}`);
-        console.log(`      Source: ${evidence.source_system}  |  Ref: ${evidence.reference}`);
-        console.log(`      Total evidence: ${updated.evidence.length} reference(s)\n`);
+        blank();
+        success("Evidence added", `to ${updated.system_name}`);
+        console.log(`      ${BOLD(evidence.title)}`);
+        kv("Source", evidence.source_system, 6);
+        kv("Ref", evidence.reference, 6);
+        kv("Total", `${updated.evidence.length} reference(s)`, 6);
+        console.log();
 
         recordActivity(root, {
           source: "cli",
@@ -294,14 +322,16 @@ export const governanceCommand = new Command("governance")
         const root = ensureGESInitialized();
         const records = loadGovernanceRecords(root);
         if (records.length === 0) {
-          console.log(`\n  No governance records found.`);
-          console.log(`  Create one with: ges governance add\n`);
+          info("No governance records found.");
+          console.log(`  ${DIM("Create one with:")} ${GREEN("ges governance add")}\n`);
           return;
         }
-        console.log(`\n  Governance Records (${records.length}):\n`);
+        blank();
+        console.log(`  ${BOLD("Governance Records")} ${GRAY(`(${records.length})`)}`);
+        console.log();
         records.forEach(r => {
           printRecordSummary(r);
-          console.log("");
+          console.log();
         });
       }),
   )
@@ -456,36 +486,46 @@ export const governanceCommand = new Command("governance")
         }
 
         const result = verifyGovernanceRecord(record);
-        console.log(`\n  ═══════════════════════════════════════════════════`);
-        console.log(`  VERIFICATION: ${record.system_name}`);
-        console.log(`  ═══════════════════════════════════════════════════\n`);
+        banner("VERIFICATION", record.system_name);
 
-        console.log(`  Overall: ${result.valid ? "✓ VALID" : "✕ ISSUES FOUND"}`);
-        console.log(`  Approval Status: ${result.approval_status.toUpperCase()}`);
+        const overallText = result.valid ? GREEN(BOLD("✓ VALID")) : RED(BOLD("✕ ISSUES FOUND"));
+        console.log(`  ${DIM("Overall:")}         ${overallText}`);
+        console.log(`  ${DIM("Approval:")}       ${statusBadge(result.approval_status)}`);
         if (result.days_until_expiry !== null) {
-          const dayLabel = result.days_until_expiry < 0 ? `${Math.abs(result.days_until_expiry)} days AGO` : `${result.days_until_expiry} days remaining`;
-          console.log(`  Expiry: ${dayLabel}`);
+          const dayLabel = result.days_until_expiry < 0
+            ? RED(`${Math.abs(result.days_until_expiry)} days AGO`)
+            : result.days_until_expiry <= 30
+              ? YELLOW(`${result.days_until_expiry} days remaining`)
+              : GREEN(`${result.days_until_expiry} days remaining`);
+          console.log(`  ${DIM("Expiry:")}          ${dayLabel}`);
         }
-        console.log(`  Evidence Count: ${result.completeness.evidence_count}`);
-        console.log(`\n  Completeness Checklist:`);
-        console.log(`    ${result.completeness.has_approval ? "✓" : "✕"} Approval Decision`);
-        console.log(`    ${result.completeness.has_risk_assessment ? "✓" : "✕"} Risk Assessment`);
-        console.log(`    ${result.completeness.has_policy_basis ? "✓" : "✕"} Policy Basis`);
-        console.log(`    ${result.completeness.has_evidence ? "✓" : "✕"} Evidence Chain`);
-        console.log(`    ${result.completeness.has_review_cycle ? "✓" : "△"} Review Cycle`);
-        console.log(`    ${result.completeness.has_data_inventory ? "✓" : "△"} Data Inventory`);
-        console.log(`    ${result.completeness.has_compliance_links ? "✓" : "△"} Compliance Links`);
-        console.log(`    ${result.completeness.is_current ? "✓" : "✕"} Currently Valid`);
+        console.log(`  ${DIM("Evidence:")}       ${result.completeness.evidence_count} reference(s)`);
+
+        console.log(`\n  ${BOLD("Completeness Checklist")}`);
+        divider(40);
+        const check = (ok: boolean, label: string, isWarning = false): void => {
+          const icon = ok ? GREEN("✓") : isWarning ? YELLOW("△") : RED("✕");
+          const text = ok ? label : isWarning ? YELLOW(label) : RED(label);
+          console.log(`    ${icon} ${text}`);
+        };
+        check(result.completeness.has_approval, "Approval Decision");
+        check(result.completeness.has_risk_assessment, "Risk Assessment");
+        check(result.completeness.has_policy_basis, "Policy Basis");
+        check(result.completeness.has_evidence, "Evidence Chain");
+        check(result.completeness.has_review_cycle, "Review Cycle", true);
+        check(result.completeness.has_data_inventory, "Data Inventory", true);
+        check(result.completeness.has_compliance_links, "Compliance Links", true);
+        check(result.completeness.is_current, "Currently Valid");
 
         if (result.issues.length > 0) {
-          console.log(`\n  BLOCKING ISSUES:`);
-          result.issues.forEach(i => console.log(`    ✕ ${i}`));
+          console.log(`\n  ${RED(BOLD("BLOCKING ISSUES"))}`);
+          result.issues.forEach(i => console.log(`    ${RED("✕")} ${i}`));
         }
         if (result.warnings.length > 0) {
-          console.log(`\n  WARNINGS:`);
-          result.warnings.forEach(w => console.log(`    △ ${w}`));
+          console.log(`\n  ${YELLOW(BOLD("WARNINGS"))}`);
+          result.warnings.forEach(w => console.log(`    ${YELLOW("△")} ${w}`));
         }
-        console.log("");
+        console.log();
       }),
   )
   .addCommand(
@@ -503,7 +543,9 @@ export const governanceCommand = new Command("governance")
         }
         const deleted = deleteGovernanceRecord(root, record.id);
         if (deleted) {
-          console.log(`\n  [✓] Deleted governance record: ${record.system_name} (${record.id})\n`);
+          blank();
+          success("Deleted governance record", `${record.system_name} (${record.id})`);
+          console.log();
           recordActivity(root, {
             source: "cli",
             action: "control_override",
@@ -554,8 +596,12 @@ export const governanceCommand = new Command("governance")
         }, "cli-user");
 
         if (!updated) { console.error(`  Error: Failed to update.`); process.exit(1); }
-        console.log(`\n  [✓] Risk assessment linked to ${updated.system_name}`);
-        console.log(`      Assessor: ${assessor}  |  Score: ${score}  |  Residual: ${residual}\n`);
+        blank();
+        success("Risk assessment linked", `to ${updated.system_name}`);
+        kv("Assessor", assessor, 6);
+        kv("Score", score, 6);
+        kv("Residual", residual, 6);
+        console.log();
         recordActivity(root, { source: "cli", action: "control_override", title: `Risk assessment added: ${updated.system_name}`, description: `Risk assessment by ${assessor} linked to ${updated.system_name}. Score: ${score}, Residual: ${residual}.`, details: { governance_record_id: updated.id }, actor_name: options.actor, actor_role: options.actorRole });
       }),
   )
@@ -590,8 +636,11 @@ export const governanceCommand = new Command("governance")
         }, "cli-user");
 
         if (!updated) { console.error(`  Error: Failed to update.`); process.exit(1); }
-        console.log(`\n  [✓] Policy basis documented for ${updated.system_name}`);
-        console.log(`      ${policyName} (${policyId} v${version}) — ${standard}\n`);
+        blank();
+        success("Policy basis documented", `for ${updated.system_name}`);
+        kv("Policy", `${policyName} (${policyId} v${version})`, 6);
+        kv("Standard", standard, 6);
+        console.log();
         recordActivity(root, { source: "cli", action: "control_override", title: `Policy basis added: ${updated.system_name}`, description: `Policy ${policyName} (${policyId} v${version}) documented for ${updated.system_name}.`, details: { governance_record_id: updated.id }, actor_name: options.actor, actor_role: options.actorRole });
       }),
   )
@@ -629,8 +678,11 @@ export const governanceCommand = new Command("governance")
         }, "cli-user");
 
         if (!updated) { console.error(`  Error: Failed to update.`); process.exit(1); }
-        console.log(`\n  [✓] Review cycle set for ${updated.system_name}`);
-        console.log(`      Frequency: ${frequency}  |  Next review: ${nextReview}\n`);
+        blank();
+        success("Review cycle set", `for ${updated.system_name}`);
+        kv("Frequency", frequency, 6);
+        kv("Next review", nextReview, 6);
+        console.log();
         recordActivity(root, { source: "cli", action: "control_override", title: `Review cycle set: ${updated.system_name}`, description: `Review cycle (${frequency}) set for ${updated.system_name}. Next review: ${nextReview}.`, details: { governance_record_id: updated.id }, actor_name: options.actor, actor_role: options.actorRole });
       }),
   )
@@ -663,7 +715,9 @@ export const governanceCommand = new Command("governance")
         }, "cli-user");
 
         if (!updated) { console.error(`  Error: Failed to update.`); process.exit(1); }
-        console.log(`\n  [✓] Data inventory documented for ${updated.system_name}\n`);
+        blank();
+        success("Data inventory documented", `for ${updated.system_name}`);
+        console.log();
         recordActivity(root, { source: "cli", action: "control_override", title: `Data inventory added: ${updated.system_name}`, description: `Data inventory documented for ${updated.system_name}.`, details: { governance_record_id: updated.id }, actor_name: options.actor, actor_role: options.actorRole });
       }),
   )
@@ -697,8 +751,11 @@ export const governanceCommand = new Command("governance")
         }, "cli-user");
 
         if (!updated) { console.error(`  Error: Failed to update.`); process.exit(1); }
-        console.log(`\n  [✓] Committee approval recorded for ${updated.system_name}`);
-        console.log(`      ${committeeName} — ${meetingDate} (${meetingRef})\n`);
+        blank();
+        success("Committee approval recorded", `for ${updated.system_name}`);
+        kv("Committee", committeeName, 6);
+        kv("Meeting", `${meetingDate} (${meetingRef})`, 6);
+        console.log();
         recordActivity(root, { source: "cli", action: "control_override", title: `Committee approval added: ${updated.system_name}`, description: `Committee ${committeeName} (${meetingRef}) recorded for ${updated.system_name}.`, details: { governance_record_id: updated.id }, actor_name: options.actor, actor_role: options.actorRole });
       }),
   )
@@ -726,7 +783,9 @@ export const governanceCommand = new Command("governance")
         }, "cli-user");
 
         if (!updated) { console.error(`  Error: Failed to update.`); process.exit(1); }
-        console.log(`\n  [✓] Compliance links mapped for ${updated.system_name}\n`);
+        blank();
+        success("Compliance links mapped", `for ${updated.system_name}`);
+        console.log();
         recordActivity(root, { source: "cli", action: "control_override", title: `Compliance links added: ${updated.system_name}`, description: `Compliance frameworks mapped for ${updated.system_name}.`, details: { governance_record_id: updated.id }, actor_name: options.actor, actor_role: options.actorRole });
       }),
   );

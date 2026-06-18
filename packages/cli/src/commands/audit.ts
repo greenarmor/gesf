@@ -7,6 +7,7 @@ import { generateScoreFile, formatScoreOutput } from "@greenarmor/ges-scoring-en
 import { runAudit, runAuditIncremental, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding, AuditCache } from "@greenarmor/ges-audit-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
+import { banner, divider, blank, success, warn, info, severityBadge, BOLD, DIM, CYAN, GREEN, RED, YELLOW, GRAY } from "../utils/ui.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -19,10 +20,10 @@ export const auditCommand = new Command("audit")
     const root = ensureGESInitialized();
     const config = readJsonFile<ProjectConfig>(path.join(root, ".ges", "config.json"));
 
-    console.log("\n  GESF Compliance Audit");
-    console.log("  ────────────────────\n");
-
-    console.log("  Scanning project files...");
+    if (!options.json) {
+      banner("GESF Compliance Audit", options.incremental ? "Incremental scan" : "Full project scan");
+      info("Scanning project files...");
+    }
 
     let rawFindings: Finding[];
     let scannedFiles: number;
@@ -34,16 +35,16 @@ export const auditCommand = new Command("audit")
       writeJsonFile(cachePath, result.newCache);
       rawFindings = result.findings;
       scannedFiles = result.scannedFiles;
-      console.log(`  Scanned ${scannedFiles} files (${result.changedFiles} changed)`);
+      if (!options.json) success("Scan complete", `${scannedFiles} files (${result.changedFiles} changed)`);
     } else {
       const result = runAudit(root);
       rawFindings = result.findings;
       scannedFiles = result.scannedFiles;
-      console.log(`  Scanned ${scannedFiles} files`);
+      if (!options.json) success("Scan complete", `${scannedFiles} files`);
     }
 
     const findings = deduplicateFindings(rawFindings);
-    console.log("");
+    if (!options.json) blank();
 
     const configFrameworks = (config?.frameworks || ["GDPR", "OWASP"]) as FrameworkName[];
 
@@ -90,7 +91,7 @@ export const auditCommand = new Command("audit")
     if (overrides.length > 0) {
       const naCount = overrides.filter(o => o.status === "not-applicable").length;
       const passCount = overrides.filter(o => o.status === "pass").length;
-      console.log(`  Control overrides: ${naCount} not-applicable, ${passCount} pre-verified\n`);
+      if (!options.json) info("Control overrides", `${naCount} not-applicable, ${passCount} pre-verified`);
     }
 
     if (options.json) {
@@ -99,36 +100,39 @@ export const auditCommand = new Command("audit")
       return;
     }
 
-    console.log("  ── Findings ─────────────────────\n");
-    console.log(`  Total findings: ${findings.length}`);
-    console.log(`  Critical: ${critical.length}  High: ${high.length}  Medium: ${medium.length}  Low: ${low.length}\n`);
+    console.log(`  ${BOLD("Findings")}`);
+    divider(40);
+    console.log(`  ${DIM("Total")}     ${findings.length}`);
+    console.log(`  ${RED(`Critical ${critical.length}`)}  ${RED(`High ${high.length}`)}  ${YELLOW(`Medium ${medium.length}`)}  ${CYAN(`Low ${low.length}`)}\n`);
 
     if (findings.length > 0) {
       const grouped = groupByCategory(findings);
       for (const [category, categoryFindings] of Object.entries(grouped)) {
-        console.log(`  [${category.toUpperCase()}]`);
+        console.log(`  ${BOLD(category.toUpperCase())}`);
         for (const f of categoryFindings.slice(0, 10)) {
-          const sev = f.severity === "critical" ? "CRIT" : f.severity === "high" ? "HIGH" : f.severity === "medium" ? "MED " : "LOW ";
-          const loc = f.file !== "project" ? ` (${f.file}${f.line ? ":" + f.line : ""})` : "";
-          console.log(`    [${sev}] ${f.title}${loc}`);
+          const loc = f.file !== "project" ? ` ${DIM(`(${f.file}${f.line ? ":" + f.line : ""})`)}` : "";
+          console.log(`    ${severityBadge(f.severity).padEnd(10)} ${f.title}${loc}`);
           if (f.evidence && f.file !== "project") {
-            console.log(`          ${f.evidence.slice(0, 100)}`);
+            console.log(`          ${GRAY(f.evidence.slice(0, 100))}`);
           }
         }
         if (categoryFindings.length > 10) {
-          console.log(`    ... and ${categoryFindings.length - 10} more`);
+          console.log(`    ${DIM(`... and ${categoryFindings.length - 10} more`)}`);
         }
         console.log("");
       }
     } else {
-      console.log("  ✓ No security or compliance issues found in source code.\n");
+      success("No security or compliance issues found in source code.");
+      blank();
     }
 
-    console.log("  ── Compliance Score ──────────────");
+    console.log(`  ${BOLD("Compliance Score")}`);
+    divider(40);
     console.log(formatScoreOutput(scoreData));
 
     if (critical.length > 0) {
-      console.log("  !! Critical issues must be resolved before deployment. !!\n");
+      warn("Critical issues must be resolved before deployment.");
+      blank();
     }
 
     recordActivity(root, {

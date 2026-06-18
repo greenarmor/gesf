@@ -1,12 +1,11 @@
 import { select } from "./prompts.js";
+import { divider, blank, label, info, GREEN, DIM, GRAY } from "./ui.js";
 
 export interface NextStep {
   label: string;
   value: string;
   description?: string;
 }
-
-const DIVIDER = "  ─────────────────────────────────────────────";
 
 function isInteractive(): boolean {
   return process.stdin.isTTY === true && process.stdout.isTTY === true;
@@ -24,6 +23,7 @@ const ALL_COMMANDS: Record<string, NextStep> = {
   generate:  { label: "Regenerate docs",     value: "ges generate --all",      description: "Update all documentation and workflows" },
   policy:    { label: "Manage policies",     value: "ges policy list",         description: "List, install, or remove policy packs" },
   update:    { label: "Check updates",       value: "ges update",              description: "Check for GESF updates" },
+  governance:{ label: "Governance",          value: "ges governance list",     description: "View approval provenance chains" },
 };
 
 function buildSteps(exclude: string[]): NextStep[] {
@@ -79,6 +79,9 @@ export function getNextStepsForCommand(command: string, context?: Record<string,
     case "update":
       return buildSteps(["update"]);
 
+    case "governance":
+      return buildSteps(["governance"]);
+
     case "mcp-setup":
       return buildSteps(["mcp-setup"]);
 
@@ -92,11 +95,11 @@ export async function showNextStepsMenu(command: string, context?: Record<string
 
   const steps = getNextStepsForCommand(command, context);
 
-  console.log(DIVIDER);
-  console.log("  What would you like to do next?\n");
+  divider();
+  label("What would you like to do next?");
 
   const answer = await select({
-    message: "Select next action:",
+    message: "Choose your next action:",
     choices: steps.map(step => ({
       name: step.description ? `${step.label} — ${step.description}` : step.label,
       value: step.value,
@@ -108,8 +111,10 @@ export async function showNextStepsMenu(command: string, context?: Record<string
     return;
   }
 
-  console.log(`\n  Running: ${answer}\n`);
-  console.log(DIVIDER + "\n");
+  blank();
+  info("Running", GREEN(answer));
+  divider();
+  blank();
 
   const { execSync } = await import("node:child_process");
   try {

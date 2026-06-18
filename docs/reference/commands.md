@@ -306,3 +306,46 @@ ges control OWASP-ASVS-003 fail -r "RBAC not yet implemented"  # Mark as failing
 Overrides are saved to `.ges/control-overrides.json` and affect your compliance score on the next audit.
 
 ---
+
+## `ges governance`
+
+Manage governance provenance chains — linked records connecting system identity, risk assessment, policy basis, approval, evidence, review cycle, and compliance links. See the [Governance guide](../user-guide/governance.md) for full details.
+
+```bash
+ges governance add --name "API" --type api --risk high    # Create a record
+ges governance list                                         # List all records
+ges governance show <id>                                    # Show full provenance chain
+ges governance verify <id>                                  # Verify completeness
+ges governance approve <id> --approver "Jane" --role "CISO" --decision approved  # Record approval
+ges governance evidence <id> --title "DPIA" --source jira --reference "DPIA-001"  # Add evidence
+ges governance delete <id>                                  # Delete a record
+```
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `add` | Create a new governance record |
+| `approve` | Record an approval decision |
+| `evidence` | Add an evidence reference |
+| `risk-assessment` | Link a risk assessment |
+| `policy-basis` | Document the policy basis |
+| `review-cycle` | Set up periodic review |
+| `data-inventory` | Document data inventory |
+| `committee` | Record committee approval |
+| `compliance-links` | Map compliance frameworks |
+| `list` | List all records |
+| `show` | Show full provenance chain |
+| `verify` | Verify completeness |
+| `delete` | Delete a record |
+
+### Common Flags
+
+All subcommands accept:
+
+| Flag | Description |
+|------|-------------|
+| `--actor <name>` | Name of person performing this action (for audit trail) |
+| `--actor-role <role>` | Role of person performing this action |
+
+---

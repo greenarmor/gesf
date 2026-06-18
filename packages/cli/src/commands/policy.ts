@@ -4,6 +4,7 @@ import { ensureGESInitialized, readJsonFile, writeFileSync, writeJsonFile } from
 import type { ProjectConfig } from "@greenarmor/ges-core";
 import { addFrameworkToConfig, removeFrameworkFromConfig, recordActivity } from "@greenarmor/ges-core";
 import { showNextStepsMenu } from "../utils/next-steps.js";
+import { banner, blank, success, error, kv, BOLD, CYAN, DIM, GRAY } from "../utils/ui.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -14,12 +15,11 @@ policyCmd
   .command("list")
   .description("List available policy packs")
   .action(async () => {
-    console.log("\n  Available Policy Packs:\n");
+    banner("Policy Packs", "Available compliance control packs");
     const packs = getAllPacks();
     for (const pack of packs) {
-      console.log(`  ${pack.id.padEnd(15)} ${pack.name}`);
-      const indent = "               ";
-      console.log(`  ${indent} ${pack.controls.length} controls | ${pack.project_types.join(", ")}`);
+      console.log(`  ${CYAN(BOLD(pack.id.padEnd(18)))} ${pack.name}`);
+      console.log(`      ${DIM(`${pack.controls.length} controls`)} ${GRAY("|")} ${DIM(pack.project_types.join(", "))}`);
       console.log("");
     }
 
@@ -35,7 +35,7 @@ policyCmd
     const pack = packs.find(p => p.id === packId);
 
     if (!pack) {
-      console.error(`  Error: Pack '${packId}' not found. Available: ${listPackIds().join(", ")}`);
+      error(`Pack '${packId}' not found.`, `Available: ${listPackIds().join(", ")}`);
       process.exit(1);
     }
 
@@ -53,11 +53,13 @@ policyCmd
       }
     }
 
-    console.log(`\n  ✓ Installed policy pack: ${pack.id} (${pack.controls.length} controls)`);
+    blank();
+    success("Installed policy pack", `${pack.id} (${pack.controls.length} controls)`);
     if (frameworksAdded.length > 0) {
-      console.log(`  ✓ Added ${frameworksAdded.join(", ")} to project frameworks in .ges/config.json`);
+      success("Updated project frameworks", frameworksAdded.join(", "));
     }
-    console.log("  ✓ Dashboard will now reflect this pack's controls\n");
+    success("Dashboard will reflect this pack's controls");
+    blank();
 
     recordActivity(root, {
       source: "cli",
@@ -78,7 +80,7 @@ policyCmd
     const packDir = path.join(root, "controls", packId);
 
     if (!fs.existsSync(packDir)) {
-      console.error(`  Error: Pack '${packId}' is not installed.`);
+      error(`Pack '${packId}' is not installed.`);
       process.exit(1);
     }
 
@@ -94,7 +96,9 @@ policyCmd
       removeFrameworkFromConfig(root, packId.toUpperCase());
     }
 
-    console.log(`\n  ✓ Removed policy pack: ${packId}\n`);
+    blank();
+    success("Removed policy pack", packId);
+    blank();
 
     recordActivity(root, {
       source: "cli",

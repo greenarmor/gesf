@@ -88,6 +88,7 @@ nav:
       - Policy Packs: user-guide/policy-packs.md
       - Git Hooks: user-guide/git-hooks.md
       - Web Dashboard: user-guide/web-dashboard.md
+      - Governance Provenance: user-guide/governance.md
       - Complete Audit Workflow: user-guide/complete-workflow.md
   - MCP Integration:
       - Overview: mcp/overview.md
@@ -109,6 +110,8 @@ nav:
       - Dependency Analysis: reference/dependency-analysis.md
       - GDPR Controls: reference/gdpr-controls.md
       - Engineering Standards: reference/engineering-standards.md
+  - Governance:
+      - Architecture: governance/architecture.md
   - Privacy Packs:
       - Overview: privacy-packs/index.md
       - Privacy Core (Global Baseline): privacy-packs/privacy-core.md

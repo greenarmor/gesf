@@ -122,6 +122,28 @@ ges mcp setup claude    # for Claude Desktop
 
 See the [MCP Integration guide](../mcp/overview.md) for full details.
 
+## Step 13 — Governance Provenance (Optional)
+
+For systems requiring formal approval documentation (auditors, regulators, internal governance):
+
+```bash
+# Install the governance pack
+ges policy install governance
+
+# Create a provenance record for each system
+ges governance add --name "Payment API" --type api --risk high
+
+# Enrich with risk assessment, approval, evidence, and review cycle
+ges governance risk-assessment <id> --assessor "Security Team" --methodology "NIST RMF" --score "7/10"
+ges governance approve <id> --approver "CISO" --role "CISO" --decision approved --valid-until "2027-01-01"
+ges governance evidence <id> --title "DPIA" --source jira --reference "DPIA-001"
+
+# Verify the complete chain
+ges governance verify <id>
+```
+
+This creates a linked approval record answering: *Who approved this? Under which authority? Is it still valid? What evidence supports the decision?* See the [Governance guide](governance.md) for the full workflow.
+
 ---
 
 ## Quick Reference Card
@@ -137,6 +159,7 @@ ges validate      → Validate configuration
 ges doctor        → Check GESF health
 ges compliance    → View compliance status
 ges policy list   → See available packs
+ges governance    → Manage approval provenance chains
 ges mcp setup     → Connect to AI assistant
 ```
 

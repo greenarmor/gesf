@@ -4,14 +4,14 @@ import type { ProjectConfig } from "@greenarmor/ges-core";
 import { CLI_VERSION } from "../utils/version.js";
 import { GES_DIR, loadGovernanceRecords, verifyGovernanceRecord } from "@greenarmor/ges-core";
 import { showNextStepsMenu } from "../utils/next-steps.js";
+import { banner, success, warn, error, blank, progressBar, BOLD, DIM, GREEN, RED, YELLOW, GRAY } from "../utils/ui.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 export const doctorCommand = new Command("doctor")
   .description("Diagnose GESF configuration and health")
   .action(async () => {
-    console.log("\n  GESF Doctor - Diagnostic Check");
-    console.log("  ─────────────────────────────\n");
+    banner("GESF Doctor", "Diagnostic health check");
 
     const checks: { name: string; status: string; detail?: string }[] = [];
 
@@ -92,13 +92,25 @@ export const doctorCommand = new Command("doctor")
 
     checks.push({ name: "GESF Version", status: "OK", detail: CLI_VERSION });
 
+    const okCount = checks.filter(c => c.status === "OK").length;
+    const warnCount = checks.filter(c => c.status === "WARN" || c.status === "MISSING").length;
+    const failCount = checks.filter(c => c.status === "FAIL").length;
+
+    console.log(`  ${BOLD("Health Score")}  ${progressBar(okCount, checks.length, 24)}`);
+    console.log(`  ${DIM("Checks")}        ${GREEN(`${okCount} ok`)}  ${YELLOW(`${warnCount} warn`)}  ${RED(`${failCount} fail`)}`);
+    blank();
+
     for (const check of checks) {
-      const icon = check.status === "OK" ? "✓" : check.status === "WARN" ? "!" : "✗";
-      const line = `  [${icon}] ${check.name}`;
-      console.log(line + (check.detail ? ` - ${check.detail}` : ""));
+      if (check.status === "OK") {
+        success(check.name, check.detail);
+      } else if (check.status === "WARN" || check.status === "MISSING") {
+        warn(check.name, check.detail);
+      } else {
+        error(check.name, check.detail);
+      }
     }
 
-    console.log("");
+    blank();
 
     await showNextStepsMenu("doctor");
   });

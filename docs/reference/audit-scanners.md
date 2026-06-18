@@ -1,6 +1,6 @@
 # Audit Scanners
 
-GESF includes 8 built-in source code scanners that run during `ges audit`. No external dependencies required. The scanners are **language-agnostic** — they use pattern matching across 20+ file types.
+GESF includes 9 built-in scanners that run during `ges audit`. No external dependencies required. The scanners are **language-agnostic** — they use pattern matching across 20+ file types.
 
 ## Scanner Overview
 
@@ -14,6 +14,7 @@ GESF includes 8 built-in source code scanners that run during `ges audit`. No ex
 | Database | `database` | Missing audit columns, missing soft delete |
 | IaC | `infrastructure` | Terraform/CloudFormation misconfigurations, open ports, public S3 |
 | Dependency | `dependency` | Vulnerabilities, deprecated packages, license issues |
+| Governance | `governance` | Missing provenance dimensions, expired approvals, verification failures (only when governance pack is installed) |
 
 ---
 
@@ -267,6 +268,31 @@ Analyzes project dependencies for vulnerabilities, deprecated packages, license 
 | Package behind latest version | `outdated` | Low |
 
 Supports: **Node.js** (`npm audit`), **Python** (`pip-audit`), **Rust** (`cargo audit`), **Go** (`govulncheck`).
+
+---
+
+## 9. Governance Scanner
+
+Validates governance provenance records when the `governance` policy pack is installed (`controls/governance/` directory exists). Checks each governance record against 10 GOVP controls.
+
+This scanner only activates when the governance pack is installed — it has no effect on projects without governance controls.
+
+| Rule ID | Severity | What It Checks |
+|---------|----------|----------------|
+| GOVP-001 | High | Pack installed but no governance records exist |
+| GOVP-002 | Medium | Record missing risk assessment |
+| GOVP-003 | Medium | Record missing policy basis |
+| GOVP-004 | High | Record missing approval decision |
+| GOVP-005 | High | Record has no evidence references |
+| GOVP-007 | Low | Record missing review cycle |
+| GOVP-008 | Critical | Record approval expired (or Medium if expiring ≤30 days) |
+| GOVP-009 | Low | Record missing data inventory |
+| GOVP-010 | Low | Record missing compliance framework links |
+| GOVP-011 | High | Record verification has blocking issues |
+
+**Zero findings** are produced when all governance records have complete provenance chains with valid, non-expired approvals.
+
+See the [Governance guide](../user-guide/governance.md) for details on creating and enriching records.
 
 ---
 

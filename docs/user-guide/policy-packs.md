@@ -1,6 +1,6 @@
 # Managing Policy Packs
 
-Policy packs are collections of compliance controls grouped by framework. GESF ships with 10 packs containing 88 controls. You can list, install, and remove them.
+Policy packs are collections of compliance controls grouped by framework. GESF ships with 27 packs including GDPR, OWASP, CIS, NIST, AI, blockchain, government, governance, ISO 27001, ISO 27701, HIPAA, privacy-core, and 15 country-specific privacy packs. You can list, install, and remove them.
 
 ## List Available Packs
 
@@ -86,6 +86,7 @@ This deletes the `controls/blockchain/` directory.
 | You need ISO 27001 certification | `ges policy install iso27001` |
 | Your SaaS processes significant PII and needs privacy controls | `ges policy install iso27701` |
 | You're building a healthcare system handling ePHI | `ges policy install hipaa` |
+| You need governance approval provenance for auditors | `ges policy install governance` |
 | You accidentally removed a pack | `ges policy install gdpr` |
 
 ## Pack Reference
@@ -117,6 +118,14 @@ This deletes the `controls/blockchain/` directory.
 ### Government Pack (`government`)
 
 **5 controls** for government systems. Covers data sovereignty, auditability, chain of custody, tamper evidence, and record integrity verification.
+
+### Governance Provenance Pack (`governance`)
+
+**12 controls** (GOVP-001 through GOVP-012) for approval provenance chains. Covers system registration, risk assessment, policy basis, approval recording, evidence references, committee approval, review cycles, approval expiry, data inventory, compliance mapping, verification, and dashboard auditability. Applies to **all project types** — not limited to AI or government systems. See the [Governance guide](governance.md) for full details.
+
+```bash
+ges policy install governance
+```
 
 ### ISO 27001 Pack (`iso27001`)
 

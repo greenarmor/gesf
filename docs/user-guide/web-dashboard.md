@@ -35,7 +35,7 @@ Open `http://localhost:3001` in your browser to view the dashboard.
 
 ## What the Dashboard Shows
 
-The dashboard has **five pages**, accessible via the navigation tabs at the top.
+The dashboard has **seven pages**, accessible via the navigation tabs at the top.
 
 ### Overview Page
 
@@ -54,7 +54,7 @@ The landing page with a high-level summary:
 
 ### Policy Packs Page
 
-Lists all 10 available policy packs with drill-down detail:
+Lists all 27 available policy packs with drill-down detail:
 
 - Each pack card shows score %, grade, pass/fail/warn/N-A counts, findings count, and installed status
 - Packs configured in `.ges/config.json` frameworks are marked **Installed**
@@ -90,6 +90,26 @@ End-to-end finding → fix → control → pack traceability:
 | **Matrix** | Full table: Finding, Severity, File, Linked Controls, Policy Pack, Fix Guidance |
 | **Prioritized Fixes** | Same detailed fix list as the Fixes page |
 | **Control Coverage** | Per-pack table: total controls, pass/fail/warn/not-implemented, coverage %, findings count |
+
+### Governance Page
+
+Approval provenance chain visualization (appears when the `governance` pack is installed):
+
+- **Summary cards** — Total records, approved, pending, blocked
+- **High-risk alerts** — Records with high/critical risk levels
+- **Provenance chain cards** — Expandable cards showing the full chain for each record with verification checklist (✓/✕ for each dimension)
+- **Report downloads** — Download compliance and governance reports in Markdown or HTML
+
+See the [Governance guide](governance.md) for creating and managing governance records.
+
+### API Endpoints — Governance
+
+| Endpoint | Method | Returns |
+|----------|--------|--------| |
+| `/api/governance` | GET | All governance records with summaries |
+| `/api/governance/:id` | GET | Full provenance chain for a record |
+| `/api/report/compliance?format=markdown\|html` | GET | Compliance report download |
+| `/api/report/governance` | GET | Governance provenance report download |
 
 The dashboard runs a fresh audit every time you load the page, so the data is always current. Scores are recomputed live from current control statuses and findings.
 

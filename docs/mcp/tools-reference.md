@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-Once configured, the GESF MCP server provides **17 tools** to your AI assistant. This page documents every tool with exact prompts you can copy and paste into your AI assistant.
+Once configured, the GESF MCP server provides **43 tools** to your AI assistant. This page documents every tool with exact prompts you can copy and paste into your AI assistant.
 
 ## Tool Overview
 
@@ -35,6 +35,25 @@ Once configured, the GESF MCP server provides **17 tools** to your AI assistant.
 | `generate_dpa` | Generate a Data Processing Agreement | `project_name` (string) |
 | `generate_data_inventory` | Generate a data inventory | `project_name` (string), `project_type` (string) |
 | `generate_processing_records` | Generate Article 30 ROPA | `project_name` (string), `controller_name` (string) |
+
+### Governance Provenance
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `create_governance_record` | Create a governance provenance record | `project_path` (string), `system_name` (string), `system_type` (string), `risk_level` (string) |
+| `approve_governance_record` | Record an approval decision | `project_path` (string), `record_id` (string), `approver_name` (string), `decision` (string) |
+| `add_governance_evidence` | Attach an evidence reference | `project_path` (string), `record_id` (string), `title` (string), `source_system` (string), `reference` (string) |
+| `list_governance_records` | List all governance records | `project_path` (string) |
+| `get_governance_record` | Get full provenance chain | `project_path` (string), `record_id` (string) |
+| `verify_governance_record` | Verify provenance completeness | `project_path` (string), `record_id` (string) |
+| `set_governance_risk_assessment` | Link a risk assessment | `project_path` (string), `record_id` (string), `assessor` (string), `methodology` (string), `risk_score` (string) |
+| `set_governance_policy_basis` | Document policy basis | `project_path` (string), `record_id` (string), `policy_name` (string), `standard` (string) |
+| `set_governance_review_cycle` | Set periodic review | `project_path` (string), `record_id` (string), `frequency` (string), `next_review` (string) |
+| `set_governance_data_inventory` | Document data inventory | `project_path` (string), `record_id` (string) |
+| `set_governance_committee` | Record committee approval | `project_path` (string), `record_id` (string) |
+| `set_governance_compliance_links` | Map compliance frameworks | `project_path` (string), `record_id` (string), `frameworks` (string) |
+
+See the [Governance guide](../user-guide/governance.md) for the full provenance chain workflow.
 
 ---
 

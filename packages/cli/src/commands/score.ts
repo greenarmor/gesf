@@ -4,6 +4,7 @@ import type { ScoreFile } from "@greenarmor/ges-core";
 import { recordActivity } from "@greenarmor/ges-core";
 import { formatScoreOutput } from "@greenarmor/ges-scoring-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
+import { warn, info, blank, DIM } from "../utils/ui.js";
 import * as path from "node:path";
 
 export const scoreCommand = new Command("score")
@@ -15,7 +16,10 @@ export const scoreCommand = new Command("score")
     const score = readJsonFile<ScoreFile>(scorePath);
 
     if (!score || !score.frameworks || Object.keys(score.frameworks).length === 0) {
-      console.log("\n  No compliance score available. Run 'ges audit' first.\n");
+      blank();
+      warn("No compliance score available.");
+      info("Run", "ges audit first.");
+      blank();
       await showNextStepsMenu("score");
       return;
     }
@@ -24,7 +28,7 @@ export const scoreCommand = new Command("score")
       console.log(JSON.stringify(score, null, 2));
     } else {
       console.log(formatScoreOutput(score));
-      console.log(`  Last evaluated: ${score.evaluated_at}\n`);
+      console.log(`  ${DIM("Last evaluated:")} ${score.evaluated_at}\n`);
     }
 
     recordActivity(root, {

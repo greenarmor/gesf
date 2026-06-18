@@ -1,6 +1,23 @@
 import { Command } from "commander";
 import { input, select, checkbox } from "../utils/prompts.js";
 import {
+  banner,
+  divider,
+  blank,
+  success,
+  error,
+  warn,
+  info,
+  step,
+  kv,
+  label,
+  BOLD,
+  CYAN,
+  DIM,
+  GREEN,
+  GRAY,
+} from "../utils/ui.js";
+import {
   PROJECT_TYPES,
   FRAMEWORKS,
   DEFAULT_FRAMEWORKS,
@@ -39,17 +56,19 @@ export const initCommand = new Command("init")
   .option("-c, --country <country>", "Country of origin (e.g., BR, CA, US-CA, GB, SG)")
   .option("--force", "Re-initialize even if GESF is already set up")
   .action(async (options) => {
-    console.log("\n  Green Engineering Standard Framework (GESF) v" + CLI_VERSION);
-    console.log("  ─────────────────────────────────────────────\n");
+    banner(
+      `Green Engineering Standard Framework`,
+      `v${CLI_VERSION}`,
+    );
 
     const gesDir = path.join(process.cwd(), GES_DIR);
     if (fs.existsSync(gesDir)) {
       if (!options.force) {
-        console.error("  Error: GESF is already initialized in this project.");
-        console.error("  Use 'ges init --force' to re-initialize.\n");
+        error("GESF is already initialized in this project.");
+        info("Use", "ges init --force to re-initialize.\n");
         process.exit(1);
       }
-      console.log("  ⚠ Re-initializing GESF (existing files will be overwritten)...\n");
+      warn("Re-initializing GESF", "existing files will be overwritten\n");
       fs.rmSync(gesDir, { recursive: true, force: true });
     }
 
@@ -74,7 +93,7 @@ export const initCommand = new Command("init")
         }) as FrameworkName[];
 
     if (selectedFrameworks.length === 0) {
-      console.error("  Error: At least one framework must be selected.");
+      error("At least one framework must be selected.");
       process.exit(1);
     }
 
@@ -110,8 +129,8 @@ export const initCommand = new Command("init")
     const countryInfo = getCountryByCode(countryCode);
 
     if (options.country && !countryInfo && countryCode !== "EU") {
-      console.warn(`  ⚠ Country code '${options.country}' not recognized. No privacy pack will be auto-installed.`);
-      console.warn(`    Available codes: ${PRIVACY_COUNTRIES.map(c => c.code).join(", ")}, EU`);
+      warn(`Country code '${options.country}' not recognized.`, "No privacy pack will be auto-installed.");
+      info("Available codes:", `${PRIVACY_COUNTRIES.map(c => c.code).join(", ")}, EU`);
     }
 
     // --- Optional: Additional privacy packs ---
@@ -246,30 +265,38 @@ export const initCommand = new Command("init")
       writeFileSync(path.join(process.cwd(), wf.filePath), wf.content);
     }
 
-    console.log("  ✓ Project structure created");
-    console.log("  ✓ Configuration files generated");
-    console.log("  ✓ Compliance documents created");
-    console.log("  ✓ Security documents created");
+    blank();
+    step(1, 4, "Creating project structure");
+    success("Project structure created");
+    success("Configuration files generated");
+    success("Compliance documents created");
+    success("Security documents created");
     if (countryInfo) {
-      console.log(`  ✓ Country privacy pack auto-installed: ${countryInfo.packId} (${countryInfo.name})`);
+      success("Country privacy pack auto-installed", `${countryInfo.packId} (${countryInfo.name})`);
     } else if (countryCode === "EU") {
-      console.log("  ✓ EU GDPR privacy pack auto-installed");
+      success("EU GDPR privacy pack auto-installed");
     }
     if (additionalPacks.length > 0) {
-      console.log(`  ✓ Additional privacy packs installed: ${additionalPacks.join(", ")}`);
+      success("Additional privacy packs installed", additionalPacks.join(", "));
     }
-    console.log("  ✓ Control packs installed:", packs.map(p => p.id).join(", "));
-    console.log("  ✓ GitHub Actions workflows generated");
-    console.log("  ✓ Developer logs directory created (.dev-logs/)");
-    console.log(`\n  GESF initialized for "${projectName}" (${projectType})`);
+    success("Control packs installed", packs.map(p => p.id).join(", "));
+    success("GitHub Actions workflows generated");
+    success("Developer logs directory created", ".dev-logs/");
+    blank();
+    step(2, 4, "Project summary");
+    blank();
+    console.log(`  ${CYAN(BOLD("GESF initialized"))} for "${projectName}" (${projectType})`);
     if (countryInfo) {
-      console.log(`  Country: ${countryInfo.name} — ${countryInfo.lawName}`);
+      kv("Country", `${countryInfo.name} — ${countryInfo.lawName}`);
     }
-    console.log("  Next steps:");
-    console.log("    1. Review generated compliance documents");
-    console.log("    2. Run 'ges audit' to evaluate your project");
-    console.log("    3. Run 'ges score' to see your compliance score");
-    console.log("    4. Add more packs with 'ges policy install <pack-id>'\n");
+    divider(40);
+    blank();
+    step(3, 4, "Next steps");
+    label("Quick start:");
+    console.log(`    ${GRAY("1.")} Review generated compliance documents`);
+    console.log(`    ${GRAY("2.")} Run ${GREEN("ges audit")} to evaluate your project`);
+    console.log(`    ${GRAY("3.")} Run ${GREEN("ges score")} to see your compliance score`);
+    console.log(`    ${GRAY("4.")} Add more packs with ${GREEN("ges policy install <pack-id>")}`);
 
     recordActivity(process.cwd(), {
       source: "cli",
