@@ -17,7 +17,28 @@ import {
   DEFAULT_FRAMEWORKS,
   PROJECT_TYPE_PACKS,
 } from "./constants/index.js";
-import { loadFixHistory, appendFixHistory, clearFixHistory, createFixHistoryEntry } from "./fix-history/index.js";
+import {
+  loadFixHistory,
+  appendFixHistory,
+  clearFixHistory,
+  createFixHistoryEntry,
+} from "./fix-history/index.js";
+import {
+  loadFixAssignments,
+  saveFixAssignments,
+  createFixAssignment,
+  addFixAssignment,
+  updateFixAssignment,
+  updateFixAssignmentStatus,
+  findFixAssignment,
+  findFixAssignmentById,
+  findFixAssignmentsForRecord,
+  resolveFixAssignment,
+  deleteFixAssignment,
+  unassignFix,
+  findingKey,
+  generateAssignmentId,
+} from "./fix-assignments/index.js";
 import {
   loadControlsFromDisk,
   getInstalledPackIds,
@@ -647,5 +668,360 @@ describe("AI recommendations", () => {
   it("loadAIRecommendations returns empty when dir does not exist", () => {
     const loaded = loadAIRecommendations(tmpDir);
     expect(loaded).toEqual([]);
+  });
+});
+
+describe("fix-assignments", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gesf-fixassign-test-"));
+    fs.mkdirSync(path.join(tmpDir, ".ges"), { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function makeAssignmentInput(overrides: Record<string, unknown> = {}) {
+    return {
+      finding_key: "SECRETS-001:src/auth.ts:42",
+      finding_rule_id: "SECRETS-001",
+      finding_title: "Hardcoded API key",
+      finding_file: "src/auth.ts",
+      finding_line: 42,
+      finding_severity: "critical" as const,
+      finding_control_ids: ["GDPR-ART32-002", "OWASP-AUTH-001"],
+      governance_record_id: "gov-test-001",
+      governance_system_name: "Customer Support Chatbot",
+      assignee: "Bob Smith",
+      assignee_role: "Security Engineer",
+      assigned_by: "Jane Doe",
+      ...overrides,
+    };
+  }
+
+  describe("findingKey", () => {
+    it("generates stable key from rule, file, and line", () => {
+      const key = findingKey({ ruleId: "SECRETS-001", file: "src/auth.ts", line: 42 });
+      expect(key).toBe("SECRETS-001:src/auth.ts:42");
+    });
+
+    it("uses 0 for missing line", () => {
+      const key = findingKey({ ruleId: "R1", file: "f.ts" });
+      expect(key).toBe("R1:f.ts:0");
+    });
+
+    it("same inputs produce same key", () => {
+      const k1 = findingKey({ ruleId: "R1", file: "a.ts", line: 5 });
+      const k2 = findingKey({ ruleId: "R1", file: "a.ts", line: 5 });
+      expect(k1).toBe(k2);
+    });
+  });
+
+  describe("generateAssignmentId", () => {
+    it("produces unique IDs with fa- prefix", () => {
+      const id1 = generateAssignmentId();
+      const id2 = generateAssignmentId();
+      expect(id1).toMatch(/^fa-\d+-\d+$/);
+      expect(id1).not.toBe(id2);
+    });
+  });
+
+  describe("loadFixAssignments", () => {
+    it("returns empty array when no file exists", () => {
+      expect(loadFixAssignments(tmpDir)).toEqual([]);
+    });
+
+    it("returns empty array for malformed JSON", () => {
+      fs.writeFileSync(
+        path.join(tmpDir, ".ges", "fix-assignments.json"),
+        "not json",
+      );
+      expect(loadFixAssignments(tmpDir)).toEqual([]);
+    });
+
+    it("returns empty array when file contains non-array", () => {
+      fs.writeFileSync(
+        path.join(tmpDir, ".ges", "fix-assignments.json"),
+        JSON.stringify({ not: "array" }),
+      );
+      expect(loadFixAssignments(tmpDir)).toEqual([]);
+    });
+  });
+
+  describe("saveFixAssignments", () => {
+    it("creates .ges dir if missing then writes", () => {
+      fs.rmSync(path.join(tmpDir, ".ges"), { recursive: true, force: true });
+      const assignment = createFixAssignment(makeAssignmentInput());
+      saveFixAssignments(tmpDir, [assignment]);
+      expect(fs.existsSync(path.join(tmpDir, ".ges", "fix-assignments.json"))).toBe(true);
+    });
+  });
+
+  describe("createFixAssignment", () => {
+    it("creates a properly structured assignment", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      expect(a.id).toMatch(/^fa-/);
+      expect(a.finding_key).toBe("SECRETS-001:src/auth.ts:42");
+      expect(a.finding_rule_id).toBe("SECRETS-001");
+      expect(a.finding_title).toBe("Hardcoded API key");
+      expect(a.finding_file).toBe("src/auth.ts");
+      expect(a.finding_line).toBe(42);
+      expect(a.finding_severity).toBe("critical");
+      expect(a.finding_control_ids).toEqual(["GDPR-ART32-002", "OWASP-AUTH-001"]);
+      expect(a.governance_record_id).toBe("gov-test-001");
+      expect(a.governance_system_name).toBe("Customer Support Chatbot");
+      expect(a.assignee).toBe("Bob Smith");
+      expect(a.assignee_role).toBe("Security Engineer");
+      expect(a.assigned_by).toBe("Jane Doe");
+      expect(a.assigned_at).toBeTruthy();
+      expect(a.status).toBe("assigned");
+      expect(a.notes).toBe("");
+      expect(a.resolution).toBeNull();
+      expect(a.created_at).toBeTruthy();
+      expect(a.updated_at).toBeTruthy();
+    });
+
+    it("accepts optional notes", () => {
+      const a = createFixAssignment(makeAssignmentInput({ notes: "Urgent fix" }));
+      expect(a.notes).toBe("Urgent fix");
+    });
+
+    it("defaults notes to empty string", () => {
+      const input = makeAssignmentInput();
+      delete (input as any).notes;
+      const a = createFixAssignment(input);
+      expect(a.notes).toBe("");
+    });
+  });
+
+  describe("addFixAssignment + load round-trip", () => {
+    it("persists and reloads an assignment", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      const loaded = loadFixAssignments(tmpDir);
+      expect(loaded.length).toBe(1);
+      expect(loaded[0].id).toBe(a.id);
+      expect(loaded[0].finding_key).toBe("SECRETS-001:src/auth.ts:42");
+      expect(loaded[0].assignee).toBe("Bob Smith");
+      expect(loaded[0].status).toBe("assigned");
+    });
+
+    it("upserts: assigning same finding_key replaces existing", () => {
+      const a1 = createFixAssignment(makeAssignmentInput({ assignee: "Alice" }));
+      addFixAssignment(tmpDir, a1);
+      const a2 = createFixAssignment(makeAssignmentInput({ assignee: "Charlie" }));
+      addFixAssignment(tmpDir, a2);
+      const loaded = loadFixAssignments(tmpDir);
+      expect(loaded.length).toBe(1);
+      expect(loaded[0].assignee).toBe("Charlie");
+    });
+
+    it("preserves multiple distinct assignments", () => {
+      const a1 = createFixAssignment(makeAssignmentInput());
+      const a2 = createFixAssignment(
+        makeAssignmentInput({
+          finding_key: "R2:src/b.ts:10",
+          finding_rule_id: "R2",
+          finding_file: "src/b.ts",
+          finding_line: 10,
+          assignee: "Different Person",
+        }),
+      );
+      addFixAssignment(tmpDir, a1);
+      addFixAssignment(tmpDir, a2);
+      const loaded = loadFixAssignments(tmpDir);
+      expect(loaded.length).toBe(2);
+    });
+  });
+
+  describe("updateFixAssignment", () => {
+    it("updates fields by ID", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      const updated = updateFixAssignment(tmpDir, a.id, { status: "in-progress", notes: "Working on it" });
+      expect(updated).not.toBeNull();
+      expect(updated!.status).toBe("in-progress");
+      expect(updated!.notes).toBe("Working on it");
+      expect(updated!.updated_at).toBeTruthy();
+    });
+
+    it("returns null for non-existent ID", () => {
+      expect(updateFixAssignment(tmpDir, "nonexistent", { notes: "x" })).toBeNull();
+    });
+  });
+
+  describe("updateFixAssignmentStatus", () => {
+    it("changes status by finding key", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      const updated = updateFixAssignmentStatus(tmpDir, a.finding_key, "verified");
+      expect(updated).not.toBeNull();
+      expect(updated!.status).toBe("verified");
+    });
+
+    it("returns null for non-existent finding key", () => {
+      expect(updateFixAssignmentStatus(tmpDir, "missing", "fixed")).toBeNull();
+    });
+  });
+
+  describe("findFixAssignment", () => {
+    it("finds assignment by finding key", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      const found = findFixAssignment(tmpDir, "SECRETS-001:src/auth.ts:42");
+      expect(found).not.toBeNull();
+      expect(found!.id).toBe(a.id);
+    });
+
+    it("returns null for unknown finding key", () => {
+      expect(findFixAssignment(tmpDir, "unknown")).toBeNull();
+    });
+  });
+
+  describe("findFixAssignmentById", () => {
+    it("finds assignment by ID", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      const found = findFixAssignmentById(tmpDir, a.id);
+      expect(found).not.toBeNull();
+      expect(found!.finding_key).toBe(a.finding_key);
+    });
+
+    it("returns null for unknown ID", () => {
+      expect(findFixAssignmentById(tmpDir, "fake-id")).toBeNull();
+    });
+  });
+
+  describe("findFixAssignmentsForRecord", () => {
+    it("returns all assignments for a governance record", () => {
+      const a1 = createFixAssignment(makeAssignmentInput());
+      const a2 = createFixAssignment(
+        makeAssignmentInput({
+          finding_key: "R2:src/b.ts:1",
+          finding_rule_id: "R2",
+          finding_file: "src/b.ts",
+        }),
+      );
+      const a3 = createFixAssignment(
+        makeAssignmentInput({
+          finding_key: "R3:src/c.ts:5",
+          finding_rule_id: "R3",
+          finding_file: "src/c.ts",
+          governance_record_id: "gov-other",
+        }),
+      );
+      addFixAssignment(tmpDir, a1);
+      addFixAssignment(tmpDir, a2);
+      addFixAssignment(tmpDir, a3);
+      const forRecord = findFixAssignmentsForRecord(tmpDir, "gov-test-001");
+      expect(forRecord.length).toBe(2);
+      expect(forRecord.every(a => a.governance_record_id === "gov-test-001")).toBe(true);
+    });
+
+    it("returns empty for record with no assignments", () => {
+      expect(findFixAssignmentsForRecord(tmpDir, "none")).toEqual([]);
+    });
+  });
+
+  describe("resolveFixAssignment", () => {
+    it("marks assignment as fixed with resolution details", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      const resolved = resolveFixAssignment(tmpDir, a.finding_key, {
+        resolved_by: "Bob Smith",
+        resolved_by_role: "Security Engineer",
+        method: "auto-fix",
+        resolution_notes: "Replaced hardcoded key with env var",
+      });
+      expect(resolved).not.toBeNull();
+      expect(resolved!.status).toBe("fixed");
+      expect(resolved!.resolution).not.toBeNull();
+      expect(resolved!.resolution!.resolved_by).toBe("Bob Smith");
+      expect(resolved!.resolution!.resolved_by_role).toBe("Security Engineer");
+      expect(resolved!.resolution!.method).toBe("auto-fix");
+      expect(resolved!.resolution!.resolution_notes).toBe("Replaced hardcoded key with env var");
+      expect(resolved!.resolution!.resolved_at).toBeTruthy();
+      expect(resolved!.updated_at).toBeTruthy();
+    });
+
+    it("supports manual resolution method", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      const resolved = resolveFixAssignment(tmpDir, a.finding_key, {
+        resolved_by: "Manual User",
+        resolved_by_role: "Dev",
+        method: "manual",
+        resolution_notes: "Fixed by hand",
+      });
+      expect(resolved!.resolution!.method).toBe("manual");
+    });
+
+    it("supports not-applicable resolution method", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      const resolved = resolveFixAssignment(tmpDir, a.finding_key, {
+        resolved_by: "Jane",
+        resolved_by_role: "CISO",
+        method: "not-applicable",
+        resolution_notes: "False positive",
+      });
+      expect(resolved!.resolution!.method).toBe("not-applicable");
+    });
+
+    it("returns null for unknown finding key", () => {
+      expect(
+        resolveFixAssignment(tmpDir, "missing", {
+          resolved_by: "X",
+          resolved_by_role: "",
+          method: "manual",
+          resolution_notes: "",
+        }),
+      ).toBeNull();
+    });
+  });
+
+  describe("deleteFixAssignment", () => {
+    it("removes assignment by ID", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      expect(deleteFixAssignment(tmpDir, a.id)).toBe(true);
+      expect(loadFixAssignments(tmpDir).length).toBe(0);
+    });
+
+    it("returns false for unknown ID", () => {
+      expect(deleteFixAssignment(tmpDir, "fake")).toBe(false);
+    });
+  });
+
+  describe("unassignFix", () => {
+    it("removes assignment by finding key", () => {
+      const a = createFixAssignment(makeAssignmentInput());
+      addFixAssignment(tmpDir, a);
+      expect(unassignFix(tmpDir, a.finding_key)).toBe(true);
+      expect(loadFixAssignments(tmpDir).length).toBe(0);
+    });
+
+    it("returns false for unknown finding key", () => {
+      expect(unassignFix(tmpDir, "missing")).toBe(false);
+    });
+
+    it("does not affect other assignments", () => {
+      const a1 = createFixAssignment(makeAssignmentInput());
+      const a2 = createFixAssignment(
+        makeAssignmentInput({
+          finding_key: "R2:src/b.ts:1",
+          finding_rule_id: "R2",
+          finding_file: "src/b.ts",
+        }),
+      );
+      addFixAssignment(tmpDir, a1);
+      addFixAssignment(tmpDir, a2);
+      unassignFix(tmpDir, a1.finding_key);
+      const loaded = loadFixAssignments(tmpDir);
+      expect(loaded.length).toBe(1);
+      expect(loaded[0].id).toBe(a2.id);
+    });
   });
 });

@@ -45,10 +45,10 @@ describe("MCP Protocol", () => {
     expect(res).toBeNull();
   });
 
-  it("responds to tools/list with 43 tools", () => {
+  it("responds to tools/list with 46 tools", () => {
     const res = handleRequest(req("tools/list"));
     const tools = (res as { result: { tools: { name: string }[] } }).result.tools;
-    expect(tools.length).toBe(43);
+    expect(tools.length).toBe(46);
   });
 
   it("returns error for unknown method", () => {
@@ -229,7 +229,7 @@ describe("new tools", () => {
   it("update_check returns version info", () => {
     const res = handleRequest(callTool("update_check"));
     const text = getResultText(res);
-    expect(text).toContain("1.4.3");
+    expect(text).toContain("1.5.0");
     expect(text).toContain("npm update");
   });
 

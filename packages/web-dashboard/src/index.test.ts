@@ -895,5 +895,183 @@ describe("web-dashboard", () => {
       expect(parsed.record.review_cycle.frequency).toBe("annual");
       await close(server);
     });
+
+    it("GET /api/fix-assignments returns empty array when none exist", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const { body, status } = await get(port, "/api/fix-assignments");
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed.length).toBe(0);
+      await close(server);
+    });
+
+    it("POST /api/fix-assignments/assign creates an assignment", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Assign Target" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      const { status, body } = await post(port, "/api/fix-assignments/assign", {
+        finding_key: "SECRETS-001:src/auth.ts:42",
+        finding_rule_id: "SECRETS-001",
+        finding_title: "Hardcoded key",
+        finding_file: "src/auth.ts",
+        finding_line: 42,
+        finding_severity: "critical",
+        finding_control_ids: "GDPR-ART32-002,OWASP-AUTH-001",
+        governance_record_id: recordId,
+        assignee: "Bob Smith",
+        assignee_role: "Security Engineer",
+        assigned_by: "Jane Doe",
+        notes: "Urgent",
+      });
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(parsed.success).toBe(true);
+      expect(parsed.assignment.id).toMatch(/^fa-/);
+      expect(parsed.assignment.finding_key).toBe("SECRETS-001:src/auth.ts:42");
+      expect(parsed.assignment.assignee).toBe("Bob Smith");
+      expect(parsed.assignment.governance_record_id).toBe(recordId);
+      expect(parsed.assignment.governance_system_name).toBe("Assign Target");
+      expect(parsed.assignment.status).toBe("assigned");
+      expect(parsed.assignment.finding_control_ids).toEqual(["GDPR-ART32-002", "OWASP-AUTH-001"]);
+      await close(server);
+    });
+
+    it("POST /api/fix-assignments/assign rejects missing required fields", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const { status, body } = await post(port, "/api/fix-assignments/assign", {
+        finding_key: "R1:f.ts:1",
+      });
+      expect(status).toBe(400);
+      expect(JSON.parse(body).error).toContain("governance_record_id");
+      await close(server);
+    });
+
+    it("POST /api/fix-assignments/assign rejects invalid governance record", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const { status, body } = await post(port, "/api/fix-assignments/assign", {
+        finding_key: "R1:f.ts:1",
+        governance_record_id: "gov-nonexistent",
+        assignee: "Someone",
+      });
+      expect(status).toBe(404);
+      expect(JSON.parse(body).error).toContain("not found");
+      await close(server);
+    });
+
+    it("GET /api/fix-assignments returns created assignment", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Get Assign Test" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      await post(port, "/api/fix-assignments/assign", {
+        finding_key: "R1:src/x.ts:5",
+        finding_rule_id: "R1",
+        governance_record_id: recordId,
+        assignee: "Dev",
+      });
+      const { body, status } = await get(port, "/api/fix-assignments");
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(parsed.length).toBe(1);
+      expect(parsed[0].assignee).toBe("Dev");
+      await close(server);
+    });
+
+    it("POST /api/fix-assignments/resolve marks assignment as fixed", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Resolve Test" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      await post(port, "/api/fix-assignments/assign", {
+        finding_key: "R1:src/y.ts:10",
+        finding_rule_id: "R1",
+        governance_record_id: recordId,
+        assignee: "Fixer",
+      });
+      const { status, body } = await post(port, "/api/fix-assignments/resolve", {
+        finding_key: "R1:src/y.ts:10",
+        resolved_by: "Fixer",
+        resolved_by_role: "Engineer",
+        method: "manual",
+        resolution_notes: "Fixed manually",
+      });
+      expect(status).toBe(200);
+      const parsed = JSON.parse(body);
+      expect(parsed.success).toBe(true);
+      expect(parsed.assignment.status).toBe("fixed");
+      expect(parsed.assignment.resolution).not.toBeNull();
+      expect(parsed.assignment.resolution.method).toBe("manual");
+      expect(parsed.assignment.resolution.resolved_by).toBe("Fixer");
+      expect(parsed.assignment.resolution.resolution_notes).toBe("Fixed manually");
+      await close(server);
+    });
+
+    it("POST /api/fix-assignments/resolve rejects unknown finding key", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const { status } = await post(port, "/api/fix-assignments/resolve", {
+        finding_key: "nonexistent",
+        resolved_by: "X",
+      });
+      expect(status).toBe(404);
+      await close(server);
+    });
+
+    it("POST /api/fix-assignments/:key/unassign removes assignment", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Unassign Test" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      await post(port, "/api/fix-assignments/assign", {
+        finding_key: "R1:src/z.ts:1",
+        finding_rule_id: "R1",
+        governance_record_id: recordId,
+        assignee: "Temp",
+      });
+      const fkey = encodeURIComponent("R1:src/z.ts:1");
+      const { status, body } = await post(port, `/api/fix-assignments/${fkey}/unassign`, {});
+      expect(status).toBe(200);
+      expect(JSON.parse(body).success).toBe(true);
+      const getRes = await get(port, "/api/fix-assignments");
+      expect(JSON.parse(getRes.body).length).toBe(0);
+      await close(server);
+    });
+
+    it("POST /api/fix-assignments/:key/unassign returns 404 for unknown", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const { status } = await post(port, "/api/fix-assignments/nonexistent/unassign", {});
+      expect(status).toBe(404);
+      await close(server);
+    });
+
+    it("upsert: assigning same finding_key replaces assignment", async () => {
+      setupProject();
+      const { server, port } = await startServer(tmpDir);
+      const createRes = await post(port, "/api/governance/create", { system_name: "Upsert Test" });
+      const recordId = JSON.parse(createRes.body).record.id;
+      await post(port, "/api/fix-assignments/assign", {
+        finding_key: "R1:src/u.ts:1",
+        finding_rule_id: "R1",
+        governance_record_id: recordId,
+        assignee: "First",
+      });
+      await post(port, "/api/fix-assignments/assign", {
+        finding_key: "R1:src/u.ts:1",
+        finding_rule_id: "R1",
+        governance_record_id: recordId,
+        assignee: "Second",
+      });
+      const { body } = await get(port, "/api/fix-assignments");
+      const parsed = JSON.parse(body);
+      expect(parsed.length).toBe(1);
+      expect(parsed[0].assignee).toBe("Second");
+      await close(server);
+    });
   });
 });

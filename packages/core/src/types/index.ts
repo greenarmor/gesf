@@ -236,6 +236,36 @@ export interface FixHistoryEntry {
   };
 }
 
+export type FixAssignmentStatus = "assigned" | "in-progress" | "fixed" | "verified" | "rejected";
+
+export interface FixAssignment {
+  id: string;
+  finding_key: string;
+  finding_rule_id: string;
+  finding_title: string;
+  finding_file: string;
+  finding_line?: number;
+  finding_severity: SeverityLevel;
+  finding_control_ids: string[];
+  governance_record_id: string;
+  governance_system_name: string;
+  assignee: string;
+  assignee_role: string;
+  assigned_at: string;
+  assigned_by: string;
+  status: FixAssignmentStatus;
+  notes: string;
+  resolution: null | {
+    resolved_at: string;
+    resolved_by: string;
+    resolved_by_role: string;
+    method: "auto-fix" | "manual" | "not-applicable";
+    resolution_notes: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
 export type ActivityAction =
   | "init"
   | "audit"
@@ -251,7 +281,9 @@ export type ActivityAction =
   | "hooks_install"
   | "hooks_uninstall"
   | "dashboard_start"
-  | "badge_generate";
+  | "badge_generate"
+  | "fix_assign"
+  | "fix_resolve";
 
 export type ActivityStatus = "success" | "partial" | "failed" | "info";
 

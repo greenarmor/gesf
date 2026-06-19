@@ -4,7 +4,7 @@ import * as path from "node:path";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import { getAllPacks, getPacksForProjectType, getPack } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile } from "@greenarmor/ges-scoring-engine";
-import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry, ActivityLogEntry, GovernanceRecord, GovernanceVerificationResult, GovernanceSystemType, GovernanceRiskLevel } from "@greenarmor/ges-core";
+import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry, ActivityLogEntry, GovernanceRecord, GovernanceVerificationResult, GovernanceSystemType, GovernanceRiskLevel, FixAssignment } from "@greenarmor/ges-core";
 import { loadFixHistory, loadActivityLog, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls } from "@greenarmor/ges-core";
 import {
   loadGovernanceRecords,
@@ -24,6 +24,17 @@ import {
   setGovernanceComplianceLinks,
   setGovernanceCommittee,
   recordActivity,
+} from "@greenarmor/ges-core";
+import {
+  loadFixAssignments,
+  saveFixAssignments,
+  createFixAssignment,
+  addFixAssignment,
+  updateFixAssignmentStatus,
+  resolveFixAssignment,
+  deleteFixAssignment,
+  unassignFix,
+  findingKey,
 } from "@greenarmor/ges-core";
 import { getInstalledPackIds as getInstalledPackIdsFromDisk } from "@greenarmor/ges-core";
 import { generateMarkdownReport, generateHtmlReport } from "@greenarmor/ges-report-generator";
@@ -90,6 +101,7 @@ export interface DashboardData {
   fixHistory: FixHistoryEntry[];
   activityLog: ActivityLogEntry[];
   governance: GovernanceData;
+  fixAssignments: FixAssignment[];
   lastAudit: string;
 }
 
@@ -294,6 +306,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
   const fixHistory = loadFixHistory(projectPath);
   const activityLog = loadActivityLog(projectPath);
   const governance = collectGovernanceData(projectPath);
+  const fixAssignments = loadFixAssignments(projectPath);
 
   const metadataPath = path.join(projectPath, ".ges", "metadata.json");
   let lastAudit = "";
@@ -310,7 +323,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
     projectName: config?.project_name || "Unknown Project",
     projectType: config?.project_type || "unknown",
     frameworks: allFrameworks,
-    gesfVersion: "1.4.3",
+    gesfVersion: "1.5.0",
     score,
     controls,
     findings,
@@ -318,6 +331,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
     fixHistory,
     activityLog,
     governance,
+    fixAssignments,
     lastAudit,
   };
 }
@@ -667,6 +681,121 @@ export function startDashboard(options: DashboardOptions): http.Server {
       return;
     }
 
+    if (req.method === "POST" && pathname === "/api/fix-assignments/assign") {
+      try {
+        const body = await readBody(req);
+        const fk = String(body.finding_key || "").trim();
+        const recordId = String(body.governance_record_id || "").trim();
+        const assignee = String(body.assignee || "").trim();
+        if (!fk || !recordId || !assignee) {
+          jsonError(res, "finding_key, governance_record_id, and assignee are required", 400);
+          return;
+        }
+        const record = findGovernanceRecord(options.projectPath, recordId);
+        if (!record) {
+          jsonError(res, `Governance record not found: ${recordId}`, 404);
+          return;
+        }
+        const assignment = createFixAssignment({
+          finding_key: fk,
+          finding_rule_id: String(body.finding_rule_id || ""),
+          finding_title: String(body.finding_title || ""),
+          finding_file: String(body.finding_file || ""),
+          finding_line: body.finding_line ? Number(body.finding_line) : undefined,
+          finding_severity: (body.finding_severity as any) || "medium",
+          finding_control_ids: parseList(body.finding_control_ids),
+          governance_record_id: record.id,
+          governance_system_name: record.system_name,
+          assignee,
+          assignee_role: String(body.assignee_role || ""),
+          assigned_by: String(body.assigned_by || body.actor_name || "dashboard"),
+          notes: String(body.notes || ""),
+        });
+        addFixAssignment(options.projectPath, assignment);
+        recordActivity(options.projectPath, {
+          source: "cli",
+          action: "fix_assign",
+          title: `Fix assigned: ${assignment.finding_rule_id} → ${record.system_name}`,
+          description: `Assigned ${assignment.finding_rule_id} (${assignment.finding_title}) to ${assignee} (${assignment.assignee_role || "unspecified role"}), linked to governance record ${record.system_name}.`,
+          details: {
+            finding_key: fk,
+            governance_record_id: record.id,
+            assignee,
+            governance_system_name: record.system_name,
+          },
+          actor_name: body.actor_name ? String(body.actor_name) : undefined,
+          actor_role: body.actor_role ? String(body.actor_role) : undefined,
+        });
+        jsonResponse(res, { success: true, assignment });
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (req.method === "POST" && pathname === "/api/fix-assignments/resolve") {
+      try {
+        const body = await readBody(req);
+        const fk = String(body.finding_key || "").trim();
+        if (!fk) {
+          jsonError(res, "finding_key is required", 400);
+          return;
+        }
+        const resolved = resolveFixAssignment(options.projectPath, fk, {
+          resolved_by: String(body.resolved_by || body.actor_name || "dashboard"),
+          resolved_by_role: String(body.resolved_by_role || body.actor_role || ""),
+          method: (body.method as "auto-fix" | "manual" | "not-applicable") || "manual",
+          resolution_notes: String(body.resolution_notes || ""),
+        });
+        if (!resolved) {
+          jsonError(res, `Fix assignment not found for finding_key: ${fk}`, 404);
+          return;
+        }
+        recordActivity(options.projectPath, {
+          source: "cli",
+          action: "fix_resolve",
+          title: `Fix resolved: ${resolved.finding_rule_id}`,
+          description: `Resolved ${resolved.finding_rule_id} via ${body.method || "manual"} by ${body.resolved_by || body.actor_name || "dashboard"}.`,
+          details: {
+            finding_key: fk,
+            governance_record_id: resolved.governance_record_id,
+            method: body.method || "manual",
+          },
+          actor_name: body.actor_name ? String(body.actor_name) : undefined,
+          actor_role: body.actor_role ? String(body.actor_role) : undefined,
+        });
+        jsonResponse(res, { success: true, assignment: resolved });
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    const fixAssignDeleteMatch = req.method === "POST" ? pathname.match(/^\/api\/fix-assignments\/([^/]+)\/unassign$/) : null;
+    if (fixAssignDeleteMatch) {
+      try {
+        const fkey = decodeURIComponent(fixAssignDeleteMatch[1]);
+        const deleted = unassignFix(options.projectPath, fkey);
+        if (!deleted) {
+          jsonError(res, `Fix assignment not found for finding: ${fkey}`, 404);
+          return;
+        }
+        recordActivity(options.projectPath, {
+          source: "cli",
+          action: "fix_assign",
+          title: `Fix assignment removed`,
+          description: `Removed fix assignment for finding ${fkey}.`,
+          details: { finding_key: fkey },
+          actor_name: undefined,
+          actor_role: undefined,
+        });
+        jsonResponse(res, { success: true });
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
     if (req.method !== "GET") {
       jsonError(res, "Method not allowed", 405);
       return;
@@ -709,6 +838,16 @@ export function startDashboard(options: DashboardOptions): http.Server {
       try {
         const data = collectDashboardData(options.projectPath);
         jsonResponse(res, data.fixHistory);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (pathname === "/api/fix-assignments") {
+      try {
+        const data = collectDashboardData(options.projectPath);
+        jsonResponse(res, data.fixAssignments);
       } catch (err) {
         jsonError(res, err instanceof Error ? err.message : String(err));
       }

@@ -32,6 +32,13 @@ import {
   setGovernanceComplianceLinks,
   setGovernanceCommittee,
 } from "@greenarmor/ges-core";
+import {
+  loadFixAssignments,
+  createFixAssignment,
+  addFixAssignment,
+  resolveFixAssignment,
+  findFixAssignmentsForRecord,
+} from "@greenarmor/ges-core";
 import type { GovernanceRecord, GovernanceSystemType, GovernanceRiskLevel, EvidenceType, EvidenceSourceSystem } from "@greenarmor/ges-core";
 import { ProjectConfigSchema } from "@greenarmor/ges-core";
 import { generateComplianceDocs, generateSecurityDocs, generateConfigJson, generateMetadataJson, generateFrameworkVersionJson, generateScoreJson } from "@greenarmor/ges-doc-generator";
@@ -731,6 +738,60 @@ const TOOLS = [
         actor_role: { type: "string", description: "Role of the person performing this action." },
       },
       required: ["project_path", "record_id"],
+    },
+  },
+  {
+    name: "assign_fix_to_governance",
+    description: "Assign a pending audit finding (fix) to an existing governance provenance record. Creates a traceable link between a specific security finding and the governance chain (who approved the system, under what policy, what risk assessment supports it). Requires a finding_key (ruleId:file:line), governance record ID, and assignee name.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        finding_key: { type: "string", description: "Finding identifier in format ruleId:file:line (e.g., SECRETS-001:src/auth.ts:42)." },
+        finding_rule_id: { type: "string", description: "The rule ID of the finding (e.g., SECRETS-001)." },
+        finding_title: { type: "string", description: "Title of the finding." },
+        finding_file: { type: "string", description: "File path of the finding." },
+        finding_line: { type: "number", description: "Line number of the finding." },
+        finding_severity: { type: "string", description: "Severity: critical, high, medium, or low." },
+        finding_control_ids: { type: "string", description: "Control IDs linked to this finding (comma-separated)." },
+        governance_record_id: { type: "string", description: "Governance record ID or system name to link this fix to." },
+        assignee: { type: "string", description: "Name of the person assigned to fix this." },
+        assignee_role: { type: "string", description: "Role of the assignee." },
+        notes: { type: "string", description: "Optional notes for this assignment." },
+        actor_name: { type: "string", description: "Name of the person making this assignment." },
+        actor_role: { type: "string", description: "Role of the person making this assignment." },
+      },
+      required: ["project_path", "finding_key", "governance_record_id", "assignee"],
+    },
+  },
+  {
+    name: "list_fix_assignments",
+    description: "List all fix assignments linking pending audit findings to governance provenance records. Shows which fixes are assigned, to whom, linked to which governance record, and their status (assigned, in-progress, fixed, verified).",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        governance_record_id: { type: "string", description: "Optional: filter assignments by governance record ID." },
+      },
+      required: ["project_path"],
+    },
+  },
+  {
+    name: "resolve_fix_assignment",
+    description: "Resolve (mark as fixed) a fix assignment that was linked to a governance record. Records who resolved it, the method used (auto-fix, manual, not-applicable), and resolution notes. Updates the provenance chain to show the fix has been addressed.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root." },
+        finding_key: { type: "string", description: "Finding key (ruleId:file:line) of the assignment to resolve." },
+        resolved_by: { type: "string", description: "Name of the person who resolved the fix." },
+        resolved_by_role: { type: "string", description: "Role of the resolver." },
+        method: { type: "string", description: "Resolution method: auto-fix, manual, or not-applicable." },
+        resolution_notes: { type: "string", description: "Notes about how the fix was resolved." },
+        actor_name: { type: "string", description: "Name of the person performing this action." },
+        actor_role: { type: "string", description: "Role of the person performing this action." },
+      },
+      required: ["project_path", "finding_key", "resolved_by"],
     },
   },
 ];
@@ -4290,6 +4351,84 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           if (!updated) { resultText = "Error: Failed to update record."; break; }
           recordActivity(projectPath, { source: "mcp", action: "control_override", title: `Compliance links: ${updated.system_name}`, description: `Frameworks mapped: ${frameworks.join(", ")}.`, details: { governance_record_id: updated.id }, actor_name: args.actor_name, actor_role: args.actor_role });
           resultText = `# Compliance Links Mapped\n\n**System**: ${updated.system_name}\n**Frameworks**: ${frameworks.join(", ") || "(none)"}\n**Controls**: ${controls.length}`;
+          break;
+        }
+        case "assign_fix_to_governance": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const fk = String(args.finding_key || "");
+          const recordId = String(args.governance_record_id || "");
+          const assignee = String(args.assignee || "");
+          if (!fk || !recordId || !assignee) { resultText = "Error: finding_key, governance_record_id, and assignee are required."; break; }
+          const record = findGovernanceRecord(projectPath, recordId);
+          if (!record) { resultText = `Error: Governance record "${recordId}" not found.`; break; }
+          const controlIds = args.finding_control_ids ? String(args.finding_control_ids).split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+          const assignment = createFixAssignment({
+            finding_key: fk,
+            finding_rule_id: String(args.finding_rule_id || ""),
+            finding_title: String(args.finding_title || ""),
+            finding_file: String(args.finding_file || ""),
+            finding_line: args.finding_line ? Number(args.finding_line) : undefined,
+            finding_severity: (args.finding_severity as any) || "medium",
+            finding_control_ids: controlIds,
+            governance_record_id: record.id,
+            governance_system_name: record.system_name,
+            assignee,
+            assignee_role: String(args.assignee_role || ""),
+            assigned_by: String(args.actor_name || "mcp"),
+            notes: String(args.notes || ""),
+          });
+          addFixAssignment(projectPath, assignment);
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "fix_assign",
+            title: `Fix assigned: ${assignment.finding_rule_id} → ${record.system_name}`,
+            description: `Assigned ${assignment.finding_rule_id} (${assignment.finding_title}) to ${assignee}, linked to ${record.system_name}.`,
+            details: { finding_key: fk, governance_record_id: record.id, assignee },
+            actor_name: args.actor_name,
+            actor_role: args.actor_role,
+          });
+          resultText = `# Fix Assigned to Governance Record\n\n**Finding**: ${assignment.finding_rule_id} — ${assignment.finding_title}\n**Finding Key**: ${fk}\n**Governance Record**: ${record.system_name} (${record.id})\n**Assignee**: ${assignee}${args.assignee_role ? " (" + args.assignee_role + ")" : ""}\n**Status**: assigned\n\n## Provenance Chain\n- **System**: ${record.system_name}\n- **Approval**: ${record.approval ? record.approval.approver_name + " (" + record.approval.approval_authority + ")" : "No approval recorded"}\n- **Policy**: ${record.policy_basis ? record.policy_basis.policy_name : "No policy documented"}\n- **Risk**: ${record.risk_assessment ? record.risk_assessment.risk_score : "No risk assessment"}`;
+          break;
+        }
+        case "list_fix_assignments": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const all = loadFixAssignments(projectPath);
+          const filtered = args.governance_record_id
+            ? findFixAssignmentsForRecord(projectPath, String(args.governance_record_id))
+            : all;
+          if (filtered.length === 0) {
+            resultText = "No fix assignments found.";
+            break;
+          }
+          const lines = filtered.map((a: any) => {
+            return `| ${a.status} | ${a.finding_rule_id} | ${a.finding_title} | ${a.governance_system_name} | ${a.assignee}${a.assignee_role ? " (" + a.assignee_role + ")" : ""} | ${a.finding_key} |`;
+          });
+          resultText = `# Fix Assignments (${filtered.length})\n\n| Status | Rule | Title | Governance Record | Assignee | Finding Key |\n|--------|------|-------|-------------------|----------|------------|\n${lines.join("\n")}`;
+          break;
+        }
+        case "resolve_fix_assignment": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const fk = String(args.finding_key || "");
+          const resolver = String(args.resolved_by || "");
+          if (!fk || !resolver) { resultText = "Error: finding_key and resolved_by are required."; break; }
+          const method = (args.method as "auto-fix" | "manual" | "not-applicable") || "manual";
+          const resolved = resolveFixAssignment(projectPath, fk, {
+            resolved_by: resolver,
+            resolved_by_role: String(args.resolved_by_role || ""),
+            method,
+            resolution_notes: String(args.resolution_notes || ""),
+          });
+          if (!resolved) { resultText = `Error: Fix assignment not found for finding_key: ${fk}`; break; }
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "fix_resolve",
+            title: `Fix resolved: ${resolved.finding_rule_id}`,
+            description: `Resolved ${resolved.finding_rule_id} via ${method} by ${resolver}.`,
+            details: { finding_key: fk, governance_record_id: resolved.governance_record_id, method },
+            actor_name: args.actor_name,
+            actor_role: args.actor_role,
+          });
+          resultText = `# Fix Resolved\n\n**Finding**: ${resolved.finding_rule_id} — ${resolved.finding_title}\n**Governance Record**: ${resolved.governance_system_name}\n**Resolved By**: ${resolver}\n**Method**: ${method}\n**Status**: fixed`;
           break;
         }
         default:

@@ -19,6 +19,7 @@ import { fixCommand } from "./commands/fix.js";
 import { hooksCommand } from "./commands/hooks.js";
 import { dashboardCommand } from "./commands/dashboard.js";
 import { governanceCommand } from "./commands/governance.js";
+import { assignCommand } from "./commands/assign.js";
 import { CLI_VERSION } from "./utils/version.js";
 import { createRequire } from "node:module";
 
@@ -47,5 +48,6 @@ program.addCommand(fixCommand);
 program.addCommand(hooksCommand);
 program.addCommand(dashboardCommand);
 program.addCommand(governanceCommand);
+program.addCommand(assignCommand);
 
 program.parse();

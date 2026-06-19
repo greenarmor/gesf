@@ -6,3 +6,4 @@ export * from "./controls/index.js";
 export * from "./activity-log/index.js";
 export * from "./recommendations/index.js";
 export * from "./governance/index.js";
+export * from "./fix-assignments/index.js";
