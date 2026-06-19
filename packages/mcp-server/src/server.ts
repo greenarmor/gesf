@@ -3136,15 +3136,15 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           if (fs.existsSync(gitignorePath)) {
             const existingGitignore = fs.readFileSync(gitignorePath, "utf-8");
             if (!existingGitignore.includes(".dev-logs/")) {
-              fs.appendFileSync(gitignorePath, `\n# GESF developer logs (not for remote)\n${devLogsIgnore}`);
+              fs.appendFileSync(gitignorePath, `\n# GESF developer logs (developer-only, not for remote)\n${devLogsIgnore}`);
             }
           } else {
-            fs.writeFileSync(gitignorePath, `# GESF developer logs (not for remote)\n${devLogsIgnore}\n`);
+            fs.writeFileSync(gitignorePath, `# GESF developer logs (developer-only, not for remote)\n${devLogsIgnore}\n`);
           }
 
           fs.writeFileSync(
             path.join(projectPath, ".dev-logs", "README.md"),
-            `# Developer Logs\n\nThis directory is for GESF development notes, session logs, AI recommendations, and release notes.\n\n**This directory is gitignored and intended for developers only. Do not submit to remote.**\n`,
+            `# Developer Logs\n\nThis directory is part of GESF — the Green Engineering Standard Framework.\n\nIt stores development notes, session logs, AI assistant recommendations, and release notes for your project.\n\n**This directory is gitignored and intended for developers only. Do not submit to remote.**\n`,
           );
 
           const complianceDocs = generateComplianceDocs(projectName, projectType);

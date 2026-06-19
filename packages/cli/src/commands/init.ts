@@ -212,15 +212,15 @@ export const initCommand = new Command("init")
     if (fs.existsSync(gitignorePath)) {
       const existing = fs.readFileSync(gitignorePath, "utf-8");
       if (!existing.includes(".dev-logs/")) {
-        fs.appendFileSync(gitignorePath, `\n# GESF developer logs (not for remote)\n${devLogsIgnore}`);
+        fs.appendFileSync(gitignorePath, `\n# GESF developer logs (developer-only, not for remote)\n${devLogsIgnore}`);
       }
     } else {
-      writeFileSync(gitignorePath, `# GESF developer logs (not for remote)\n${devLogsIgnore}\n`);
+      writeFileSync(gitignorePath, `# GESF developer logs (developer-only, not for remote)\n${devLogsIgnore}\n`);
     }
 
     writeFileSync(
       path.join(process.cwd(), ".dev-logs", "README.md"),
-      `# Developer Logs\n\nThis directory is for GESF development notes, session logs, AI recommendations, and release notes.\n\n**This directory is gitignored and intended for developers only. Do not submit to remote.**\n\n## Structure\n\n- \`session-*.md\` — Session logs\n- \`release-notes-*.md\` — Release notes\n- \`ai-recommendations/\` — Recommendations from AI assistants using the MCP server\n`,
+      `# Developer Logs\n\nThis directory is part of GESF — the Green Engineering Standard Framework.\n\nIt stores development notes, session logs, AI assistant recommendations, and release notes for your project.\n\n**This directory is gitignored and intended for developers only. Do not submit to remote.**\n\n## Structure\n\n- \`session-*.md\` — Session logs (if using GESF for development tracking)\n- \`release-notes-*.md\` — Release notes for your project\n- \`ai-recommendations/\` — Recommendations from AI assistants using the MCP server (for human review)\n`,
     );
 
     const configJson = generateConfigJson(config);

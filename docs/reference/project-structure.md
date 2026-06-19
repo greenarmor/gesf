@@ -61,7 +61,9 @@ your-project/
 | `checklists/` | `ges init` | Manual | Yes |
 | `docs/` | `ges init` | Manual | Yes |
 | `reports/` | `ges report` | `ges report` | No |
+| `.dev-logs/` | `ges init` | AI assistants via MCP | No (gitignored) |
 | `.github/workflows/` | `ges init` | `ges generate --workflows` | Yes |
+
 
 ## What to Commit
 
@@ -79,6 +81,7 @@ your-project/
 **Never commit:**
 
 - `reports/` — Generated output, add to `.gitignore`
+- `.dev-logs/` — Developer logs and AI recommendations, gitignored by default
 
 ## Language-Agnostic
 
