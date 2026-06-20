@@ -323,7 +323,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
     projectName: config?.project_name || "Unknown Project",
     projectType: config?.project_type || "unknown",
     frameworks: allFrameworks,
-    gesfVersion: "1.5.0",
+    gesfVersion: "1.5.1",
     score,
     controls,
     findings,
