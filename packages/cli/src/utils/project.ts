@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { safeWriteFile, safeWriteJson } from "@greenarmor/ges-core";
 
 export const GES_DIR = ".ges";
 
@@ -27,11 +28,7 @@ export function ensureGESInitialized(): string {
 }
 
 export function writeFileSync(filePath: string, content: string): void {
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(filePath, content, "utf-8");
+  safeWriteFile(filePath, content);
 }
 
 export function readJsonFile<T>(filePath: string): T | null {
@@ -44,5 +41,5 @@ export function readJsonFile<T>(filePath: string): T | null {
 }
 
 export function writeJsonFile(filePath: string, data: unknown): void {
-  writeFileSync(filePath, JSON.stringify(data, null, 2));
+  safeWriteJson(filePath, data);
 }

@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { FixAssignment, FixAssignmentStatus, SeverityLevel } from "../types/index.js";
+import { safeWriteJson } from "../utils/index.js";
 
 const ASSIGNMENTS_FILE = "fix-assignments.json";
 
@@ -20,11 +21,7 @@ export function loadFixAssignments(projectPath: string): FixAssignment[] {
 }
 
 export function saveFixAssignments(projectPath: string, assignments: FixAssignment[]): void {
-  const gesDir = path.join(projectPath, ".ges");
-  if (!fs.existsSync(gesDir)) {
-    fs.mkdirSync(gesDir, { recursive: true });
-  }
-  fs.writeFileSync(assignmentsPath(projectPath), JSON.stringify(assignments, null, 2), "utf-8");
+  safeWriteJson(assignmentsPath(projectPath), assignments);
 }
 
 let assignmentCounter = 0;

@@ -11,6 +11,7 @@ import type {
   EvidenceType,
   EvidenceSourceSystem,
 } from "../types/index.js";
+import { safeWriteJson } from "../utils/index.js";
 
 const GOVERNANCE_FILE = "governance-records.json";
 
@@ -30,11 +31,7 @@ export function loadGovernanceRecords(projectPath: string): GovernanceRecord[] {
 }
 
 export function saveGovernanceRecords(projectPath: string, records: GovernanceRecord[]): void {
-  const gesDir = path.join(projectPath, ".ges");
-  if (!fs.existsSync(gesDir)) {
-    fs.mkdirSync(gesDir, { recursive: true });
-  }
-  fs.writeFileSync(recordsPath(projectPath), JSON.stringify(records, null, 2), "utf-8");
+  safeWriteJson(recordsPath(projectPath), records);
 }
 
 let govCounter = 0;

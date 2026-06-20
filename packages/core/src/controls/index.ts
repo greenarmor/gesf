@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Control, ControlOverride, ControlStatus, ProjectConfig } from "../types/index.js";
+import { safeWriteJson } from "../utils/index.js";
 
 const GES_DIR = ".ges";
 const CONTROLS_DIR = "controls";
@@ -76,11 +77,6 @@ export function saveControlOverride(
   status: ControlStatus,
   reason: string,
 ): void {
-  const gesDir = path.join(projectPath, GES_DIR);
-  if (!fs.existsSync(gesDir)) {
-    fs.mkdirSync(gesDir, { recursive: true });
-  }
-
   const overrides = loadControlOverrides(projectPath);
   const existingIdx = overrides.findIndex(o => o.control_id === controlId);
   const entry: ControlOverride = { control_id: controlId, status, reason };
@@ -91,8 +87,8 @@ export function saveControlOverride(
     overrides.push(entry);
   }
 
-  const overridesPath = path.join(gesDir, OVERRIDES_FILE);
-  fs.writeFileSync(overridesPath, JSON.stringify(overrides, null, 2), "utf-8");
+  const overridesPath = path.join(projectPath, GES_DIR, OVERRIDES_FILE);
+  safeWriteJson(overridesPath, overrides);
 }
 
 export function applyOverridesToControls(
@@ -132,7 +128,7 @@ export function addFrameworkToConfig(projectPath: string, framework: string): bo
     if (fwLower.has(framework.toLowerCase())) return false;
 
     config.frameworks.push(framework);
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
+    safeWriteJson(configPath, config);
     return true;
   } catch {
     return false;
@@ -153,7 +149,7 @@ export function removeFrameworkFromConfig(projectPath: string, framework: string
 
     if (config.frameworks.length === before) return false;
 
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
+    safeWriteJson(configPath, config);
     return true;
   } catch {
     return false;

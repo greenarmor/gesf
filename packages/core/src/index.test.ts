@@ -39,6 +39,7 @@ import {
   findingKey,
   generateAssignmentId,
 } from "./fix-assignments/index.js";
+import { safeWriteJson, safeWriteFile, safeReadJson } from "./utils/index.js";
 import {
   loadControlsFromDisk,
   getInstalledPackIds,
@@ -1022,6 +1023,184 @@ describe("fix-assignments", () => {
       const loaded = loadFixAssignments(tmpDir);
       expect(loaded.length).toBe(1);
       expect(loaded[0].id).toBe(a2.id);
+    });
+  });
+});
+
+describe("safeWriteJson / safeWriteFile / safeReadJson", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gesf-safewrite-test-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  describe("safeWriteJson", () => {
+    it("writes valid JSON that can be read back", () => {
+      const filePath = path.join(tmpDir, "data.json");
+      const data = { name: "test", values: [1, 2, 3], nested: { a: true } };
+      safeWriteJson(filePath, data);
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const loaded = JSON.parse(raw);
+      expect(loaded.name).toBe("test");
+      expect(loaded.values).toEqual([1, 2, 3]);
+      expect(loaded.nested.a).toBe(true);
+    });
+
+    it("creates parent directories if they do not exist", () => {
+      const filePath = path.join(tmpDir, "deeply", "nested", "dir", "data.json");
+      safeWriteJson(filePath, { ok: true });
+      expect(fs.existsSync(filePath)).toBe(true);
+    });
+
+    it("overwrites existing file atomically", () => {
+      const filePath = path.join(tmpDir, "overwrite.json");
+      safeWriteJson(filePath, { version: 1 });
+      safeWriteJson(filePath, { version: 2 });
+      const raw = fs.readFileSync(filePath, "utf-8");
+      expect(JSON.parse(raw).version).toBe(2);
+    });
+
+    it("does not leave temp file after successful write", () => {
+      const filePath = path.join(tmpDir, "clean.json");
+      safeWriteJson(filePath, { data: "test" });
+      expect(fs.existsSync(filePath + ".tmp")).toBe(false);
+    });
+
+    it("handles empty objects and arrays", () => {
+      const filePath = path.join(tmpDir, "empty.json");
+      safeWriteJson(filePath, {});
+      const raw = fs.readFileSync(filePath, "utf-8");
+      expect(JSON.parse(raw)).toEqual({});
+
+      safeWriteJson(filePath, []);
+      const raw2 = fs.readFileSync(filePath, "utf-8");
+      expect(JSON.parse(raw2)).toEqual([]);
+    });
+
+    it("handles null and undefined values", () => {
+      const filePath = path.join(tmpDir, "nulls.json");
+      safeWriteJson(filePath, { a: null, b: undefined, c: "keep" });
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      expect(parsed.a).toBeNull();
+      expect(parsed.c).toBe("keep");
+    });
+  });
+
+  describe("safeWriteFile", () => {
+    it("writes string content", () => {
+      const filePath = path.join(tmpDir, "file.txt");
+      safeWriteFile(filePath, "hello world");
+      expect(fs.readFileSync(filePath, "utf-8")).toBe("hello world");
+    });
+
+    it("creates parent directories", () => {
+      const filePath = path.join(tmpDir, "a", "b", "c.txt");
+      safeWriteFile(filePath, "nested");
+      expect(fs.readFileSync(filePath, "utf-8")).toBe("nested");
+    });
+
+    it("overwrites existing file", () => {
+      const filePath = path.join(tmpDir, "ow.txt");
+      safeWriteFile(filePath, "first");
+      safeWriteFile(filePath, "second");
+      expect(fs.readFileSync(filePath, "utf-8")).toBe("second");
+    });
+
+    it("handles empty string", () => {
+      const filePath = path.join(tmpDir, "empty.txt");
+      safeWriteFile(filePath, "");
+      expect(fs.readFileSync(filePath, "utf-8")).toBe("");
+    });
+
+    it("handles multi-line content", () => {
+      const filePath = path.join(tmpDir, "multi.txt");
+      const content = "line1\nline2\nline3\n";
+      safeWriteFile(filePath, content);
+      expect(fs.readFileSync(filePath, "utf-8")).toBe(content);
+    });
+  });
+
+  describe("safeReadJson", () => {
+    it("reads valid JSON file", () => {
+      const filePath = path.join(tmpDir, "read.json");
+      fs.writeFileSync(filePath, JSON.stringify({ key: "value" }));
+      const result = safeReadJson(filePath, null);
+      expect(result).toEqual({ key: "value" });
+    });
+
+    it("returns fallback for missing file", () => {
+      const result = safeReadJson(path.join(tmpDir, "missing.json"), { fallback: true });
+      expect(result).toEqual({ fallback: true });
+    });
+
+    it("returns fallback for malformed JSON", () => {
+      const filePath = path.join(tmpDir, "bad.json");
+      fs.writeFileSync(filePath, "not valid json {{{");
+      const fallback = { default: "value" };
+      const result = safeReadJson(filePath, fallback);
+      expect(result).toEqual(fallback);
+    });
+
+    it("returns fallback for empty file", () => {
+      const filePath = path.join(tmpDir, "empty.json");
+      fs.writeFileSync(filePath, "");
+      const result = safeReadJson(filePath, []);
+      expect(result).toEqual([]);
+    });
+
+    it("preserves type of fallback", () => {
+      const result1 = safeReadJson(path.join(tmpDir, "x.json"), "default-string");
+      expect(typeof result1).toBe("string");
+
+      const result2 = safeReadJson(path.join(tmpDir, "y.json"), 42);
+      expect(typeof result2).toBe("number");
+
+      const result3 = safeReadJson(path.join(tmpDir, "z.json"), null);
+      expect(result3).toBeNull();
+    });
+  });
+
+  describe("atomic write guarantee", () => {
+    it("temp file is cleaned up on rename failure", () => {
+      const filePath = path.join(tmpDir, "guarded.json");
+      safeWriteJson(filePath, { first: true });
+
+      const readOnlyDir = path.join(tmpDir, "readonly");
+      fs.mkdirSync(readOnlyDir, { recursive: true });
+      fs.chmodSync(readOnlyDir, 0o444);
+
+      const impossiblePath = path.join(readOnlyDir, "subdir", "fail.json");
+
+      let threw = false;
+      try {
+        safeWriteJson(impossiblePath, { will: "fail" });
+      } catch {
+        threw = true;
+      }
+
+      fs.chmodSync(readOnlyDir, 0o755);
+
+      expect(threw).toBe(true);
+    });
+
+    it("original file is not corrupted when write succeeds", () => {
+      const filePath = path.join(tmpDir, "integrity.json");
+      const original = { critical: "data", count: 42 };
+      safeWriteJson(filePath, original);
+
+      const updated = { critical: "updated", count: 43, extra: true };
+      safeWriteJson(filePath, updated);
+
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      expect(parsed.critical).toBe("updated");
+      expect(parsed.count).toBe(43);
+      expect(parsed.extra).toBe(true);
     });
   });
 });

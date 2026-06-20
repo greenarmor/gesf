@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ActivityLogEntry, ActivityAction, ActivityStatus } from "../types/index.js";
+import { safeWriteJson } from "../utils/index.js";
 
 export function loadActivityLog(projectPath: string): ActivityLogEntry[] {
   const logPath = path.join(projectPath, ".ges", "activity-log.json");
@@ -15,14 +16,10 @@ export function loadActivityLog(projectPath: string): ActivityLogEntry[] {
 
 export function appendActivityLog(projectPath: string, entries: ActivityLogEntry[]): void {
   if (entries.length === 0) return;
-  const gesDir = path.join(projectPath, ".ges");
-  if (!fs.existsSync(gesDir)) {
-    fs.mkdirSync(gesDir, { recursive: true });
-  }
-  const logPath = path.join(gesDir, "activity-log.json");
+  const logPath = path.join(projectPath, ".ges", "activity-log.json");
   const existing = loadActivityLog(projectPath);
   const updated = existing.concat(entries);
-  fs.writeFileSync(logPath, JSON.stringify(updated, null, 2), "utf-8");
+  safeWriteJson(logPath, updated);
 }
 
 export function clearActivityLog(projectPath: string): void {

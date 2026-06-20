@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as url from "node:url";
+import { safeWriteFile } from "@greenarmor/ges-core";
 import { select } from "../utils/prompts.js";
 import { showNextStepsMenu } from "../utils/next-steps.js";
 
@@ -203,11 +204,7 @@ function readJsonFile(filePath: string): Record<string, unknown> | null {
 }
 
 function writeJsonFile(filePath: string, data: Record<string, unknown>): void {
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n");
+  safeWriteFile(filePath, JSON.stringify(data, null, 2) + "\n");
 }
 
 function addServerToConfig(

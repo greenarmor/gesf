@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding } from "@greenarmor/ges-audit-engine";
+import { safeWriteFile } from "@greenarmor/ges-core";
 
 export const PRE_COMMIT_HOOK = `#!/bin/sh
 # GESF Pre-Commit Hook - Runs compliance audit before allowing commits
@@ -77,7 +78,7 @@ export function installHooks(projectRoot: string, hooks: string[] = ["pre-commit
     if (fs.existsSync(hookPath)) {
       const existing = fs.readFileSync(hookPath, "utf-8");
       if (existing.includes("@greenarmor/ges-git-hooks")) {
-        fs.writeFileSync(hookPath, hookContents[hookName], "utf-8");
+        safeWriteFile(hookPath, hookContents[hookName]);
         fs.chmodSync(hookPath, 0o755);
         result.installed.push(hookName);
         continue;
@@ -86,7 +87,7 @@ export function installHooks(projectRoot: string, hooks: string[] = ["pre-commit
       continue;
     }
 
-    fs.writeFileSync(hookPath, hookContents[hookName], "utf-8");
+    safeWriteFile(hookPath, hookContents[hookName]);
     fs.chmodSync(hookPath, 0o755);
     result.installed.push(hookName);
   }

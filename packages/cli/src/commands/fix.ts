@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { ensureGESInitialized } from "../utils/project.js";
+import { safeWriteJson } from "@greenarmor/ges-core";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { createAutoFixPlan, applyAutoFixAction, getNpmInstallsFromActions } from "@greenarmor/ges-mcp-server";
@@ -53,9 +54,9 @@ export const fixCommand = new Command("fix")
     const projectControls = loadProjectControls(root);
 
     try {
-      fs.writeFileSync(path.join(root, ".ges", "last-audit.json"), JSON.stringify({
+      safeWriteJson(path.join(root, ".ges", "last-audit.json"), {
         findings, scannedFiles, timestamp: new Date().toISOString(),
-      }, null, 2));
+      });
     } catch { /* ignore persistence errors */ }
 
     console.log(`  Scanned ${scannedFiles} files`);

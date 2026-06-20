@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { FixHistoryEntry, ControlStatus, SeverityLevel, Control } from "../types/index.js";
+import { safeWriteJson } from "../utils/index.js";
 
 export function loadFixHistory(projectPath: string): FixHistoryEntry[] {
   const histPath = path.join(projectPath, ".ges", "fix-history.json");
@@ -15,14 +16,10 @@ export function loadFixHistory(projectPath: string): FixHistoryEntry[] {
 
 export function appendFixHistory(projectPath: string, entries: FixHistoryEntry[]): void {
   if (entries.length === 0) return;
-  const gesDir = path.join(projectPath, ".ges");
-  if (!fs.existsSync(gesDir)) {
-    fs.mkdirSync(gesDir, { recursive: true });
-  }
-  const histPath = path.join(gesDir, "fix-history.json");
+  const histPath = path.join(projectPath, ".ges", "fix-history.json");
   const existing = loadFixHistory(projectPath);
   const updated = existing.concat(entries);
-  fs.writeFileSync(histPath, JSON.stringify(updated, null, 2), "utf-8");
+  safeWriteJson(histPath, updated);
 }
 
 export function clearFixHistory(projectPath: string): void {

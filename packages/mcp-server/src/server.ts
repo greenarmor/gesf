@@ -41,6 +41,7 @@ import {
 } from "@greenarmor/ges-core";
 import type { GovernanceRecord, GovernanceSystemType, GovernanceRiskLevel, EvidenceType, EvidenceSourceSystem } from "@greenarmor/ges-core";
 import { ProjectConfigSchema } from "@greenarmor/ges-core";
+import { safeWriteJson, safeWriteFile } from "@greenarmor/ges-core";
 import { generateComplianceDocs, generateSecurityDocs, generateConfigJson, generateMetadataJson, generateFrameworkVersionJson, generateScoreJson } from "@greenarmor/ges-doc-generator";
 import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
 import { detectProject, runAllScansWithSbom, formatScanResults, formatSbomResults } from "@greenarmor/ges-scanner-integration";
@@ -1295,7 +1296,7 @@ export function applyAutoFixAction(root: string, action: AutoFixAction): AutoFix
         }
         const dir = path.dirname(fullPath);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        fs.writeFileSync(fullPath, action.content || "", "utf-8");
+        safeWriteFile(fullPath, action.content || "");
         return { applied: true, action };
       }
       case "modify": {
@@ -1306,7 +1307,7 @@ export function applyAutoFixAction(root: string, action: AutoFixAction): AutoFix
         if (action.search && !content.includes(action.search)) {
           return { applied: false, action, error: "Search string not found" };
         }
-        fs.writeFileSync(fullPath, content.replace(action.search || "", action.replace || ""), "utf-8");
+        safeWriteFile(fullPath, content.replace(action.search || "", action.replace || ""));
         return { applied: true, action };
       }
       case "append": {
@@ -2522,15 +2523,15 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           const score = generateScoreFile(auditedControls, frameworks, findings);
 
           try {
-            fs.writeFileSync(path.join(projectPath, ".ges", "last-audit.json"), JSON.stringify({
+            safeWriteJson(path.join(projectPath, ".ges", "last-audit.json"), {
               findings, scannedFiles, timestamp: new Date().toISOString(),
-            }, null, 2));
-            fs.writeFileSync(path.join(projectPath, ".ges", "score.json"), JSON.stringify(score, null, 2));
+            });
+            safeWriteJson(path.join(projectPath, ".ges", "score.json"), score);
             const metaPath = path.join(projectPath, ".ges", "metadata.json");
             let meta: Record<string, unknown> = {};
             try { meta = JSON.parse(fs.readFileSync(metaPath, "utf-8")); } catch { /* ignore */ }
             meta.last_audit = new Date().toISOString();
-            fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+            safeWriteJson(metaPath, meta);
           } catch { /* ignore persistence errors */ }
 
           const critical = findings.filter(f => f.severity === "critical");
@@ -2686,9 +2687,9 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           const findings = deduplicateFindings(rawFindings);
 
           try {
-            fs.writeFileSync(path.join(projectPath, ".ges", "last-audit.json"), JSON.stringify({
+            safeWriteJson(path.join(projectPath, ".ges", "last-audit.json"), {
               findings, scannedFiles, timestamp: new Date().toISOString(),
-            }, null, 2));
+            });
           } catch { /* ignore persistence errors */ }
 
           if (findings.length === 0) {
@@ -2908,7 +2909,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
 
           const dir = path.dirname(overridePath);
           if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-          fs.writeFileSync(overridePath, JSON.stringify(overrides, null, 2), "utf-8");
+          safeWriteJson(overridePath, overrides);
 
           const lines = [
             `# Control Override Applied\n`,
@@ -3071,7 +3072,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           const outputName = args.output || "badge.svg";
           const outputPath = path.resolve(projectPath, outputName);
           fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-          fs.writeFileSync(outputPath, svg);
+          safeWriteFile(outputPath, svg);
 
           const explainer = generateScoreExplainer(score);
           const lines: string[] = [];
@@ -3086,7 +3087,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
               const readmeContent = fs.readFileSync(readmePath, "utf-8");
               const relativeBadgePath = path.relative(path.dirname(readmePath), outputPath);
               const updated = injectBadgeIntoReadme(readmeContent, relativeBadgePath, explainer);
-              fs.writeFileSync(readmePath, updated);
+              safeWriteFile(readmePath, updated);
               lines.push(`Badge injected into ${readmeName}`);
             } else {
               lines.push(`${readmeName} not found — badge SVG saved but not injected into README.`);
@@ -3176,16 +3177,16 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           fs.mkdirSync(gesDir, { recursive: true });
 
           const configJson = generateConfigJson(config);
-          fs.writeFileSync(path.join(gesDir, "config.json"), configJson.content);
+          safeWriteFile(path.join(gesDir, "config.json"), configJson.content);
 
           const metadataJson = generateMetadataJson(config);
-          fs.writeFileSync(path.join(gesDir, "metadata.json"), metadataJson.content);
+          safeWriteFile(path.join(gesDir, "metadata.json"), metadataJson.content);
 
           const frameworkVersionJson = generateFrameworkVersionJson();
-          fs.writeFileSync(path.join(gesDir, "framework-version.json"), frameworkVersionJson.content);
+          safeWriteFile(path.join(gesDir, "framework-version.json"), frameworkVersionJson.content);
 
           const scoreJson = generateScoreJson();
-          fs.writeFileSync(path.join(gesDir, "score.json"), scoreJson.content);
+          safeWriteFile(path.join(gesDir, "score.json"), scoreJson.content);
 
           const dirs = [COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, ".dev-logs"];
           for (const dir of dirs) {
@@ -3200,10 +3201,10 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
               fs.appendFileSync(gitignorePath, `\n# GESF developer logs (developer-only, not for remote)\n${devLogsIgnore}`);
             }
           } else {
-            fs.writeFileSync(gitignorePath, `# GESF developer logs (developer-only, not for remote)\n${devLogsIgnore}\n`);
+            safeWriteFile(gitignorePath, `# GESF developer logs (developer-only, not for remote)\n${devLogsIgnore}\n`);
           }
 
-          fs.writeFileSync(
+          safeWriteFile(
             path.join(projectPath, ".dev-logs", "README.md"),
             `# Developer Logs\n\nThis directory is part of GESF — the Green Engineering Standard Framework.\n\nIt stores development notes, session logs, AI assistant recommendations, and release notes for your project.\n\n**This directory is gitignored and intended for developers only. Do not submit to remote.**\n`,
           );
@@ -3212,14 +3213,14 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           for (const doc of complianceDocs) {
             const filePath = path.join(projectPath, COMPLIANCE_DIR, doc.filePath);
             fs.mkdirSync(path.dirname(filePath), { recursive: true });
-            fs.writeFileSync(filePath, doc.content);
+            safeWriteFile(filePath, doc.content);
           }
 
           const securityDocs = generateSecurityDocs(projectName, projectType);
           for (const doc of securityDocs) {
             const filePath = path.join(projectPath, SECURITY_DIR, doc.filePath);
             fs.mkdirSync(path.dirname(filePath), { recursive: true });
-            fs.writeFileSync(filePath, doc.content);
+            safeWriteFile(filePath, doc.content);
           }
 
           const installedPackIds = new Set<string>();
@@ -3255,7 +3256,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             if (pack) {
               const packDir = path.join(projectPath, CONTROLS_DIR, pack.id);
               fs.mkdirSync(packDir, { recursive: true });
-              fs.writeFileSync(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
+              safeWriteFile(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
               packs.push(pack);
             }
           }
@@ -3264,7 +3265,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           const workflowsDir = path.join(projectPath, ".github", "workflows");
           fs.mkdirSync(workflowsDir, { recursive: true });
           for (const wf of workflows) {
-            fs.writeFileSync(path.join(workflowsDir, wf.filePath.replace(/^\.github\/workflows\//, "")), wf.content);
+            safeWriteFile(path.join(workflowsDir, wf.filePath.replace(/^\.github\/workflows\//, "")), wf.content);
           }
 
           const lines: string[] = [];
@@ -3737,7 +3738,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
 
           const packDir = path.join(projectPath, CONTROLS_DIR, pack.id);
           fs.mkdirSync(packDir, { recursive: true });
-          fs.writeFileSync(path.join(packDir, "controls.json"), JSON.stringify(pack.controls, null, 2));
+          safeWriteJson(path.join(packDir, "controls.json"), pack.controls);
 
           const frameworksAdded: string[] = [];
           for (const fw of pack.frameworks) {
@@ -3853,7 +3854,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             break;
           }
 
-          fs.writeFileSync(hookPath, hookContent);
+          safeWriteFile(hookPath, hookContent);
           fs.chmodSync(hookPath, 0o755);
 
           resultText = `✅ Installed pre-commit hook at ${hookPath}\n\nThe hook will run 'ges audit --ci' before allowing commits.\n- To bypass: \`git commit --no-verify\`\n- To remove: use \`install_hooks\` with action: "uninstall"`;

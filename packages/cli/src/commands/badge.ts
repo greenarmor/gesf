@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { ensureGESInitialized, readJsonFile } from "../utils/project.js";
+import { ensureGESInitialized, readJsonFile, writeFileSync } from "../utils/project.js";
 import type { ScoreFile } from "@greenarmor/ges-core";
 import { generateBadgeSvg, injectBadgeIntoReadme, computeGrade, generateScoreExplainer } from "@greenarmor/ges-scoring-engine";
 import { showNextStepsMenu } from "../utils/next-steps.js";
@@ -25,7 +25,7 @@ export const badgeCommand = new Command("badge")
     const svg = generateBadgeSvg(score);
     const outputPath = path.resolve(root, options.output);
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(outputPath, svg);
+    writeFileSync(outputPath, svg);
 
     const explainer = generateScoreExplainer(score);
 
@@ -38,7 +38,7 @@ export const badgeCommand = new Command("badge")
         const readmeContent = fs.readFileSync(readmePath, "utf-8");
         const relativeBadgePath = path.relative(path.dirname(readmePath), outputPath);
         const updated = injectBadgeIntoReadme(readmeContent, relativeBadgePath, explainer);
-        fs.writeFileSync(readmePath, updated);
+        writeFileSync(readmePath, updated);
         console.log(`  Badge injected into ${options.readme}`);
       } else {
         console.log(`  ${options.readme} not found — skipping badge injection`);
