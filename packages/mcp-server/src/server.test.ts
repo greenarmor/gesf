@@ -229,7 +229,7 @@ describe("new tools", () => {
   it("update_check returns version info", () => {
     const res = handleRequest(callTool("update_check"));
     const text = getResultText(res);
-    expect(text).toContain("1.5.3");
+    expect(text).toContain("1.5.4");
     expect(text).toContain("npm update");
   });
 
