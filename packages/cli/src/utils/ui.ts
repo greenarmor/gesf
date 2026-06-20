@@ -127,4 +127,28 @@ export function gradeColor(grade: string): string {
   return RED(BOLD(grade));
 }
 
+export function updateNoticeBox(current: string, latest: string): void {
+  const inner = `  ${YELLOW(BOLD("↻"))}  ${BOLD("Update available")}  ${DIM(GRAY(current))} ${GRAY("→")} ${GREEN(latest)}`;
+  const innerLine2 = `     ${DIM("Run")} ${CYAN("ges update")} ${DIM("to upgrade, or")} ${CYAN("npm i -g @greenarmor/ges@latest")}`;
+  const width = Math.max(inner.replace(/\x1b\[[0-9;]*m/g, "").length, 56) + 4;
+  const top = GRAY(`  ┌${"─".repeat(width)}┐`);
+  const mid1 = GRAY("  │") + " ".repeat(Math.max(0, (width - stripAnsi(inner).length) / 2 | 0)) + inner + " ".repeat(Math.max(0, width - stripAnsi(inner).length - ((width - stripAnsi(inner).length) / 2 | 0))) + GRAY("│");
+  const mid2 = GRAY("  │") + " ".repeat(Math.max(0, (width - stripAnsi(innerLine2).length) / 2 | 0)) + innerLine2 + " ".repeat(Math.max(0, width - stripAnsi(innerLine2).length - ((width - stripAnsi(innerLine2).length) / 2 | 0))) + GRAY("│");
+  const bot = GRAY(`  └${"─".repeat(width)}┘`);
+  console.log();
+  console.log(top);
+  console.log(mid1);
+  console.log(mid2);
+  console.log(bot);
+  console.log();
+}
+
+function stripAnsi(str: string): string {
+  return str.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+export function updateNoticeLine(current: string, latest: string): void {
+  console.error(`  ${YELLOW("↻")} ${DIM("Update available:")} ${current} ${GRAY("→")} ${latest}  ${DIM("Run")} ${CYAN("ges update")}`);
+}
+
 export { chalk, icons, DIM, BOLD, GREEN, RED, YELLOW, CYAN, MAGENTA, GRAY };

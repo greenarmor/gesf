@@ -20,15 +20,34 @@ import { hooksCommand } from "./commands/hooks.js";
 import { dashboardCommand } from "./commands/dashboard.js";
 import { governanceCommand } from "./commands/governance.js";
 import { assignCommand } from "./commands/assign.js";
-import { CLI_VERSION } from "./utils/version.js";
+import { CLI_VERSION, AUTHOR, RELEASE_DATE, DONATE_URL, HOMEPAGE } from "./utils/version.js";
+import { showUpdateNoticeIfNeeded } from "./utils/update-notice.js";
 import { createRequire } from "node:module";
+import { BOLD, DIM, CYAN, GRAY, GREEN, MAGENTA } from "./utils/ui.js";
+
+const versionDisplay = [
+  ``,
+  `  ${BOLD(MAGENTA("GESF"))} ${BOLD(`v${CLI_VERSION}`)}`,
+  `  ${GRAY("Green Engineering Standard Framework")}`,
+  ``,
+  `  ${DIM("Author:")}    ${AUTHOR}`,
+  `  ${DIM("Released:")}  ${RELEASE_DATE}`,
+  ``,
+  `  ${DIM("Support:")}   ${CYAN(DONATE_URL)}`,
+  `  ${DIM("GitHub:")}    ${GRAY(HOMEPAGE)}`,
+  ``,
+].join("\n");
 
 const program = new Command();
 
 program
   .name("ges")
   .description("Green Engineering Standard Framework - Compliance-as-Code CLI")
-  .version(CLI_VERSION);
+  .version(versionDisplay, "-v, --version", "Output the version number");
+
+program.hook("preAction", async (_thisCommand, actionCommand) => {
+  await showUpdateNoticeIfNeeded(actionCommand.name());
+});
 
 program.addCommand(initCommand);
 program.addCommand(auditCommand);
