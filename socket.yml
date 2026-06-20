@@ -8,3 +8,14 @@ issueRules:
   installScripts: true
   obfuscatedCode: true
   unmaintainedPackages: true
+
+# Accepted transitive dependencies - these are pulled in by @inquirer/*
+# packages (optional dependencies of @greenarmor/ges). They are legitimate,
+# maintained packages used by the Inquirer.js ecosystem for terminal rendering.
+# See SECURITY.md "Supply Chain Review" section for full risk assessment.
+#
+# These cannot be replaced without forking @inquirer/core, which explicitly
+# depends on them for performance-optimized ANSI terminal rendering.
+#
+# GESF has a built-in readline fallback: if @inquirer/* is not installed,
+# all CLI prompts degrade gracefully to numbered text menus.
