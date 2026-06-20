@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@greenarmor/ges-core": "1.5.2"
+    "@greenarmor/ges-core": "1.5.3"
   },
   "description": "GESF Rules Engine - Standards enforcement and validation rules",
   "devDependencies": {
@@ -29,5 +29,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.5.2"
+  "version": "1.5.3"
 }

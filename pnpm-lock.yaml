@@ -24,7 +24,7 @@ importers:
   packages/audit-engine:
     dependencies:
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -40,7 +40,7 @@ importers:
   packages/cicd-generator:
     dependencies:
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -56,43 +56,43 @@ importers:
   packages/cli:
     dependencies:
       '@greenarmor/ges-audit-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../audit-engine
       '@greenarmor/ges-cicd-generator':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../cicd-generator
       '@greenarmor/ges-compliance-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../compliance-engine
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
       '@greenarmor/ges-doc-generator':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../doc-generator
       '@greenarmor/ges-git-hooks':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../git-hooks
       '@greenarmor/ges-mcp-server':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../mcp-server
       '@greenarmor/ges-policy-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../policy-engine
       '@greenarmor/ges-report-generator':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../report-generator
       '@greenarmor/ges-rules-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../rules-engine
       '@greenarmor/ges-scanner-integration':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../scanner-integration
       '@greenarmor/ges-scoring-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../scoring-engine
       '@greenarmor/ges-web-dashboard':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../web-dashboard
       chalk:
         specifier: ^5.6.2
@@ -127,7 +127,7 @@ importers:
   packages/compliance-engine:
     dependencies:
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -159,7 +159,7 @@ importers:
   packages/doc-generator:
     dependencies:
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -190,10 +190,10 @@ importers:
   packages/git-hooks:
     dependencies:
       '@greenarmor/ges-audit-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../audit-engine
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -209,37 +209,37 @@ importers:
   packages/mcp-server:
     dependencies:
       '@greenarmor/ges-audit-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../audit-engine
       '@greenarmor/ges-cicd-generator':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../cicd-generator
       '@greenarmor/ges-compliance-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../compliance-engine
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
       '@greenarmor/ges-doc-generator':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../doc-generator
       '@greenarmor/ges-policy-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../policy-engine
       '@greenarmor/ges-report-generator':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../report-generator
       '@greenarmor/ges-rules-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../rules-engine
       '@greenarmor/ges-scanner-integration':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../scanner-integration
       '@greenarmor/ges-scoring-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../scoring-engine
       '@greenarmor/ges-web-dashboard':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../web-dashboard
     devDependencies:
       '@types/node':
@@ -258,10 +258,10 @@ importers:
   packages/policy-engine:
     dependencies:
       '@greenarmor/ges-compliance-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../compliance-engine
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -277,19 +277,19 @@ importers:
   packages/report-generator:
     dependencies:
       '@greenarmor/ges-audit-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../audit-engine
       '@greenarmor/ges-compliance-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../compliance-engine
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
       '@greenarmor/ges-policy-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../policy-engine
       '@greenarmor/ges-scoring-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../scoring-engine
     devDependencies:
       '@types/node':
@@ -305,7 +305,7 @@ importers:
   packages/rules-engine:
     dependencies:
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -321,7 +321,7 @@ importers:
   packages/scanner-integration:
     dependencies:
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -337,7 +337,7 @@ importers:
   packages/scoring-engine:
     dependencies:
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
     devDependencies:
       '@types/node':
@@ -368,19 +368,19 @@ importers:
   packages/web-dashboard:
     dependencies:
       '@greenarmor/ges-audit-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../audit-engine
       '@greenarmor/ges-core':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../core
       '@greenarmor/ges-policy-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../policy-engine
       '@greenarmor/ges-report-generator':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../report-generator
       '@greenarmor/ges-scoring-engine':
-        specifier: 1.5.2
+        specifier: 1.5.3
         version: link:../scoring-engine
     devDependencies:
       '@types/node':
