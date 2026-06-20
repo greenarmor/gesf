@@ -1806,6 +1806,10 @@ function renderComplianceFixCards(
     }
     html += `</div>`;
 
+    const ctrlFkey = `${issue.controlId}::0`;
+    const ctrlAssignment = assignmentMap?.get(ctrlFkey);
+    html += renderGovernanceProvenanceSection(issue.controlId, issue.controlName, issue.severity, ctrlFkey, ctrlAssignment, govRecords);
+
     html += `<div class="fix-section"><div class="fix-section-title">Traceability</div>`;
     html += `<table><tbody>`;
     html += `<tr><td style="font-weight:600;width:160px;">Control</td><td><span class="link" onclick="showControlDetail('${escapeHtml(issue.controlId)}')">${escapeHtml(issue.controlId)}</span> &mdash; ${escapeHtml(issue.controlName)}</td></tr>`;
@@ -1822,6 +1826,158 @@ function renderComplianceFixCards(
     html += `</div></div>`;
   }
 
+  return html;
+}
+
+function renderGovernanceProvenanceSection(
+  controlId: string,
+  controlName: string,
+  severity: string,
+  ctrlFkey: string,
+  ctrlAssignment: import("@greenarmor/ges-core").FixAssignment | undefined,
+  govRecords?: import("@greenarmor/ges-core").GovernanceRecord[],
+): string {
+  let html = `<div class="fix-section"><div class="fix-section-title">Governance Provenance Chain</div>`;
+
+  if (ctrlAssignment && govRecords) {
+    const record = govRecords.find(r => r.id === ctrlAssignment.governance_record_id);
+
+    const aStatusColor = ctrlAssignment.status === "fixed" || ctrlAssignment.status === "verified"
+      ? "#22c55e"
+      : ctrlAssignment.status === "in-progress"
+        ? "#3b82f6"
+        : "#eab308";
+    html += `<div style="padding:12px 16px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;margin-bottom:10px;">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">`;
+    html += `<span class="badge" style="background:${aStatusColor};color:#fff;font-size:10px;text-transform:uppercase;">${escapeHtml(ctrlAssignment.status)}</span>`;
+    html += `<span style="font-size:12px;font-weight:600;color:#166534;">Assignee: ${escapeHtml(ctrlAssignment.assignee)}${ctrlAssignment.assignee_role ? ' (' + escapeHtml(ctrlAssignment.assignee_role) + ')' : ''}</span>`;
+    html += `<span style="font-size:11px;color:#6b7280;">Assigned by ${escapeHtml(ctrlAssignment.assigned_by)} on ${escapeHtml(new Date(ctrlAssignment.assigned_at).toLocaleDateString())}</span>`;
+    html += `</div>`;
+    if (ctrlAssignment.notes) {
+      html += `<div style="font-size:12px;color:#4b5563;margin-bottom:6px;"><strong>Notes:</strong> ${escapeHtml(ctrlAssignment.notes)}</div>`;
+    }
+    if (ctrlAssignment.resolution) {
+      const r = ctrlAssignment.resolution;
+      html += `<div style="font-size:12px;padding:6px 10px;background:#dcfce7;border-radius:6px;margin-top:6px;">`;
+      html += `<strong>&#10003; Resolved</strong> by ${escapeHtml(r.resolved_by)}${r.resolved_by_role ? ' (' + escapeHtml(r.resolved_by_role) + ')' : ''} via <strong>${escapeHtml(r.method)}</strong> on ${escapeHtml(new Date(r.resolved_at).toLocaleDateString())}`;
+      if (r.resolution_notes) html += `<br><span style="color:#4b5563;">${escapeHtml(r.resolution_notes)}</span>`;
+      html += `</div>`;
+    }
+    html += `<div style="margin-top:8px;display:flex;gap:6px;">`;
+    if (ctrlAssignment.status !== "fixed" && ctrlAssignment.status !== "verified") {
+      html += `<button class="gov-action-btn" style="background:#22c55e;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;" onclick="event.stopPropagation();resolveFindingFix('${escapeHtml(ctrlFkey)}')">Mark Fixed</button>`;
+    }
+    html += `<button class="gov-action-btn" style="background:#fee2e2;color:#991b1b;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;" onclick="event.stopPropagation();unassignFix('${escapeHtml(ctrlFkey)}')">Unassign</button>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    if (record) {
+      html += renderProvenanceChainInline(record);
+    }
+  } else {
+    html += `<div style="padding:12px 16px;border-radius:8px;background:#f9fafb;border:1px dashed #d1d5db;">`;
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">`;
+    html += `<div style="font-size:13px;color:#6b7280;">This control is not linked to any governance record. Assign it to create a provenance chain for auditors.</div>`;
+    html += `<button class="gov-action-btn" style="background:#4f46e5;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;" onclick="event.stopPropagation();openAssignModal('${escapeHtml(ctrlFkey)}','${escapeHtml(controlId)}','${escapeHtml(controlName.replace(/'/g, "\\'"))}','',0,'${escapeHtml(severity)}','${escapeHtml(controlId)}')">+ Assign to Governance Record</button>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    if (issueHasFindingLevelAssignments(ctrlFkey, controlId)) {
+      html += `<div style="margin-top:8px;font-size:11px;color:#6b7280;">&#8505; Individual audit findings within this control may already be assigned at the finding level below.</div>`;
+    }
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function issueHasFindingLevelAssignments(ctrlFkey: string, controlId: string): boolean {
+  return false;
+}
+
+function renderProvenanceChainInline(record: import("@greenarmor/ges-core").GovernanceRecord): string {
+  let html = `<div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">`;
+
+  html += `<div style="background:#f3f4f6;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">`;
+  html += `<span style="font-size:14px;font-weight:700;color:#1f2937;">${escapeHtml(record.system_name)}</span>`;
+  html += `<span class="badge" style="background:${record.status === "approved" ? "#22c55e" : record.status === "rejected" || record.status === "revoked" ? "#ef4444" : "#eab308"};color:#fff;font-size:10px;text-transform:uppercase;">${escapeHtml(record.status)}</span>`;
+  html += `<span class="badge" style="background:${record.risk_level === "critical" ? "#ef4444" : record.risk_level === "high" ? "#f97316" : record.risk_level === "medium" ? "#eab308" : "#22c55e"};color:#fff;font-size:10px;text-transform:uppercase;">${escapeHtml(record.risk_level)} RISK</span>`;
+  html += `<span style="font-size:11px;color:#9ca3af;font-family:monospace;">${escapeHtml(record.id)}</span>`;
+  html += `</div>`;
+
+  html += `<div style="padding:10px 14px;">`;
+  html += `<table style="width:100%;font-size:12px;border-collapse:collapse;">`;
+
+  if (record.approval) {
+    const a = record.approval;
+    const decColor = a.decision === "approved" ? "#22c55e" : "#ef4444";
+    html += `<tr style="border-bottom:1px solid #f3f4f6;">`;
+    html += `<td style="padding:6px 8px;font-weight:600;width:140px;color:#374151;">Approval</td>`;
+    html += `<td style="padding:6px 8px;">`;
+    html += `<span style="color:${decColor};font-weight:600;">${escapeHtml(a.decision.toUpperCase())}</span> by ${escapeHtml(a.approver_name)} (${escapeHtml(a.approver_role)})`;
+    if (a.valid_until) html += ` &mdash; valid until ${escapeHtml(a.valid_until)}`;
+    html += `</td></tr>`;
+  } else {
+    html += `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:6px 8px;font-weight:600;width:140px;color:#374151;">Approval</td><td style="padding:6px 8px;color:#ef4444;">&#10007; Not recorded</td></tr>`;
+  }
+
+  if (record.risk_assessment) {
+    const ra = record.risk_assessment;
+    html += `<tr style="border-bottom:1px solid #f3f4f6;">`;
+    html += `<td style="padding:6px 8px;font-weight:600;color:#374151;">Risk Assessment</td>`;
+    html += `<td style="padding:6px 8px;">Score: <strong>${escapeHtml(ra.risk_score)}</strong> &mdash; Residual: ${escapeHtml(ra.residual_risk)} (${escapeHtml(ra.methodology)})</td>`;
+    html += `</tr>`;
+  } else {
+    html += `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:6px 8px;font-weight:600;color:#374151;">Risk Assessment</td><td style="padding:6px 8px;color:#9ca3af;">&#10007; Not assessed</td></tr>`;
+  }
+
+  if (record.policy_basis) {
+    const pb = record.policy_basis;
+    html += `<tr style="border-bottom:1px solid #f3f4f6;">`;
+    html += `<td style="padding:6px 8px;font-weight:600;color:#374151;">Policy Basis</td>`;
+    html += `<td style="padding:6px 8px;">${escapeHtml(pb.policy_name)} v${escapeHtml(pb.version)} (${escapeHtml(pb.standard)})</td>`;
+    html += `</tr>`;
+  } else {
+    html += `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:6px 8px;font-weight:600;color:#374151;">Policy Basis</td><td style="padding:6px 8px;color:#9ca3af;">&#10007; Not documented</td></tr>`;
+  }
+
+  html += `<tr style="border-bottom:1px solid #f3f4f6;">`;
+  html += `<td style="padding:6px 8px;font-weight:600;color:#374151;">Evidence Chain</td>`;
+  if (record.evidence.length > 0) {
+    html += `<td style="padding:6px 8px;">`;
+    for (const e of record.evidence) {
+      html += `<span style="display:inline-block;margin-right:6px;margin-bottom:2px;padding:2px 8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;font-size:11px;">${escapeHtml(e.title)} <span style="color:#6b7280;">(${escapeHtml(e.source_system)}: ${escapeHtml(e.reference)})</span></span>`;
+    }
+    html += `</td>`;
+  } else {
+    html += `<td style="padding:6px 8px;color:#9ca3af;">&#10007; No evidence references</td>`;
+  }
+  html += `</tr>`;
+
+  if (record.review_cycle) {
+    const rc = record.review_cycle;
+    html += `<tr style="border-bottom:1px solid #f3f4f6;">`;
+    html += `<td style="padding:6px 8px;font-weight:600;color:#374151;">Review Cycle</td>`;
+    html += `<td style="padding:6px 8px;">${escapeHtml(rc.frequency)} &mdash; next review: ${escapeHtml(rc.next_review)}</td>`;
+    html += `</tr>`;
+  } else {
+    html += `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:6px 8px;font-weight:600;color:#374151;">Review Cycle</td><td style="padding:6px 8px;color:#9ca3af;">&#10007; Not scheduled</td></tr>`;
+  }
+
+  html += `<tr>`;
+  html += `<td style="padding:6px 8px;font-weight:600;color:#374151;">Provenance Chain</td>`;
+  const chainParts: string[] = [];
+  chainParts.push(record.approval ? "&#10003;" : "&#10007;");
+  chainParts.push(record.risk_assessment ? "&#10003;" : "&#10007;");
+  chainParts.push(record.policy_basis ? "&#10003;" : "&#10007;");
+  chainParts.push(record.evidence.length > 0 ? "&#10003;" : "&#10007;");
+  chainParts.push(record.review_cycle ? "&#10003;" : "&#10007;");
+  html += `<td style="padding:6px 8px;font-size:11px;">Approval ${chainParts[0]} &rarr; Risk ${chainParts[1]} &rarr; Policy ${chainParts[2]} &rarr; Evidence ${chainParts[3]} &rarr; Review ${chainParts[4]}</td>`;
+  html += `</tr>`;
+
+  html += `</table>`;
+  html += `</div>`;
+  html += `</div>`;
   return html;
 }
 
@@ -2121,8 +2277,8 @@ function renderGovernanceSection(data: GovernanceData): string {
       html += `<div><strong>Decision:</strong> <span style="color:${a.decision === "approved" ? "#22c55e" : "#ef4444"};font-weight:600;">${a.decision.toUpperCase()}</span></div>`;
       html += `<div><strong>Date:</strong> ${escapeHtml(a.decision_date)}</div>`;
       html += `<div><strong>Validity:</strong> ${escapeHtml(a.valid_from)} &rarr; ${escapeHtml(a.valid_until || "indefinite")}</div>`;
-      if (a.conditions.length > 0) {
-        html += `<div><strong>Conditions:</strong> ${a.conditions.map(c => escapeHtml(c)).join("; ")}</div>`;
+      if (a.conditions && a.conditions.length > 0) {
+        html += `<div><strong>Conditions:</strong> ${(a.conditions || []).map(c => escapeHtml(c)).join("; ")}</div>`;
       }
       if (a.rationale) {
         html += `<div><strong>Rationale:</strong> ${escapeHtml(a.rationale)}</div>`;
@@ -2141,8 +2297,8 @@ function renderGovernanceSection(data: GovernanceData): string {
       html += `<div><strong>Methodology:</strong> ${escapeHtml(ra.methodology)}</div>`;
       html += `<div><strong>Risk Score:</strong> ${escapeHtml(ra.risk_score)} &mdash; <strong>Residual:</strong> ${escapeHtml(ra.residual_risk)}</div>`;
       html += `<div><strong>Date:</strong> ${escapeHtml(ra.assessment_date)}</div>`;
-      if (ra.identified_risks.length > 0) {
-        html += `<div><strong>Identified Risks:</strong> ${ra.identified_risks.map(r => escapeHtml(r)).join(", ")}</div>`;
+      if (ra.identified_risks && ra.identified_risks.length > 0) {
+        html += `<div><strong>Identified Risks:</strong> ${(ra.identified_risks || []).map(r => escapeHtml(r)).join(", ")}</div>`;
       }
       html += `</div>`;
       html += `</div>`;
@@ -2154,8 +2310,8 @@ function renderGovernanceSection(data: GovernanceData): string {
       html += `<div style="font-size:13px;line-height:1.8;">`;
       html += `<div><strong>Policy:</strong> ${escapeHtml(pb.policy_name)} (${escapeHtml(pb.policy_id)} v${escapeHtml(pb.version)})</div>`;
       html += `<div><strong>Standard:</strong> ${escapeHtml(pb.standard)}</div>`;
-      if (pb.clauses.length > 0) {
-        html += `<div><strong>Clauses:</strong> ${pb.clauses.map(c => escapeHtml(c)).join(", ")}</div>`;
+      if (pb.clauses && pb.clauses.length > 0) {
+        html += `<div><strong>Clauses:</strong> ${(pb.clauses || []).map(c => escapeHtml(c)).join(", ")}</div>`;
       }
       html += `</div>`;
       html += `</div>`;
@@ -2195,7 +2351,7 @@ function renderGovernanceSection(data: GovernanceData): string {
       html += `<div><strong>Committee:</strong> ${escapeHtml(c.committee_name)}</div>`;
       html += `<div><strong>Meeting:</strong> ${escapeHtml(c.meeting_date)} (${escapeHtml(c.meeting_reference)})</div>`;
       if (c.attendees.length > 0) {
-        html += `<div><strong>Attendees:</strong> ${c.attendees.map(a => escapeHtml(a)).join(", ")}</div>`;
+        html += `<div><strong>Attendees:</strong> ${(c.attendees || []).map(a => escapeHtml(a)).join(", ")}</div>`;
       }
       html += `</div>`;
       html += `</div>`;
@@ -2225,8 +2381,9 @@ function renderGovernanceSection(data: GovernanceData): string {
   return html;
 }
 
-function escapeHtml(str: string): string {
-  return str
+function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return "";
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
