@@ -78,6 +78,83 @@ function printRecordSummary(record: GovernanceRecord): void {
   console.log(`     ${DIM("Ev")}     ${record.evidence.length} reference(s)`);
 }
 
+async function showGovernanceNextAction(
+  root: string,
+  records: GovernanceRecord[],
+  lastShownId?: string,
+): Promise<void> {
+  if (process.stdin.isTTY !== true || process.stdout.isTTY !== true) return;
+
+  const choices: { name: string; value: string }[] = [];
+
+  if (lastShownId) {
+    choices.push({ name: `Verify this record ${DIM("— check provenance completeness")}`, value: `ges governance verify ${lastShownId}` });
+    if (records.length > 1) {
+      choices.push({ name: `Show another record ${DIM("— pick from list")}`, value: `__pick_show__` });
+    }
+    choices.push({ name: `Record an approval ${DIM("— add approval decision")}`, value: `ges governance approve ${lastShownId}` });
+    choices.push({ name: `Add evidence reference ${DIM("— link to Jira/Confluence/etc")}`, value: `ges governance evidence ${lastShownId}` });
+    choices.push({ name: `Link risk assessment ${DIM("— assessor, methodology, score")}`, value: `ges governance risk-assessment ${lastShownId}` });
+    choices.push({ name: `Document policy basis ${DIM("— which policy applies")}`, value: `ges governance policy-basis ${lastShownId}` });
+  } else if (records.length > 0) {
+    choices.push({ name: `Show a record's full provenance chain ${DIM("— all dimensions in detail")}`, value: `__pick_show__` });
+    choices.push({ name: `Verify a record's completeness ${DIM("— check all 8 dimensions")}`, value: `__pick_verify__` });
+  }
+
+  choices.push({ name: `Create a new governance record ${DIM("— start a new approval chain")}`, value: `ges governance add` });
+
+  if (records.length === 0) {
+    choices.length = 0;
+    choices.push({ name: `Create a new governance record ${DIM("— start a new approval chain")}`, value: `ges governance add` });
+  }
+
+  choices.push({ name: `${YELLOW("Exit")} ${DIM("— return to terminal")}`, value: `exit` });
+
+  divider();
+  label("What would you like to do next?");
+
+  const answer = await select({
+    message: "Choose your next action:",
+    choices,
+  });
+
+  if (answer === "exit") {
+    blank();
+    return;
+  }
+
+  let cmd = answer;
+
+  if (answer === "__pick_show__" || answer === "__pick_verify__") {
+    let recordChoice: string;
+    if (records.length === 1) {
+      recordChoice = records[0].id;
+    } else {
+      recordChoice = await select({
+        message: "Select a record:",
+        choices: records.map(r => ({
+          name: `${r.system_name} ${GRAY(`(${r.status}, ${r.risk_level})`)}`,
+          value: r.id,
+        })),
+      });
+    }
+    const sub = answer === "__pick_show__" ? "show" : "verify";
+    cmd = `ges governance ${sub} ${recordChoice}`;
+  }
+
+  blank();
+  info("Running", GREEN(cmd));
+  divider();
+  blank();
+
+  const { execSync } = await import("node:child_process");
+  try {
+    execSync(cmd, { stdio: "inherit" });
+  } catch {
+    process.exit(1);
+  }
+}
+
 export const governanceCommand = new Command("governance")
   .description("Manage governance approval provenance chains")
   .action(async () => {
@@ -409,12 +486,13 @@ export const governanceCommand = new Command("governance")
   .addCommand(
     new Command("list")
       .description("List all governance records")
-      .action(() => {
+      .action(async () => {
         const root = ensureGESInitialized();
         const records = loadGovernanceRecords(root);
         if (records.length === 0) {
           info("No governance records found.");
           console.log(`  ${DIM("Create one with:")} ${GREEN("ges governance add")}\n`);
+          await showGovernanceNextAction(root, records);
           return;
         }
         blank();
@@ -424,13 +502,14 @@ export const governanceCommand = new Command("governance")
           printRecordSummary(r);
           console.log();
         });
+        await showGovernanceNextAction(root, records);
       }),
   )
   .addCommand(
     new Command("show")
       .description("Show full provenance chain for a governance record")
       .argument("<id>", "Record ID or system name")
-      .action((id: string) => {
+      .action(async (id: string) => {
         const root = ensureGESInitialized();
         const record = findGovernanceRecord(root, id);
         if (!record) {
@@ -562,13 +641,14 @@ export const governanceCommand = new Command("governance")
         }
         console.log(`\n  Created: ${record.created_at} by ${record.created_by}`);
         console.log(`  Updated: ${record.updated_at} by ${record.updated_by} (v${record.record_version})\n`);
+        await showGovernanceNextAction(root, [record], record.id);
       }),
   )
   .addCommand(
     new Command("verify")
       .description("Verify the provenance chain completeness of a governance record")
       .argument("<id>", "Record ID or system name")
-      .action((id: string) => {
+      .action(async (id: string) => {
         const root = ensureGESInitialized();
         const record = findGovernanceRecord(root, id);
         if (!record) {
@@ -617,6 +697,7 @@ export const governanceCommand = new Command("governance")
           result.warnings.forEach(w => console.log(`    ${YELLOW("△")} ${w}`));
         }
         console.log();
+        await showGovernanceNextAction(root, [record], record.id);
       }),
   )
   .addCommand(
