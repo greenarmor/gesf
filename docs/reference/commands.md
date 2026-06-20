@@ -20,7 +20,9 @@ ges init                              # Interactive prompts
 ges init -n "My App"                  # Specify name
 ges init -t saas                      # Specify type
 ges init -f "GDPR,OWASP,NIST"        # Specify frameworks
+ges init -c GB                        # Country: United Kingdom (installs UK-GDPR pack)
 ges init -n "My App" -t saas -f "GDPR,OWASP"  # All options
+ges init --force                      # Re-initialize existing project
 ```
 
 | Flag | Short | Description |
@@ -28,6 +30,8 @@ ges init -n "My App" -t saas -f "GDPR,OWASP"  # All options
 | `--name <name>` | `-n` | Project name (default: directory name) |
 | `--type <type>` | `-t` | Project type (see project types below) |
 | `--frameworks <list>` | `-f` | Comma-separated framework list |
+| `--country <code>` | `-c` | Country of origin (e.g., `BR`, `CA`, `US-CA`, `GB`, `SG`, `PH`, `JP`, `EU`) — installs matching privacy pack |
+| `--force` | | Re-initialize even if GESF is already set up |
 
 **Project type values:** `saas`, `ai-application`, `mcp-server`, `blockchain`, `wallet`, `government-system`, `healthcare-system`, `event-platform`, `photo-storage-platform`, `vulnerability-scanner`, `generic-web-application`, `api-backend`, `mobile-application`
 
@@ -41,13 +45,14 @@ Scan source code for security and compliance violations. Language-agnostic — s
 ges audit                  # Full audit with findings
 ges audit --ci             # Exit code 1 on critical findings
 ges audit --json           # Machine-readable JSON output
+ges audit --incremental    # Only rescan changed files since last audit
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--ci` | Exit code 1 if critical findings exist (for CI/CD) |
 | `--json` | Output findings and score as JSON |
-
+| `--incremental` | Only rescan files changed since last audit (faster for large projects) |
 ---
 
 ## `ges score`
@@ -323,21 +328,170 @@ ges governance delete <id>                                  # Delete a record
 
 ### Subcommands
 
+#### `governance add`
+
+Create a new governance record.
+
+```bash
+ges governance add --name "Payment API" --type api --risk high
+ges governance add -n "Chatbot" --type ai-system --risk medium --desc "Customer support AI"
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--name <name>` | `-n` | System name |
+| `--type <type>` | | System type: `ai-system`, `application`, `data-process`, `api`, `model`, `infrastructure`, `third-party-service` |
+| `--risk <level>` | | Risk level: `low`, `medium`, `high`, `critical` |
+| `--desc <description>` | | System description |
+| `--actor <name>` | | Name of person performing this action |
+| `--actor-role <role>` | | Role of person performing this action |
+
+#### `governance approve`
+
+Record an approval decision for a governance record.
+
+```bash
+ges governance approve gov-123 --approver "Jane Smith" --role "CISO" \
+    --decision approved --authority "AI Ethics Board" --valid-until "2027-01-01"
+```
+
+| Flag | Description |
+|------|-------------|
+| `--approver <name>` | Approver full name |
+| `--role <role>` | Approver role/title |
+| `--email <email>` | Approver email |
+| `--authority <authority>` | Approval authority (e.g., "AI Ethics Board") |
+| `--decision <decision>` | `approved`, `rejected`, or `conditional` |
+| `--valid-from <date>` | Validity start date (YYYY-MM-DD) |
+| `--valid-until <date>` | Validity end date (YYYY-MM-DD) |
+| `--conditions <conditions>` | Conditions (comma-separated) |
+| `--rationale <text>` | Rationale for the decision |
+| `--actor <name>` | Name of person performing this action |
+| `--actor-role <role>` | Role of person performing this action |
+
+#### `governance evidence`
+
+Add an evidence reference to a governance record. Evidence is **referenced, not duplicated** — each entry points to the source system.
+
+```bash
+ges governance evidence gov-123 --title "DPIA Report Q4" --source jira --reference "DPIA-2026-001"
+```
+
+| Flag | Description |
+|------|-------------|
+| `--title <title>` | Evidence title |
+| `--source <system>` | Source system: `jira`, `confluence`, `servicenow`, `sharepoint`, `grc-platform`, `email`, `git`, `file`, `url`, `other` |
+| `--reference <ref>` | Reference (ticket ID, URL, document name, or path) |
+| `--actor <name>` | Name of person performing this action |
+| `--actor-role <role>` | Role of person performing this action |
+
+#### `governance risk-assessment`
+
+Link a risk assessment to a governance record.
+
+```bash
+ges governance risk-assessment gov-123 --assessor "John Doe" --methodology "NIST RMF" \
+    --score "7.5/10" --residual medium --identified-risks "data breach,key compromise"
+```
+
+| Flag | Description |
+|------|-------------|
+| `--assessor <name>` | Risk assessor name |
+| `--methodology <text>` | Assessment methodology (e.g., `NIST RMF`, `ISO 27005`) |
+| `--score <score>` | Risk score (e.g., `7.5/10`, `High`) |
+| `--residual <level>` | Residual risk level after mitigations |
+| `--actor <name>` | Name of person performing this action |
+| `--actor-role <role>` | Role of person performing this action |
+
+#### `governance policy-basis`
+
+Document the policy basis for a governance record.
+
+```bash
+ges governance policy-basis gov-123 --policy-name "InfoSec Policy" --standard "ISO 27001" --pv "2.1"
+```
+
+| Flag | Description |
+|------|-------------|
+| `--policy-id <id>` | Policy identifier |
+| `--policy-name <name>` | Policy name |
+| `--pv <version>` | Policy version |
+| `--standard <std>` | Standard reference (e.g., `GDPR`, `ISO 27001`) |
+| `--actor <name>` | Name of person performing this action |
+| `--actor-role <role>` | Role of person performing this action |
+
+#### `governance review-cycle`
+
+Set up a periodic review cycle for a governance record.
+
+```bash
+ges governance review-cycle gov-123 --frequency annual --next-review 2027-01-01
+```
+
+| Flag | Description |
+|------|-------------|
+| `--frequency <freq>` | `quarterly`, `semi-annual`, `annual`, or `biennial` |
+| `--next-review <date>` | Next review date (YYYY-MM-DD) |
+| `--actor <name>` | Name of person performing this action |
+| `--actor-role <role>` | Role of person performing this action |
+
+#### `governance data-inventory`
+
+Document the data inventory for a governance record.
+
+```bash
+ges governance data-inventory gov-123 --categories "names,emails,ip addresses" \
+    --purposes "user authentication,analytics" --retention "2 years"
+```
+
+| Flag | Description |
+|------|-------------|
+| `--categories <cats>` | Personal data categories (comma-separated) |
+| `--purposes <purp>` | Processing purposes (comma-separated) |
+| `--retention <period>` | Retention period |
+| `--actor <name>` | Name of person performing this action |
+| `--actor-role <role>` | Role of person performing this action |
+
+#### `governance committee`
+
+Record committee approval for a governance record.
+
+```bash
+ges governance committee gov-123 --committee "AI Ethics Board" \
+    --meeting-ref "MIN-2026-001" --meeting-date 2026-01-15
+```
+
+| Flag | Description |
+|------|-------------|
+| `--committee <name>` | Committee name |
+| `--meeting-ref <ref>` | Meeting reference or minutes ID |
+| `--meeting-date <date>` | Meeting date (YYYY-MM-DD) |
+| `--actor <name>` | Name of person performing this action |
+| `--actor-role <role>` | Role of person performing this action |
+
+#### `governance compliance-links`
+
+Map compliance frameworks and controls to a governance record.
+
+```bash
+ges governance compliance-links gov-123 --frameworks "GDPR,OWASP" --controls "GDPR-ART32-002,OWASP-AUTH-001"
+```
+
+| Flag | Description |
+|------|-------------|
+| `--frameworks <fw>` | Frameworks (comma-separated, e.g., `GDPR,OWASP`) |
+| `--controls <ctrls>` | Controls satisfied (comma-separated) |
+| `--actor <name>` | Name of person performing this action |
+| `--actor-role <role>` | Role of person performing this action |
+
+#### Query subcommands
+
 | Subcommand | Description |
 |------------|-------------|
-| `add` | Create a new governance record |
-| `approve` | Record an approval decision |
-| `evidence` | Add an evidence reference |
-| `risk-assessment` | Link a risk assessment |
-| `policy-basis` | Document the policy basis |
-| `review-cycle` | Set up periodic review |
-| `data-inventory` | Document data inventory |
-| `committee` | Record committee approval |
-| `compliance-links` | Map compliance frameworks |
-| `list` | List all records |
-| `show` | Show full provenance chain |
-| `verify` | Verify completeness |
-| `delete` | Delete a record |
+| `list` | List all governance records (summary view) |
+| `show <id>` | Show full provenance chain for a record |
+| `verify <id>` | Verify completeness of the provenance chain (8-dimension check) |
+| `delete <id>` | Delete a governance record |
 
 ### Common Flags
 
@@ -347,5 +501,63 @@ All subcommands accept:
 |------|-------------|
 | `--actor <name>` | Name of person performing this action (for audit trail) |
 | `--actor-role <role>` | Role of person performing this action |
+
+---
+
+## `ges assign`
+
+Assign pending audit findings to governance provenance records, creating full traceability from fix → assignee → governance record → approval → policy → evidence. See the [Fix Assignments guide](../user-guide/fix-assignments.md) for details.
+
+### Assign a finding
+
+```bash
+# Interactive mode (prompts for finding, record, assignee)
+ges assign
+
+# Full CLI mode
+ges assign \
+    --finding "SECRETS-001:src/auth.ts:1" \
+    --record gov-123 \
+    --assignee "Bob Smith" \
+    --assignee-role "Security Engineer" \
+    --notes "Urgent — production key exposure" \
+    --actor "Jane Smith" --actor-role "Tech Lead"
+```
+
+### List all assignments
+
+```bash
+ges assign --list
+```
+
+### Resolve a fix
+
+```bash
+ges assign --resolve "SECRETS-001:src/auth.ts:1" \
+    --by "Bob Smith" \
+    --by-role "Security Engineer" \
+    --method manual \
+    --resolution-notes "Replaced with process.env, added dotenv"
+```
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--finding <key>` | Finding key (`ruleId:file:line`) to assign |
+| `--record <id>` | Governance record ID or system name |
+| `--assignee <name>` | Person assigned to fix this |
+| `--assignee-role <role>` | Role of the assignee |
+| `--notes <notes>` | Notes for this assignment |
+| `--actor <name>` | Your name (for audit trail) |
+| `--actor-role <role>` | Your role (for audit trail) |
+| `--list` | List all fix assignments |
+| `--resolve <key>` | Resolve a fix assignment by finding key |
+| `--by <name>` | Who resolved the fix (for `--resolve`) |
+| `--by-role <role>` | Role of resolver (for `--resolve`) |
+| `--method <method>` | Resolution method: `auto-fix`, `manual`, `not-applicable` |
+| `--resolution-notes <notes>` | Notes about the resolution |
+
+Assignments are stored in `.ges/fix-assignments.json` and visible in the dashboard's Fix Detail page with inline provenance chain display.
 
 ---

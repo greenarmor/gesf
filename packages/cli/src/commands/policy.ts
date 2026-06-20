@@ -4,12 +4,93 @@ import { ensureGESInitialized, readJsonFile, writeFileSync, writeJsonFile } from
 import type { ProjectConfig } from "@greenarmor/ges-core";
 import { addFrameworkToConfig, removeFrameworkFromConfig, recordActivity } from "@greenarmor/ges-core";
 import { showNextStepsMenu } from "../utils/next-steps.js";
-import { banner, blank, success, error, kv, BOLD, CYAN, DIM, GRAY } from "../utils/ui.js";
+import { banner, blank, success, error, kv, BOLD, CYAN, DIM, GRAY, YELLOW } from "../utils/ui.js";
+import { select } from "../utils/prompts.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 const policyCmd = new Command("policy")
-  .description("Manage policy packs");
+  .description("Manage policy packs")
+  .action(async () => {
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      policyCmd.outputHelp();
+      return;
+    }
+
+    banner("Policy Packs", "Compliance control management");
+
+    let root: string;
+    try {
+      root = ensureGESInitialized();
+    } catch {
+      error("GESF is not initialized.", "Run `ges init` first.");
+      blank();
+      return;
+    }
+
+    const installedPacks = fs.existsSync(path.join(root, "controls"))
+      ? fs.readdirSync(path.join(root, "controls")).filter(d => {
+          try { return fs.statSync(path.join(root, "controls", d)).isDirectory(); } catch { return false; }
+        })
+      : [];
+
+    if (installedPacks.length > 0) {
+      console.log(`  ${BOLD("Installed Packs")} ${GRAY(`(${installedPacks.length})`)}`);
+      installedPacks.forEach(p => console.log(`    ${GRAY("•")} ${p}`));
+      console.log("");
+    }
+
+    const action = await select({
+      message: "What would you like to do?",
+      choices: [
+        { name: `List all available packs ${DIM("— see what can be installed")}`, value: "list" },
+        { name: `Install a pack ${DIM("— add compliance controls")}`, value: "install" },
+        ...(installedPacks.length > 0 ? [
+          { name: `Remove a pack ${DIM(`(${installedPacks.length} installed)`)}`, value: "remove" },
+        ] : []),
+        { name: `${YELLOW("Exit")} ${DIM("— return to terminal")}`, value: "exit" },
+      ],
+    });
+
+    if (action === "exit") {
+      blank();
+      return;
+    }
+
+    let cmd = "ges policy";
+
+    if (action === "list") {
+      cmd += " list";
+    } else if (action === "install") {
+      const packs = getAllPacks();
+      const packChoice = await select({
+        message: "Select a pack to install:",
+        choices: [
+          ...packs.map(p => ({
+            name: `${p.id.padEnd(16)} ${DIM(p.name)} ${GRAY(`(${p.controls.length} controls)`)}`,
+            value: p.id,
+          })),
+        ],
+      });
+      cmd += ` install ${packChoice}`;
+    } else if (action === "remove") {
+      const packChoice = await select({
+        message: "Select a pack to remove:",
+        choices: [
+          ...installedPacks.map(p => ({ name: p, value: p })),
+        ],
+      });
+      cmd += ` remove ${packChoice}`;
+    }
+
+    blank();
+    const { execSync } = await import("node:child_process");
+    try {
+      execSync(cmd, { stdio: "inherit" });
+    } catch {
+      process.exit(1);
+    }
+  });
 
 policyCmd
   .command("list")

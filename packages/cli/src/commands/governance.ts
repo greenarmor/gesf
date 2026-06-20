@@ -80,6 +80,97 @@ function printRecordSummary(record: GovernanceRecord): void {
 
 export const governanceCommand = new Command("governance")
   .description("Manage governance approval provenance chains")
+  .action(async () => {
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      governanceCommand.outputHelp();
+      return;
+    }
+
+    banner("GESF Governance", "Provenance Chain Management");
+
+    let root: string;
+    try {
+      root = ensureGESInitialized();
+    } catch {
+      error("GESF is not initialized.", "Run `ges init` first.");
+      blank();
+      return;
+    }
+
+    const records = loadGovernanceRecords(root);
+    if (records.length > 0) {
+      console.log(`  ${BOLD("Existing Records")} ${GRAY(`(${records.length})`)}`);
+      records.forEach(r => printRecordSummary(r));
+      console.log("");
+    } else {
+      warn("No governance records yet.", "Create one to start building a provenance chain.");
+      blank();
+    }
+
+    const action = await select({
+      message: "What would you like to do?",
+      choices: [
+        { name: `Create a new governance record ${DIM("— start a new approval chain")}`, value: "add" },
+        ...(records.length > 0 ? [
+          { name: `List all records ${DIM(`(${records.length} existing)`)}`, value: "list" },
+          { name: `Show a record's full provenance chain ${DIM("— all dimensions in detail")}`, value: "show" },
+          { name: `Verify a record's completeness ${DIM("— check all 8 dimensions")}`, value: "verify" },
+          { name: `Record an approval decision ${DIM("— who approved, under what authority")}`, value: "approve" },
+          { name: `Add an evidence reference ${DIM("— link to Jira, Confluence, etc.")}`, value: "evidence" },
+          { name: `Link a risk assessment ${DIM("— assessor, methodology, score")}`, value: "risk-assessment" },
+          { name: `Document the policy basis ${DIM("— which policy/standard applies")}`, value: "policy-basis" },
+          { name: `Set up a review cycle ${DIM("— when to re-review")}`, value: "review-cycle" },
+          { name: `Document data inventory ${DIM("— what personal data is processed")}`, value: "data-inventory" },
+          { name: `Record committee approval ${DIM("— formal committee sign-off")}`, value: "committee" },
+          { name: `Map compliance frameworks ${DIM("— GDPR, OWASP, etc.")}`, value: "compliance-links" },
+          { name: `Delete a record ${DIM("— permanently remove")}`, value: "delete" },
+        ] : []),
+        { name: `${YELLOW("Exit")} ${DIM("— return to terminal")}`, value: "exit" },
+      ],
+    });
+
+    if (action === "exit") {
+      blank();
+      return;
+    }
+
+    let cmd = `ges governance ${action}`;
+
+    if (["show", "verify", "approve", "evidence", "risk-assessment", "policy-basis", "review-cycle", "data-inventory", "committee", "compliance-links", "delete"].includes(action)) {
+      if (records.length === 0) {
+        error("No records to work with.", "Create one first with: ges governance add");
+        blank();
+        return;
+      }
+
+      if (records.length === 1) {
+        cmd += ` ${records[0].id}`;
+      } else {
+        const recordChoice = await select({
+          message: "Select a record:",
+          choices: [
+            ...records.map(r => ({
+              name: `${r.system_name} ${GRAY(`(${r.status}, ${r.risk_level})`)}`,
+              value: r.id,
+            })),
+          ],
+        });
+        cmd += ` ${recordChoice}`;
+      }
+    }
+
+    blank();
+    info("Running", GREEN(cmd));
+    divider();
+    blank();
+
+    const { execSync } = await import("node:child_process");
+    try {
+      execSync(cmd, { stdio: "inherit" });
+    } catch {
+      process.exit(1);
+    }
+  })
   .addCommand(
     new Command("add")
       .description("Create a new governance record")
@@ -175,10 +266,10 @@ export const governanceCommand = new Command("governance")
           process.exit(1);
         }
 
-        const approverName = options.approver || await input({ message: "Approver name:", default: "" });
-        const approverRole = options.role || await input({ message: "Approver role:", default: "" });
-        const approverEmail = options.email || await input({ message: "Approver email:", default: "" });
-        const authority = options.authority || await input({ message: "Approval authority:", default: "" });
+        const approverName = options.approver || await input({ message: "Approver full name:", default: "" });
+        const approverRole = options.role || await input({ message: "Approver role/title (e.g., 'CISO', 'CTO'):", default: "" });
+        const approverEmail = options.email || await input({ message: "Approver email (optional):", default: "" });
+        const authority = options.authority || await input({ message: "Approval authority (e.g., 'AI Ethics Board', 'Security Committee'):", default: "" });
         const decision = (options.decision || await select({
           message: "Decision:",
           choices: [
@@ -189,9 +280,9 @@ export const governanceCommand = new Command("governance")
         })) as "approved" | "rejected" | "conditional";
 
         const validFrom = options.validFrom || new Date().toISOString().split("T")[0];
-        const validUntil = options.validUntil || await input({ message: "Valid until (YYYY-MM-DD, or blank for indefinite):", default: "" });
-        const conditionsStr = options.conditions || await input({ message: "Conditions (comma-separated):", default: "" });
-        const rationale = options.rationale || await input({ message: "Rationale:", default: "" });
+        const validUntil = options.validUntil || await input({ message: "Valid until YYYY-MM-DD (or press Enter for indefinite):", default: "" });
+        const conditionsStr = options.conditions || await input({ message: "Conditions (comma-separated, or press Enter to skip):", default: "" });
+        const rationale = options.rationale || await input({ message: "Rationale (why was this decision made?):", default: "" });
 
         const updated = setGovernanceApproval(root, record.id, {
           approver_name: approverName,
@@ -246,7 +337,7 @@ export const governanceCommand = new Command("governance")
           process.exit(1);
         }
 
-        const title = options.title || await input({ message: "Evidence title:", default: "" });
+        const title = options.title || await input({ message: "Evidence title (e.g., 'DPIA Report Q4 2026'):", default: "" });
         const sourceSystem = (options.source || await select({
           message: "Source system:",
           choices: [
@@ -263,7 +354,7 @@ export const governanceCommand = new Command("governance")
           ],
         })) as EvidenceSourceSystem;
 
-        const reference = options.reference || await input({ message: "Reference (ticket ID, URL, doc name):", default: "" });
+        const reference = options.reference || await input({ message: "Reference (ticket ID, URL, or document path):", default: "" });
         const evidenceType = await select({
           message: "Evidence type:",
           choices: [
@@ -279,7 +370,7 @@ export const governanceCommand = new Command("governance")
             { name: "Other", value: "other" },
           ],
         }) as EvidenceType;
-        const locationDesc = await input({ message: "Location description:", default: "" });
+        const locationDesc = await input({ message: "Location description (where to find it, optional):", default: "" });
 
         const evidence = createEvidenceRef({
           type: evidenceType,
@@ -576,12 +667,12 @@ export const governanceCommand = new Command("governance")
         const record = findGovernanceRecord(root, id);
         if (!record) { console.error(`  Error: Governance record "${id}" not found.`); process.exit(1); }
 
-        const assessor = options.assessor || await input({ message: "Assessor name:", default: "" });
-        const methodology = options.methodology || await input({ message: "Methodology:", default: "" });
-        const score = options.score || await input({ message: "Risk score:", default: "" });
-        const residual = options.residual || await input({ message: "Residual risk level:", default: "" });
-        const risksStr = await input({ message: "Identified risks (comma-separated):", default: "" });
-        const mitigationsStr = await input({ message: "Mitigation measures (comma-separated):", default: "" });
+        const assessor = options.assessor || await input({ message: "Risk assessor name:", default: "" });
+        const methodology = options.methodology || await input({ message: "Methodology (e.g., 'NIST RMF', 'ISO 27005'):", default: "" });
+        const score = options.score || await input({ message: "Risk score (e.g., '7.5/10', 'High'):", default: "" });
+        const residual = options.residual || await input({ message: "Residual risk level (low/medium/high):", default: "" });
+        const risksStr = await input({ message: "Identified risks (comma-separated, or Enter to skip):", default: "" });
+        const mitigationsStr = await input({ message: "Mitigation measures (comma-separated, or Enter to skip):", default: "" });
 
         const updated = setGovernanceRiskAssessment(root, record.id, {
           id: `risk-${Date.now()}`,
@@ -620,11 +711,11 @@ export const governanceCommand = new Command("governance")
         const record = findGovernanceRecord(root, id);
         if (!record) { console.error(`  Error: Governance record "${id}" not found.`); process.exit(1); }
 
-        const policyId = options.policyId || await input({ message: "Policy ID:", default: "" });
-        const policyName = options.policyName || await input({ message: "Policy name:", default: "" });
+        const policyId = options.policyId || await input({ message: "Policy ID (e.g., 'POL-SEC-001'):", default: "" });
+        const policyName = options.policyName || await input({ message: "Policy name (e.g., 'Information Security Policy'):", default: "" });
         const version = options.pv || await input({ message: "Policy version:", default: "1.0" });
-        const standard = options.standard || await input({ message: "Standard:", default: "" });
-        const clausesStr = await input({ message: "Applicable clauses (comma-separated):", default: "" });
+        const standard = options.standard || await input({ message: "Standard (e.g., 'GDPR', 'ISO 27001'):", default: "" });
+        const clausesStr = await input({ message: "Applicable clauses (comma-separated, or Enter to skip):", default: "" });
 
         const updated = setGovernancePolicyBasis(root, record.id, {
           policy_id: policyId,
@@ -700,11 +791,11 @@ export const governanceCommand = new Command("governance")
         const record = findGovernanceRecord(root, id);
         if (!record) { console.error(`  Error: Governance record "${id}" not found.`); process.exit(1); }
 
-        const categoriesStr = options.categories || await input({ message: "Personal data categories (comma-separated):", default: "" });
-        const purposesStr = options.purposes || await input({ message: "Processing purposes (comma-separated):", default: "" });
-        const subjectsStr = await input({ message: "Data subjects (comma-separated):", default: "" });
-        const transfersStr = await input({ message: "Cross-border transfers (comma-separated):", default: "" });
-        const retention = options.retention || await input({ message: "Retention period:", default: "" });
+        const categoriesStr = options.categories || await input({ message: "Personal data categories (e.g., 'names,emails,IP addresses'):", default: "" });
+        const purposesStr = options.purposes || await input({ message: "Processing purposes (e.g., 'user auth,analytics'):", default: "" });
+        const subjectsStr = await input({ message: "Data subjects (e.g., 'customers,employees', or Enter to skip):", default: "" });
+        const transfersStr = await input({ message: "Cross-border transfers (e.g., 'US,EU', or Enter to skip):", default: "" });
+        const retention = options.retention || await input({ message: "Retention period (e.g., '2 years', '90 days'):", default: "" });
 
         const updated = setGovernanceDataInventory(root, record.id, {
           personal_data_categories: categoriesStr ? categoriesStr.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
@@ -735,11 +826,11 @@ export const governanceCommand = new Command("governance")
         const record = findGovernanceRecord(root, id);
         if (!record) { console.error(`  Error: Governance record "${id}" not found.`); process.exit(1); }
 
-        const committeeName = options.committee || await input({ message: "Committee name:", default: "" });
-        const meetingRef = options.meetingRef || await input({ message: "Meeting reference:", default: "" });
+        const committeeName = options.committee || await input({ message: "Committee name (e.g., 'AI Ethics Board'):", default: "" });
+        const meetingRef = options.meetingRef || await input({ message: "Meeting reference (e.g., 'MIN-2026-001'):", default: "" });
         const meetingDate = options.meetingDate || await input({ message: "Meeting date (YYYY-MM-DD):", default: "" });
-        const attendeesStr = await input({ message: "Attendees (comma-separated):", default: "" });
-        const summary = await input({ message: "Decision summary:", default: "" });
+        const attendeesStr = await input({ message: "Attendees (comma-separated names, or Enter to skip):", default: "" });
+        const summary = await input({ message: "Decision summary (what was decided):", default: "" });
 
         const updated = setGovernanceCommittee(root, record.id, {
           committee_name: committeeName,
@@ -772,9 +863,9 @@ export const governanceCommand = new Command("governance")
         const record = findGovernanceRecord(root, id);
         if (!record) { console.error(`  Error: Governance record "${id}" not found.`); process.exit(1); }
 
-        const frameworksStr = options.frameworks || await input({ message: "Frameworks (comma-separated):", default: "" });
-        const controlsStr = options.controls || await input({ message: "Controls satisfied (comma-separated):", default: "" });
-        const packsStr = await input({ message: "Control pack IDs (comma-separated):", default: "" });
+        const frameworksStr = options.frameworks || await input({ message: "Frameworks (e.g., 'GDPR,OWASP'):", default: "" });
+        const controlsStr = options.controls || await input({ message: "Controls satisfied (e.g., 'GDPR-ART32-002', or Enter to skip):", default: "" });
+        const packsStr = await input({ message: "Control pack IDs (comma-separated, or Enter to skip):", default: "" });
 
         const updated = setGovernanceComplianceLinks(root, record.id, {
           frameworks: frameworksStr ? frameworksStr.split(",").map((s: string) => s.trim()).filter(Boolean) : [],

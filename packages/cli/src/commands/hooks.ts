@@ -2,9 +2,58 @@ import { Command } from "commander";
 import { ensureGESInitialized } from "../utils/project.js";
 import { installHooks, uninstallHooks } from "@greenarmor/ges-git-hooks";
 import { recordActivity } from "@greenarmor/ges-core";
+import { banner, blank, DIM, YELLOW } from "../utils/ui.js";
+import { select } from "../utils/prompts.js";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 export const hooksCommand = new Command("hooks")
   .description("Manage GESF git hooks (pre-commit compliance enforcement)")
+  .action(async () => {
+    if (!process.stdin.isTTY || !process.stdout.isTTY) {
+      hooksCommand.outputHelp();
+      return;
+    }
+
+    banner("Git Hooks", "Pre-commit compliance enforcement");
+
+    let root: string;
+    try {
+      root = ensureGESInitialized();
+    } catch {
+      const { error } = await import("../utils/ui.js");
+      error("GESF is not initialized.", "Run `ges init` first.");
+      blank();
+      return;
+    }
+
+    const hookPath = path.join(root, ".git", "hooks", "pre-commit");
+    const isInstalled = fs.existsSync(hookPath);
+
+    const action = await select({
+      message: "What would you like to do?",
+      choices: [
+        ...(isInstalled
+          ? [{ name: `Uninstall pre-commit hook ${DIM("— remove compliance gate")}`, value: "uninstall" }]
+          : [{ name: `Install pre-commit hook ${DIM("— blocks commits with critical findings")}`, value: "install" }]
+        ),
+        { name: `${YELLOW("Exit")} ${DIM("— return to terminal")}`, value: "exit" },
+      ],
+    });
+
+    if (action === "exit") {
+      blank();
+      return;
+    }
+
+    blank();
+    const { execSync } = await import("node:child_process");
+    try {
+      execSync(`ges hooks ${action}`, { stdio: "inherit" });
+    } catch {
+      process.exit(1);
+    }
+  })
   .addCommand(
     new Command("install")
       .description("Install the pre-commit hook that runs ges audit before each commit")

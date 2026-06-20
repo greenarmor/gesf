@@ -195,16 +195,16 @@ async function assignFinding(root: string, options: any): Promise<void> {
     return;
   }
 
-  const assignee = options.assignee || await input({ message: "Assignee name:" });
+  const assignee = options.assignee || await input({ message: "Assignee name (who will fix this):" });
   if (!assignee.trim()) {
-    errorOut("Assignee name is required.");
+    errorOut("Assignee name is required.", "Please provide the name of the person responsible for this fix.");
     return;
   }
 
-  const assigneeRole = options.assigneeRole || await input({ message: "Assignee role (optional):" });
-  const notes = options.notes || await input({ message: "Notes (optional):" });
-  const actorName = options.actor || await input({ message: "Your name (for audit trail):" });
-  const actorRole = options.actorRole || await input({ message: "Your role (optional):" });
+  const assigneeRole = options.assigneeRole || await input({ message: "Assignee role (optional, e.g., 'Security Engineer'):", default: "" });
+  const notes = options.notes || await input({ message: "Notes (optional, e.g., 'Urgent — fix before release'):", default: "" });
+  const actorName = options.actor || await input({ message: "Your name (for audit trail):", default: "cli-user" });
+  const actorRole = options.actorRole || await input({ message: "Your role (optional):", default: "" });
 
   const assignment = createFixAssignment({
     finding_key: fkey,
