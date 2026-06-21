@@ -191,8 +191,6 @@ ${nodeSetupStep()}
       - name: Setup pnpm
         if: hashFiles('pnpm-lock.yaml') != ''
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install dependencies and audit (pnpm)
         if: hashFiles('pnpm-lock.yaml') != ''
