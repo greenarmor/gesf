@@ -1365,6 +1365,8 @@ export function renderDashboard(data: DashboardData): string {
         if (btn) { btn.textContent = 'Create & Assign'; btn.disabled = false; }
       });
   };
+
+  window.resolveFindingFix = function(fkey) {
     if (!confirm('Mark this fix as resolved?')) return;
     var resolver = prompt('Your name:', '') || 'dashboard';
     var resolverRole = prompt('Your role:', '') || '';
