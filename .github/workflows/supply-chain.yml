@@ -21,26 +21,34 @@ jobs:
           node-version: '22'
 
       - name: Setup pnpm
+        if: hashFiles('pnpm-lock.yaml') != ''
         uses: pnpm/action-setup@v4
 
-      - name: Install dependencies
+      - name: Install dependencies (pnpm)
+        if: hashFiles('pnpm-lock.yaml') != ''
         run: pnpm install --frozen-lockfile
 
-      - name: npm audit (high+ severity)
+      - name: Install dependencies (npm)
+        if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') != ''
+        run: npm ci
+
+      - name: Install dependencies (yarn)
+        if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') == '' && hashFiles('yarn.lock') != ''
+        run: yarn install --frozen-lockfile
+
+      - name: Audit dependencies (pnpm)
+        if: hashFiles('pnpm-lock.yaml') != ''
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Audit dependencies (npm)
+        if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') != ''
         run: npm audit --audit-level=high
         continue-on-error: true
 
-      - name: Socket.dev supply chain scan
-        uses: Socket-security/socket-security-action@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
-
-      - name: OSV vulnerability scan
-        uses: google/osv-scanner-action@v2
-        with:
-          scan-args: |-
-            ./
+      - name: Audit dependencies (yarn)
+        if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') == '' && hashFiles('yarn.lock') != ''
+        run: yarn audit --level high
         continue-on-error: true
 
       - name: Audit install scripts
@@ -71,9 +79,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| npm audit (high+) | ✅ advisory |" >> $GITHUB_STEP_SUMMARY
-          echo "| Socket.dev scan | ✅ advisory |" >> $GITHUB_STEP_SUMMARY
-          echo "| OSV-Scanner | ✅ advisory |" >> $GITHUB_STEP_SUMMARY
-          echo "| Install scripts | ✅ checked |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency audit (high+) | advisory |" >> $GITHUB_STEP_SUMMARY
+          echo "| Install scripts | checked |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All checks are advisory (non-blocking) to avoid disrupting development." >> $GITHUB_STEP_SUMMARY
+          echo "All checks are advisory (non-blocking). Active gates: Trivy (dependency-scan.yml), Gitleaks (secret-scan.yml)." >> $GITHUB_STEP_SUMMARY
