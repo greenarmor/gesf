@@ -31,8 +31,9 @@ import {
   REPORTS_DIR,
 } from "@greenarmor/ges-core";
 import { CLI_VERSION } from "../utils/version.js";
-import type { ProjectConfig, ProjectType, FrameworkName } from "@greenarmor/ges-core";
+import type { ProjectConfig, ProjectType, FrameworkName, GovernanceSystemType, GovernanceRiskLevel } from "@greenarmor/ges-core";
 import { recordActivity } from "@greenarmor/ges-core";
+import { createGovernanceRecord, addGovernanceRecord } from "@greenarmor/ges-core";
 import { getPacksForProjectType, getPack, PRIVACY_COUNTRIES, getCountryByCode } from "@greenarmor/ges-policy-engine";
 import {
   generateComplianceDocs,
@@ -265,6 +266,19 @@ export const initCommand = new Command("init")
       writeFileSync(path.join(process.cwd(), wf.filePath), wf.content);
     }
 
+    // Genesis governance record — establishes the root of the approval provenance chain
+    // using project info collected during init, so audit findings can be assigned immediately.
+    const genesisSystemType = mapProjectTypeToSystemType(projectType);
+    const genesisRiskLevel = inferRiskLevel(projectType);
+    const genesisRecord = createGovernanceRecord({
+      system_name: projectName,
+      system_description: `Genesis governance record auto-created by ges init for a ${projectType} project. Frameworks: ${selectedFrameworks.join(", ")}. Update this record with approval, risk assessment, and evidence as your project matures.`,
+      system_type: genesisSystemType,
+      risk_level: genesisRiskLevel,
+      created_by: "ges-init",
+    });
+    addGovernanceRecord(process.cwd(), genesisRecord);
+
     blank();
     step(1, 4, "Creating project structure");
     success("Project structure created");
@@ -281,6 +295,7 @@ export const initCommand = new Command("init")
     }
     success("Control packs installed", packs.map(p => p.id).join(", "));
     success("GitHub Actions workflows generated");
+    success("Genesis governance record created", `${genesisRecord.id} (${genesisSystemType}, ${genesisRiskLevel} risk)`);
     success("Developer logs directory created", ".dev-logs/");
     blank();
     step(2, 4, "Project summary");
@@ -302,9 +317,31 @@ export const initCommand = new Command("init")
       source: "cli",
       action: "init",
       title: `Project initialized: ${projectName}`,
-      description: `Initialized GESF for ${projectType} project${countryInfo ? ` in ${countryInfo.name}` : ""} with frameworks: ${selectedFrameworks.join(", ")}. Installed ${packs.length} policy packs: ${packs.map(p => p.id).join(", ")}.`,
-      details: { packs_affected: packs.map(p => p.id), frameworks_added: selectedFrameworks.map((f: FrameworkName) => String(f)), country: countryCode },
+      description: `Initialized GESF for ${projectType} project${countryInfo ? ` in ${countryInfo.name}` : ""} with frameworks: ${selectedFrameworks.join(", ")}. Installed ${packs.length} policy packs: ${packs.map(p => p.id).join(", ")}. Genesis governance record created: ${genesisRecord.id}.`,
+      details: { packs_affected: packs.map(p => p.id), frameworks_added: selectedFrameworks.map((f: FrameworkName) => String(f)), country: countryCode, genesis_governance_record_id: genesisRecord.id },
     });
 
     await showNextStepsMenu("init");
   });
+
+function mapProjectTypeToSystemType(projectType: ProjectType): GovernanceSystemType {
+  switch (projectType) {
+    case "ai-application":
+    case "mcp-server":
+      return "ai-system";
+    case "api-backend":
+      return "api";
+    default:
+      return "application";
+  }
+}
+
+function inferRiskLevel(projectType: ProjectType): GovernanceRiskLevel {
+  if (projectType === "healthcare-system" || projectType === "government-system") {
+    return "high";
+  }
+  if (projectType === "blockchain" || projectType === "wallet") {
+    return "high";
+  }
+  return "medium";
+}

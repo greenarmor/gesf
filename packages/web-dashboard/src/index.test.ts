@@ -488,6 +488,48 @@ describe("web-dashboard", () => {
       expect(html).toContain("Traceability");
     });
 
+    it("renders inline create-and-assign form JS when no governance records exist", () => {
+      const data = collectDashboardData(tmpDir);
+      const html = renderDashboard(data);
+      expect(html).toContain("submitCreateAndAssignForm");
+      expect(html).toContain("govRecordsForAssign = []");
+    });
+
+    it("renders governance records in govRecordsForAssign when they exist", () => {
+      const data = collectDashboardData(tmpDir);
+      data.governance = {
+        records: [
+          {
+            id: "gov-test-1",
+            system_name: "Test System",
+            system_description: "",
+            system_type: "application",
+            system_version: "",
+            status: "draft",
+            risk_level: "medium",
+            approval: null,
+            risk_assessment: null,
+            policy_basis: null,
+            committee: null,
+            evidence: [],
+            review_cycle: null,
+            data_inventory: null,
+            compliance: null,
+            created_at: "2026-01-01T00:00:00Z",
+            created_by: "test",
+            updated_at: "2026-01-01T00:00:00Z",
+            updated_by: "test",
+            record_version: 1,
+          },
+        ],
+        verifications: [],
+        summary: { total: 1, approved: 0, draft: 1, rejected: 0, high_risk: 0, with_evidence: 0, blocking_issues: 0 },
+      };
+      const html = renderDashboard(data);
+      expect(html).toContain('"Test System"');
+      expect(html).toContain("gov-test-1");
+    });
+
     it("includes all 5 navigation tabs", () => {
       const data = collectDashboardData(tmpDir);
       const html = renderDashboard(data);

@@ -1175,8 +1175,57 @@ export function renderDashboard(data: DashboardData): string {
     var overlay = document.getElementById('assign-modal-overlay');
     var modal = document.getElementById('assign-modal');
     if (!overlay || !modal) return;
+    modal.dataset.fkey = fkey;
+    modal.dataset.ruleId = ruleId;
+    modal.dataset.title = title;
+    modal.dataset.file = file;
+    modal.dataset.line = String(line || 0);
+    modal.dataset.severity = severity;
+    modal.dataset.controlIds = controlIds;
+    var findingCtx = '<div style="margin-bottom:12px;padding:8px 10px;background:#f9fafb;border-radius:6px;font-size:12px;">' +
+      '<strong>' + ruleId + '</strong> &mdash; ' + title + '<br>' +
+      '<span style="color:#6b7280;font-family:monospace;">' + file + (line ? ':' + line : '') + '</span>' +
+      '</div>';
+    var assigneeFields =
+      '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Assignee Name *</label>' +
+      '<input name="assignee" type="text" placeholder="e.g., Jane Doe" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;" />' +
+      '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Assignee Role</label>' +
+      '<input name="assignee_role" type="text" placeholder="e.g., Security Engineer" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;" />' +
+      '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Your Name (for audit log)</label>' +
+      '<input name="actor_name" type="text" placeholder="Who is making this assignment" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;" />' +
+      '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Your Role</label>' +
+      '<input name="actor_role" type="text" placeholder="e.g., Tech Lead" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;" />';
     if (govRecordsForAssign.length === 0) {
-      showToast('No governance records found. Create one first on the Governance tab.', 'error');
+      modal.innerHTML =
+        '<div class="gov-modal-header"><h3>Create Governance Record &amp; Assign Fix</h3><button class="gov-modal-close" onclick="closeAssignModal()">&times;</button></div>' +
+        '<div class="gov-modal-body">' +
+        '<div style="margin-bottom:12px;padding:10px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#92400e;">' +
+        '<strong>No governance records exist yet.</strong> Create one below to establish the approval provenance chain. The fix will be assigned to it automatically.' +
+        '</div>' +
+        findingCtx +
+        '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">System Name *</label>' +
+        '<input name="system_name" type="text" placeholder="e.g., Customer Support Chatbot" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;" />' +
+        '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">System Type</label>' +
+        '<select name="system_type" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;">' +
+          '<option value="ai-system">AI System</option>' +
+          '<option value="application" selected>Application</option>' +
+          '<option value="data-process">Data Process</option>' +
+          '<option value="api">API</option>' +
+          '<option value="model">Model</option>' +
+          '<option value="infrastructure">Infrastructure</option>' +
+          '<option value="third-party-service">Third-Party Service</option>' +
+        '</select>' +
+        '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Risk Level</label>' +
+        '<select name="risk_level" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;">' +
+          '<option value="low">Low</option>' +
+          '<option value="medium" selected>Medium</option>' +
+          '<option value="high">High</option>' +
+          '<option value="critical">Critical</option>' +
+        '</select>' +
+        assigneeFields +
+        '</div>' +
+        '<div class="gov-modal-footer"><button class="gov-btn gov-btn-outline" onclick="closeAssignModal()">Cancel</button><button class="gov-btn gov-btn-primary" onclick="submitCreateAndAssignForm()">Create &amp; Assign</button></div>';
+      overlay.classList.add('active');
       return;
     }
     var recordOptions = govRecordsForAssign.map(function(r) {
@@ -1185,10 +1234,7 @@ export function renderDashboard(data: DashboardData): string {
     modal.innerHTML =
       '<div class="gov-modal-header"><h3>Assign Fix to Governance Record</h3><button class="gov-modal-close" onclick="closeAssignModal()">&times;</button></div>' +
       '<div class="gov-modal-body">' +
-      '<div style="margin-bottom:12px;padding:8px 10px;background:#f9fafb;border-radius:6px;font-size:12px;">' +
-      '<strong>' + ruleId + '</strong> &mdash; ' + title + '<br>' +
-      '<span style="color:#6b7280;font-family:monospace;">' + file + (line ? ':' + line : '') + '</span>' +
-      '</div>' +
+      findingCtx +
       '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Governance Record *</label>' +
       '<select name="governance_record_id" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;">' + recordOptions + '</select>' +
       '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Assignee Name *</label>' +
@@ -1203,13 +1249,6 @@ export function renderDashboard(data: DashboardData): string {
       '<input name="actor_role" type="text" placeholder="e.g., Tech Lead" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-bottom:12px;" />' +
       '</div>' +
       '<div class="gov-modal-footer"><button class="gov-btn gov-btn-outline" onclick="closeAssignModal()">Cancel</button><button class="gov-btn gov-btn-primary" onclick="submitAssignForm()">Assign</button></div>';
-    modal.dataset.fkey = fkey;
-    modal.dataset.ruleId = ruleId;
-    modal.dataset.title = title;
-    modal.dataset.file = file;
-    modal.dataset.line = String(line || 0);
-    modal.dataset.severity = severity;
-    modal.dataset.controlIds = controlIds;
     overlay.classList.add('active');
   };
 
@@ -1251,7 +1290,81 @@ export function renderDashboard(data: DashboardData): string {
       .catch(function(e) { showToast('Error: ' + (e.message||'network'), 'error'); if (btn) { btn.textContent = 'Assign'; btn.disabled = false; } });
   };
 
-  window.resolveFindingFix = function(fkey) {
+  window.submitCreateAndAssignForm = function() {
+    var modal = document.getElementById('assign-modal');
+    if (!modal) return;
+    var inputs = modal.querySelectorAll('[name]');
+    var fields = {};
+    for (var i = 0; i < inputs.length; i++) {
+      fields[inputs[i].name] = inputs[i].value;
+    }
+    if (!fields.system_name || !fields.system_name.trim()) {
+      showToast('System name is required', 'error');
+      return;
+    }
+    if (!fields.assignee || !fields.assignee.trim()) {
+      showToast('Assignee name is required', 'error');
+      return;
+    }
+    var btn = modal.querySelector('.gov-btn-primary');
+    if (btn) { btn.textContent = 'Creating...'; btn.disabled = true; }
+    fetch('/api/governance/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_name: fields.system_name,
+        system_description: fields.system_description || '',
+        system_type: fields.system_type || 'application',
+        risk_level: fields.risk_level || 'medium',
+        actor_name: fields.actor_name,
+        actor_role: fields.actor_role,
+      }),
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.success || !d.record) {
+          showToast(d.error || 'Failed to create governance record', 'error');
+          if (btn) { btn.textContent = 'Create & Assign'; btn.disabled = false; }
+          return;
+        }
+        govRecordsForAssign.unshift({ id: d.record.id, name: d.record.system_name, status: d.record.status, risk: d.record.risk_level });
+        return fetch('/api/fix-assignments/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            finding_key: modal.dataset.fkey,
+            finding_rule_id: modal.dataset.ruleId,
+            finding_title: modal.dataset.title,
+            finding_file: modal.dataset.file,
+            finding_line: parseInt(modal.dataset.line, 10),
+            finding_severity: modal.dataset.severity,
+            finding_control_ids: (modal.dataset.controlIds || '').split(',').filter(Boolean),
+            governance_record_id: d.record.id,
+            assignee: fields.assignee,
+            assignee_role: fields.assignee_role || '',
+            assigned_by: fields.actor_name || 'dashboard',
+            notes: 'Auto-created governance record during fix assignment',
+            actor_name: fields.actor_name,
+            actor_role: fields.actor_role,
+          }),
+        }).then(function(r) { return r.json(); });
+      })
+      .then(function(d) {
+        if (!d) return;
+        if (d.success) {
+          closeAssignModal();
+          showToast('Governance record created & fix assigned! Reloading...', 'success');
+          setTimeout(function() { location.reload(); }, 800);
+        } else {
+          showToast(d.error || 'Failed to assign fix', 'error');
+          if (btn) { btn.textContent = 'Create & Assign'; btn.disabled = false; }
+        }
+      })
+      .catch(function(e) {
+        showToast('Error: ' + (e.message||'network'), 'error');
+        if (btn) { btn.textContent = 'Create & Assign'; btn.disabled = false; }
+      });
+  };
     if (!confirm('Mark this fix as resolved?')) return;
     var resolver = prompt('Your name:', '') || 'dashboard';
     var resolverRole = prompt('Your role:', '') || '';
