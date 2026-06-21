@@ -1,4 +1,5 @@
 import type { ProjectConfig } from "@greenarmor/ges-core";
+import { GESF_VERSION } from "@greenarmor/ges-core";
 import * as path from "node:path";
 
 export interface WorkflowFile {
@@ -6,14 +7,14 @@ export interface WorkflowFile {
   content: string;
 }
 
-const GESF_VERSION = "1.5.5";
-
 function gesfInitStep(config: ProjectConfig): string {
   const frameworks = config?.frameworks?.length
     ? config.frameworks.join(",")
     : "GDPR,OWASP,CIS,NIST";
   const type = config?.project_type || "generic-web-application";
-  return `        run: ges init --name "${"${{ github.event.repository.name }}"}" --type "${type}" --frameworks "${frameworks}" --country "US-CA" --force`;
+  const country = config?.country || "US-CA";
+  const repoName = "${{ github.event.repository.name }}";
+  return `        run: ges init --name "${repoName}" --type "${type}" --frameworks "${frameworks}" --country "${country}" --force`;
 }
 
 function nodeSetupStep(): string {
@@ -21,6 +22,7 @@ function nodeSetupStep(): string {
     "      - name: Setup Node.js",
     "        uses: actions/setup-node@v4",
     "        with:",
+    "          node-version-file: '.nvmrc'",
     "          node-version: '22'",
   ].join("\n");
 }
@@ -156,11 +158,11 @@ jobs:
 /**
  * Dependency Gate Workflow (Trivy + audit)
  *
- * Trivy filesystem scan + package-manager-aware audit.
- * Auto-detects npm, pnpm, or yarn via lockfile presence.
+ * Trivy filesystem scan is the primary gate (reliable exit codes).
+ * Package-manager audit is supplementary (continue-on-error) because
+ * pnpm audit exit codes are inconsistent across versions.
  *
- * Gate behavior: Trivy exits non-zero on CRITICAL/HIGH. Audit
- * exits non-zero on HIGH+.
+ * Auto-detects npm, pnpm, or yarn via lockfile presence.
  */
 export function generateDependencyScanWorkflow(_config: ProjectConfig): WorkflowFile {
   return {
@@ -192,23 +194,20 @@ ${nodeSetupStep()}
         if: hashFiles('pnpm-lock.yaml') != ''
         uses: pnpm/action-setup@v4
 
-      - name: Install dependencies and audit (pnpm)
+      - name: Install and audit (pnpm)
         if: hashFiles('pnpm-lock.yaml') != ''
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm audit --audit-level=high
+        run: pnpm install --frozen-lockfile && pnpm audit --audit-level=high
+        continue-on-error: true
 
-      - name: Install dependencies and audit (npm)
+      - name: Install and audit (npm)
         if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') != ''
-        run: |
-          npm ci
-          npm audit --audit-level=high
+        run: npm ci && npm audit --audit-level=high
+        continue-on-error: true
 
-      - name: Install dependencies and audit (yarn)
+      - name: Install and audit (yarn)
         if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') == '' && hashFiles('yarn.lock') != ''
-        run: |
-          yarn install --frozen-lockfile
-          yarn audit --level high
+        run: yarn install --frozen-lockfile && yarn audit --level high
+        continue-on-error: true
 `,
   };
 }
@@ -307,7 +306,7 @@ jobs:
   container-scan:
     name: Container Image Scan (Trivy)
     runs-on: ubuntu-latest
-    # Only runs when a Dockerfile is present
+    # Auto-aware: only runs when a Dockerfile is present
     if: hashFiles('Dockerfile', '**/Dockerfile', 'docker-compose.yml', 'docker-compose.yaml') != ''
     steps:
       - uses: actions/checkout@v4
@@ -342,7 +341,7 @@ jobs:
   iac-scan:
     name: Infrastructure Config Scan (Trivy)
     runs-on: ubuntu-latest
-    # Only runs when IaC files are present (K8s, Docker Compose, Terraform)
+    # Auto-aware: only runs when IaC files are present
     if: hashFiles('k8s/**', 'kubernetes/**', 'helm/**', 'terraform/**', 'tf/**', '*.tf', '**/*.tf', 'docker-compose*.yml', 'docker-compose*.yaml') != ''
     steps:
       - uses: actions/checkout@v4

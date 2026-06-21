@@ -156,10 +156,14 @@ describe("generateDependencyScanWorkflow", () => {
     expect(wf.content).toContain("if: hashFiles('pnpm-lock.yaml') == ''");
   });
 
-  it("does not hardcode a single package manager", () => {
+  it("Trivy gate is hard (no continue-on-error), audit is soft", () => {
     const wf = generateDependencyScanWorkflow(testConfig);
-    expect(wf.content).not.toContain("run: npm ci\n");
-    expect(wf.content).not.toContain("continue-on-error: true");
+    // Trivy is the real gate — no continue-on-error
+    const trivySection = wf.content.split("Setup Node.js")[0];
+    expect(trivySection).not.toContain("continue-on-error");
+    // Audit is supplementary — has continue-on-error
+    const auditSection = wf.content.split("Setup Node.js")[1];
+    expect(auditSection).toContain("continue-on-error: true");
   });
 });
 
