@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "@greenarmor/ges-compliance-engine": "1.5.6",
-    "@greenarmor/ges-core": "1.5.6"
+    "@greenarmor/ges-compliance-engine": "1.5.7",
+    "@greenarmor/ges-core": "1.5.7"
   },
   "description": "GESF Policy Engine - Policy packs management and enforcement",
   "devDependencies": {
@@ -30,5 +30,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.5.6"
+  "version": "1.5.7"
 }

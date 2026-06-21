@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@greenarmor/ges-core": "1.5.6"
+    "@greenarmor/ges-core": "1.5.7"
   },
   "description": "GESF Scoring Engine - Compliance scoring across frameworks",
   "devDependencies": {
@@ -29,5 +29,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.5.6"
+  "version": "1.5.7"
 }
