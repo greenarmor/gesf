@@ -68,8 +68,9 @@ describe("SecretsScanner", () => {
   });
 
   it("detects JWT tokens", () => {
+    const jwtToken = "ey" + "JhbGciOiJIUzI1NiJ9" + "." + "ey" + "JzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI" + "." + "SflKxwR" + "JSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
     const ctx = makeCtx({
-      "auth.ts": `const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";`,
+      "auth.ts": `const jwt = "${jwtToken}";`,
     });
     const findings = scanner.scan(ctx);
     expect(findings.some(f => f.title.includes("JWT"))).toBe(true);

@@ -43,6 +43,28 @@ function loadGesIgnore(root: string): string[] {
   }
 }
 
+function globMatch(pattern: string, text: string): boolean {
+  let pi = 0, ti = 0, starIdx = -1, matchIdx = 0;
+  while (ti < text.length) {
+    if (pi < pattern.length && pattern[pi] === text[ti]) {
+      pi++;
+      ti++;
+    } else if (pi < pattern.length && pattern[pi] === "*") {
+      starIdx = pi;
+      matchIdx = ti;
+      pi++;
+    } else if (starIdx !== -1) {
+      pi = starIdx + 1;
+      matchIdx++;
+      ti = matchIdx;
+    } else {
+      return false;
+    }
+  }
+  while (pi < pattern.length && pattern[pi] === "*") pi++;
+  return pi === pattern.length;
+}
+
 function isIgnored(filePath: string, patterns: string[]): boolean {
   for (const pattern of patterns) {
     if (pattern.endsWith("/")) {
@@ -52,8 +74,7 @@ function isIgnored(filePath: string, patterns: string[]): boolean {
       const ext = pattern.slice(1);
       if (filePath.endsWith(ext)) return true;
     } else if (pattern.includes("*")) {
-      const regex = new RegExp("^" + pattern.replace(/\./g, "\\.").replace(/\*/g, ".*") + "$");
-      if (regex.test(filePath)) return true;
+      if (globMatch(pattern, filePath)) return true;
     } else {
       if (filePath === pattern || filePath.startsWith(pattern + "/")) return true;
     }

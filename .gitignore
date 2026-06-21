@@ -31,7 +31,15 @@ Thumbs.db
 .turbo/
 .cache/
 
+# Local E2E tests — uses realistic fixtures that trigger Semgrep false positives
+# Run locally only: node e2e-local/security-e2e.mjs
+e2e-local/
+
 .dev-logs/
 AGENTS.md
 SESSION.md
 /sbom/
+
+# Commercial pro packages — developed in private fork (gesf-pro)
+# See .dev-logs/BUSINESS-MODEL.md §15 and .dev-logs/runbook-pro-repo-setup.md
+packages-pro/

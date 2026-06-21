@@ -1485,12 +1485,21 @@ function hasDep(root: string, dep: string): boolean {
 }
 
 function hasPyDep(root: string, dep: string): boolean {
+  const check = (c: string): boolean => {
+    for (const line of c.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith(dep) && (trimmed.length === dep.length || !/[a-zA-Z0-9_]/.test(trimmed[dep.length]))) {
+        return true;
+      }
+    }
+    return false;
+  };
   for (const f of ["requirements.txt", "requirements-dev.txt"]) {
     const c = readFileSafe(path.join(root, f));
-    if (c && new RegExp(`^\\s*${dep}\\b`, "mi").test(c)) return true;
+    if (c && check(c)) return true;
   }
   const pyproject = readFileSafe(path.join(root, "pyproject.toml"));
-  if (pyproject && new RegExp(`^\\s*${dep}\\b`, "mi").test(pyproject)) return true;
+  if (pyproject && check(pyproject)) return true;
   return false;
 }
 
@@ -1501,7 +1510,9 @@ function hasGoDep(root: string, dep: string): boolean {
 
 function hasRubyDep(root: string, dep: string): boolean {
   const gemfile = readFileSafe(path.join(root, "Gemfile"));
-  return gemfile ? new RegExp(`gem\\s+['"]${dep}`, "i").test(gemfile) : false;
+  if (!gemfile) return false;
+  const lower = gemfile.toLowerCase();
+  return lower.includes(`gem "${dep}"`) || lower.includes(`gem '${dep}'`);
 }
 
 function hasJavaDep(root: string, dep: string): boolean {
@@ -1523,7 +1534,14 @@ function hasPhpDep(root: string, dep: string): boolean {
 
 function hasRustDep(root: string, dep: string): boolean {
   const cargo = readFileSafe(path.join(root, "Cargo.toml"));
-  return cargo ? new RegExp(`^${dep}\\b`, "m").test(cargo) || new RegExp(`${dep}\\s*=`).test(cargo) : false;
+  if (!cargo) return false;
+  for (const line of cargo.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith(dep) && (trimmed.length === dep.length || !/[a-zA-Z0-9_]/.test(trimmed[dep.length]))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function readFileSafe(filePath: string): string | null {
