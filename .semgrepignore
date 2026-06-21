@@ -1,0 +1,13 @@
+# Semgrep ignore — exclude test fixtures that use fake secrets/tokens
+# These are not real credentials; they test the secret scanner itself.
+
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+**/fixtures/**
+**/e2e-local/**
+
+# Generated documentation templates may contain example patterns
+docs/
+site/
