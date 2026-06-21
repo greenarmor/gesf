@@ -1,15 +1,23 @@
-name: Compliance Check
+name: Compliance Gate
+
+# ═══════════════════════════════════════════════════════════════
+# GESF Compliance Gate — GESF's SUPREME authority.
+# Runs 9 built-in scanners via ges audit --ci.
+# ═══════════════════════════════════════════════════════════════
 
 on:
   push:
-    branches: [master, main, develop]
   pull_request:
-    branches: [master, main]
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: write
+  pull-requests: read
 
 jobs:
   compliance:
+    name: GESF Compliance Gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,24 +30,14 @@ jobs:
       - name: Install GESF
         run: npm install -g @greenarmor/ges
 
+      - name: Initialize GESF
+        run: ges init --name "GESF" --type "generic-web-application" --frameworks "GDPR,OWASP,CIS,NIST" --country "US-CA" --force
+
       - name: Run Compliance Audit
         run: ges audit --ci
 
       - name: Generate Compliance Score
         run: ges score --ci
-
-      - name: Generate Compliance Badge
-        if: github.event_name != 'pull_request'
-        run: ges badge
-
-      - name: Commit Compliance Badge
-        if: github.event_name != 'pull_request'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add badge.svg README.md || true
-          git diff --cached --quiet || git commit -m "Update compliance badge [skip ci]"
-          git push
 
       - name: Upload Compliance Report
         if: always()

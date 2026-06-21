@@ -1,15 +1,20 @@
-name: SBOM Generation & Scan
+name: SBOM & Infrastructure Gate
+
+# ═══════════════════════════════════════════════════════════════
+# Supply chain gate — SBOM generation + container/IaC scanning.
+# Especially critical for Docker/Kubernetes projects: catches
+# OS-level CVEs in base images that filesystem scans miss.
+# ═══════════════════════════════════════════════════════════════
 
 on:
   push:
-    branches: [master, main, develop]
   pull_request:
-    branches: [master, main]
   schedule:
     - cron: '0 6 * * 1'
 
 jobs:
   sbom:
+    name: Filesystem SBOM (Syft + Grype)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,30 +25,81 @@ jobs:
           image: ""
           path: .
           format: cyclonedx-json
-          output-file: sbom.json
+          output-file: sbom-filesystem.json
           fail-build: false
 
       - name: Scan SBOM for vulnerabilities with Grype
         uses: anchore/scan-action@v6
         with:
-          sbom: sbom.json
+          sbom: sbom-filesystem.json
           fail-build: true
           severity-cutoff: high
 
-      - name: Generate SBOM with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'cyclonedx'
-          output: 'trivy-sbom.json'
-
-      - name: Upload SBOM artifacts
+      - name: Upload filesystem SBOM
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-artifacts
-          path: |
-            sbom.json
-            trivy-sbom.json
+          name: sbom-filesystem
+          path: sbom-filesystem.json
+          retention-days: 90
+
+  container-scan:
+    name: Container Image Scan (Trivy)
+    runs-on: ubuntu-latest
+    # Auto-aware: only runs when a Dockerfile is present
+    if: hashFiles('Dockerfile', '**/Dockerfile', 'docker-compose.yml', 'docker-compose.yaml') != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: gesf-scan:latest
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: gesf-scan:latest
+          format: 'sarif'
+          output: 'trivy-container.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Upload container scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-scan
+          path: trivy-container.sarif
+          retention-days: 90
+
+  iac-scan:
+    name: Infrastructure Config Scan (Trivy)
+    runs-on: ubuntu-latest
+    # Auto-aware: only runs when IaC files are present
+    if: hashFiles('k8s/**', 'kubernetes/**', 'helm/**', 'terraform/**', 'tf/**', '*.tf', '**/*.tf', 'docker-compose*.yml', 'docker-compose*.yaml') != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan IaC configs with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-iac.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Upload IaC scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iac-scan
+          path: trivy-iac.sarif
           retention-days: 90
