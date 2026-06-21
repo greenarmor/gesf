@@ -301,4 +301,58 @@ describe("generateAllWorkflows", () => {
       expect(wf.content).not.toContain("ges scan");
     }
   });
+
+  it("no workflow references broken/nonexistent GitHub Actions", () => {
+    const wfs = generateAllWorkflows(testConfig);
+    const BROKEN_ACTIONS = [
+      "socket-security/socket-security-action",
+      "Socket-security/socket-security-action",
+      "google/osv-scanner-action@v2",
+      "google/osv-scanner-action@v1",
+    ];
+    for (const wf of wfs) {
+      for (const broken of BROKEN_ACTIONS) {
+        expect(wf.content).not.toContain(broken);
+      }
+    }
+  });
+
+  it("pnpm setup has no version pin (auto-detects from packageManager)", () => {
+    const wfs = generateAllWorkflows(testConfig);
+    const depScan = wfs.find(w => w.filePath.includes("dependency-scan.yml"))!;
+    const lines = depScan.content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes("pnpm/action-setup")) {
+        const nextLines = lines.slice(i + 1, i + 4).join("\n");
+        expect(nextLines).not.toContain("version:");
+      }
+    }
+  });
+
+  it("npm ci is guarded by package-lock.json check", () => {
+    const wfs = generateAllWorkflows(testConfig);
+    const depScan = wfs.find(w => w.filePath.includes("dependency-scan.yml"))!;
+    const lines = depScan.content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes("npm ci")) {
+        const guard = lines.slice(Math.max(0, i - 2), i).join("\n");
+        expect(guard).toContain("package-lock.json");
+      }
+    }
+  });
+
+  it("country flows from config (not hardcoded)", () => {
+    const gbConfig = { ...testConfig, country: "GB" };
+    const wfs = generateAllWorkflows(gbConfig);
+    const compliance = wfs.find(w => w.filePath.includes("compliance.yml"))!;
+    expect(compliance.content).toContain('--country "GB"');
+    expect(compliance.content).not.toContain('--country "US-CA"');
+  });
+
+  it("GESF version is dynamic (not hardcoded in source)", () => {
+    const wfs = generateAllWorkflows(testConfig);
+    const compliance = wfs.find(w => w.filePath.includes("compliance.yml"))!;
+    expect(compliance.content).toContain("@greenarmor/ges@");
+    expect(compliance.content).not.toContain("@greenarmor/ges@latest");
+  });
 });
