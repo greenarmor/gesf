@@ -154,13 +154,13 @@ jobs:
 }
 
 /**
- * Dependency Gate Workflow (Trivy + npm audit)
+ * Dependency Gate Workflow (Trivy + audit)
  *
- * Uses the maintained Trivy GitHub Action for filesystem vulnerability
- * scanning with native SARIF output to GitHub Security tab.
+ * Trivy filesystem scan + package-manager-aware audit.
+ * Auto-detects npm, pnpm, or yarn via lockfile presence.
  *
- * Gate behavior: Trivy exits non-zero on CRITICAL/HIGH. npm audit
- * exits non-zero on HIGH+ (no continue-on-error — this is a gate).
+ * Gate behavior: Trivy exits non-zero on CRITICAL/HIGH. Audit
+ * exits non-zero on HIGH+.
  */
 export function generateDependencyScanWorkflow(_config: ProjectConfig): WorkflowFile {
   return {
@@ -173,7 +173,7 @@ ${ON_TRIGGER_DAILY}
 
 jobs:
   dependency-scan:
-    name: Trivy + npm audit
+    name: Trivy + Dependency Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -188,11 +188,29 @@ jobs:
 
 ${nodeSetupStep()}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup pnpm
+        if: hashFiles('pnpm-lock.yaml') != ''
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+      - name: Install dependencies and audit (pnpm)
+        if: hashFiles('pnpm-lock.yaml') != ''
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm audit --audit-level=high
+
+      - name: Install dependencies and audit (npm)
+        if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') != ''
+        run: |
+          npm ci
+          npm audit --audit-level=high
+
+      - name: Install dependencies and audit (yarn)
+        if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') == '' && hashFiles('yarn.lock') != ''
+        run: |
+          yarn install --frozen-lockfile
+          yarn audit --level high
 `,
   };
 }

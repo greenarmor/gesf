@@ -1,6 +1,7 @@
 name: Dependency Gate (Trivy)
 
-# Trivy filesystem scan + npm audit for known CVEs.
+# Trivy filesystem scan + package-manager-aware audit.
+# Auto-detects npm, pnpm, or yarn — uses the correct lockfile and audit command.
 # Gate behavior: exits non-zero on CRITICAL/HIGH.
 
 on:
@@ -11,7 +12,7 @@ on:
 
 jobs:
   dependency-scan:
-    name: Trivy + npm audit
+    name: Trivy + Dependency Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +30,26 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup pnpm
+        if: hashFiles('pnpm-lock.yaml') != ''
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+      - name: Install dependencies and audit (pnpm)
+        if: hashFiles('pnpm-lock.yaml') != ''
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm audit --audit-level=high
+
+      - name: Install dependencies and audit (npm)
+        if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') != ''
+        run: |
+          npm ci
+          npm audit --audit-level=high
+
+      - name: Install dependencies and audit (yarn)
+        if: hashFiles('pnpm-lock.yaml') == '' && hashFiles('package-lock.json') == '' && hashFiles('yarn.lock') != ''
+        run: |
+          yarn install --frozen-lockfile
+          yarn audit --level high

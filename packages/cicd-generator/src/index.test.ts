@@ -128,9 +128,37 @@ describe("generateDependencyScanWorkflow", () => {
     expect(wf.content).toContain("aquasecurity/trivy-action");
   });
 
-  it("includes npm audit without continue-on-error (is a gate)", () => {
+  it("auto-detects pnpm (uses pnpm-lock.yaml)", () => {
     const wf = generateDependencyScanWorkflow(testConfig);
+    expect(wf.content).toContain("pnpm-lock.yaml");
+    expect(wf.content).toContain("pnpm install --frozen-lockfile");
+    expect(wf.content).toContain("pnpm audit");
+    expect(wf.content).toContain("pnpm/action-setup");
+  });
+
+  it("auto-detects npm (uses package-lock.json)", () => {
+    const wf = generateDependencyScanWorkflow(testConfig);
+    expect(wf.content).toContain("package-lock.json");
+    expect(wf.content).toContain("npm ci");
     expect(wf.content).toContain("npm audit");
+  });
+
+  it("auto-detects yarn (uses yarn.lock)", () => {
+    const wf = generateDependencyScanWorkflow(testConfig);
+    expect(wf.content).toContain("yarn.lock");
+    expect(wf.content).toContain("yarn install --frozen-lockfile");
+    expect(wf.content).toContain("yarn audit");
+  });
+
+  it("uses conditional if: for package manager selection", () => {
+    const wf = generateDependencyScanWorkflow(testConfig);
+    expect(wf.content).toContain("if: hashFiles('pnpm-lock.yaml') != ''");
+    expect(wf.content).toContain("if: hashFiles('pnpm-lock.yaml') == ''");
+  });
+
+  it("does not hardcode a single package manager", () => {
+    const wf = generateDependencyScanWorkflow(testConfig);
+    expect(wf.content).not.toContain("run: npm ci\n");
     expect(wf.content).not.toContain("continue-on-error: true");
   });
 });
