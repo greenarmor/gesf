@@ -151,7 +151,7 @@ export function createCISDockerPolicyPack(): PolicyPack {
     version: "1.0.0",
     project_types: [
       "saas", "api-backend", "generic-web-application", "ai-application",
-      "healthcare-system", "government-system", "blockchain", "vulnerability-scanner",
+      "healthcare-system", "government-system", "blockchain",
     ],
     controls,
     frameworks: ["CIS-DOCKER"],

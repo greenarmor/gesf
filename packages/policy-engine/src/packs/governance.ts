@@ -192,7 +192,7 @@ export function createGovernancePolicyPack(): PolicyPack {
   const allProjectTypes: ProjectType[] = [
     "saas", "ai-application", "mcp-server", "blockchain", "wallet",
     "government-system", "healthcare-system", "event-platform",
-    "photo-storage-platform", "vulnerability-scanner",
+    "photo-storage-platform",
     "generic-web-application", "api-backend", "mobile-application",
   ];
 

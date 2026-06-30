@@ -185,7 +185,7 @@ export function createCISKubernetesPolicyPack(): PolicyPack {
     version: "1.0.0",
     project_types: [
       "saas", "api-backend", "generic-web-application", "ai-application",
-      "government-system", "blockchain", "vulnerability-scanner",
+      "government-system", "blockchain",
     ],
     controls,
     frameworks: ["CIS-K8S"],

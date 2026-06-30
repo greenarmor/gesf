@@ -43,6 +43,32 @@ const INSECURE_PASSWORD_PATTERNS = [
 
 const SCAN_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".py", ".rb", ".go", ".java", ".php", ".cs", ".rs"]);
 
+function isInsideStringOrComment(line: string, index: number): boolean {
+  let inDouble = false;
+  let inSingle = false;
+  let inBacktick = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let i = 0; i < index && i < line.length; i++) {
+    const ch = line[i];
+    const next = line[i + 1];
+
+    if (inLineComment) break;
+    if (inBlockComment) {
+      if (ch === "*" && next === "/") { inBlockComment = false; i++; }
+      continue;
+    }
+    if (ch === "/" && next === "/") { inLineComment = true; continue; }
+    if (ch === "/" && next === "*") { inBlockComment = true; i++; continue; }
+    if (ch === '"' && !inSingle && !inBacktick) { inDouble = !inDouble; continue; }
+    if (ch === "'" && !inDouble && !inBacktick) { inSingle = !inSingle; continue; }
+    if (ch === "`" && !inDouble && !inSingle) { inBacktick = !inBacktick; continue; }
+  }
+
+  return inDouble || inSingle || inBacktick || inLineComment || inBlockComment;
+}
+
 export class CryptoScanner implements Scanner {
   name = "crypto";
 
@@ -59,7 +85,8 @@ export class CryptoScanner implements Scanner {
 
         for (const { pattern, algo } of WEAK_HASH_PATTERNS) {
           pattern.lastIndex = 0;
-          if (pattern.test(line)) {
+          const m = pattern.exec(line);
+          if (m && !isInsideStringOrComment(line, m.index)) {
             findings.push({
               ruleId: "CRYPTO-001",
               severity: "critical",
@@ -77,7 +104,8 @@ export class CryptoScanner implements Scanner {
 
         for (const { pattern, algo } of WEAK_CRYPTO_PATTERNS) {
           pattern.lastIndex = 0;
-          if (pattern.test(line)) {
+          const m = pattern.exec(line);
+          if (m && !isInsideStringOrComment(line, m.index)) {
             findings.push({
               ruleId: "CRYPTO-002",
               severity: "high",
@@ -95,7 +123,8 @@ export class CryptoScanner implements Scanner {
 
         for (const { pattern, check, desc } of INSECURE_PASSWORD_PATTERNS) {
           pattern.lastIndex = 0;
-          if (check && pattern.test(line)) {
+          const m = pattern.exec(line);
+          if (check && m && !isInsideStringOrComment(line, m.index)) {
             findings.push({
               ruleId: "CRYPTO-003",
               severity: "critical",

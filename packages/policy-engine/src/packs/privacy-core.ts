@@ -657,7 +657,6 @@ export function createPrivacyCorePolicyPack(): PolicyPack {
       "blockchain",
       "event-platform",
       "photo-storage-platform",
-      "vulnerability-scanner",
       "wallet",
     ],
     controls,

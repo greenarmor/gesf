@@ -13,5 +13,11 @@ site/
 # ESLint plugin rules - reference weak algorithms by design
 packages/eslint-plugin/src/rules/
 
+# Dev logs - gitignored, contains example secrets for documentation
+.dev-logs/
+
+# E2E test fixtures - intentionally contain fake secrets to test scanner detection
+e2e-local/
+
 # Auto-generated .env from false-positive auto-fix
 .env
