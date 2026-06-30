@@ -1,6 +1,6 @@
 # 🔰 Green Engineering Standard Framework (GESF)
 
-![GESF Compliance](badge.svg)
+![GESF Compliance](docs/assets/images/badge.svg)
 <!-- GESF-SCORE-START -->
 > **GESF Compliance Score: 100% (A)**
 >
