@@ -44,7 +44,14 @@ export type FrameworkName =
   | "PDP-VN"
   | "NDPA-NG"
   | "DPA-KE"
-  | "PDPA-QA";
+  | "PDPA-QA"
+  | "CIS-DOCKER"
+  | "CIS-K8S"
+  | "OWASP-MASVS"
+  | "OWASP-LLM"
+  | "PCI-DSS"
+  | "SOC2"
+  | "ZTA";
 
 export type DataClassification = "public" | "internal" | "confidential" | "restricted";
 

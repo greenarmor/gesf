@@ -23,6 +23,13 @@ import {
 import { createBrazilLGPDPolicyPack, createCanadaPIPEDAPolicyPack, createCaliforniaCRPAPolicyPack } from "./packs/privacy-americas.js";
 import { createSouthAfricaPOPIAPolicyPack, createUAEPDPLPolicyPack, createSaudiArabiaPDPLPolicyPack } from "./packs/privacy-africa-me.js";
 import { createGovernancePolicyPack } from "./packs/governance.js";
+import { createCISDockerPolicyPack } from "./packs/cis-docker.js";
+import { createCISKubernetesPolicyPack } from "./packs/cis-kubernetes.js";
+import { createOWASPMASVSPolicyPack } from "./packs/owasp-masvs.js";
+import { createOWASPLLMPolicyPack } from "./packs/owasp-llm.js";
+import { createPCIDSSPolicyPack } from "./packs/pci-dss.js";
+import { createSOC2PolicyPack } from "./packs/soc2.js";
+import { createZeroTrustPolicyPack } from "./packs/zero-trust.js";
 
 const ALL_PACKS: (() => PolicyPack)[] = [
   createGDPRPolicyPack,
@@ -58,6 +65,14 @@ const ALL_PACKS: (() => PolicyPack)[] = [
   createSaudiArabiaPDPLPolicyPack,
   // Governance
   createGovernancePolicyPack,
+  // Security Compliance Depth
+  createCISDockerPolicyPack,
+  createCISKubernetesPolicyPack,
+  createOWASPMASVSPolicyPack,
+  createOWASPLLMPolicyPack,
+  createPCIDSSPolicyPack,
+  createSOC2PolicyPack,
+  createZeroTrustPolicyPack,
 ];
 
 const PACK_MAP: Record<string, () => PolicyPack> = {
@@ -94,6 +109,14 @@ const PACK_MAP: Record<string, () => PolicyPack> = {
   "sa-pdpl": createSaudiArabiaPDPLPolicyPack,
   // Governance
   "governance": createGovernancePolicyPack,
+  // Security Compliance Depth
+  "cis-docker": createCISDockerPolicyPack,
+  "cis-kubernetes": createCISKubernetesPolicyPack,
+  "owasp-masvs": createOWASPMASVSPolicyPack,
+  "owasp-llm": createOWASPLLMPolicyPack,
+  "pci-dss": createPCIDSSPolicyPack,
+  "soc2": createSOC2PolicyPack,
+  "zero-trust": createZeroTrustPolicyPack,
 };
 
 export function getAllPacks(): PolicyPack[] {
@@ -137,5 +160,12 @@ export {
 export { createBrazilLGPDPolicyPack, createCanadaPIPEDAPolicyPack, createCaliforniaCRPAPolicyPack } from "./packs/privacy-americas.js";
 export { createSouthAfricaPOPIAPolicyPack, createUAEPDPLPolicyPack, createSaudiArabiaPDPLPolicyPack } from "./packs/privacy-africa-me.js";
 export { createGovernancePolicyPack } from "./packs/governance.js";
+export { createCISDockerPolicyPack } from "./packs/cis-docker.js";
+export { createCISKubernetesPolicyPack } from "./packs/cis-kubernetes.js";
+export { createOWASPMASVSPolicyPack } from "./packs/owasp-masvs.js";
+export { createOWASPLLMPolicyPack } from "./packs/owasp-llm.js";
+export { createPCIDSSPolicyPack } from "./packs/pci-dss.js";
+export { createSOC2PolicyPack } from "./packs/soc2.js";
+export { createZeroTrustPolicyPack } from "./packs/zero-trust.js";
 export { PRIVACY_COUNTRIES, getCountryByCode, getCountryPackId, getCountriesByRegion } from "./packs/countries.js";
 export type { CountryPrivacyPack } from "./packs/countries.js";

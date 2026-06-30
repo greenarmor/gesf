@@ -8,6 +8,8 @@ import { AuthScanner } from "./scanners/auth-scanner.js";
 import { ConfigScanner } from "./scanners/config-scanner.js";
 import { DatabaseScanner } from "./scanners/database-scanner.js";
 import { IaCScanner } from "./scanners/iac-scanner.js";
+import { DockerfileScanner } from "./scanners/dockerfile-scanner.js";
+import { KubernetesScanner } from "./scanners/kubernetes-scanner.js";
 import { GovernanceScanner } from "./scanners/governance-scanner.js";
 
 export type { Finding } from "./scanners/types.js";
@@ -221,6 +223,8 @@ export function runAudit(root: string): { findings: Finding[]; scannedFiles: num
     new ConfigScanner(),
     new DatabaseScanner(),
     new IaCScanner(),
+    new DockerfileScanner(),
+    new KubernetesScanner(),
     new GovernanceScanner(),
   ];
 
@@ -284,6 +288,8 @@ export function runAuditIncremental(
     new CodeSecurityScanner(),
     new DatabaseScanner(),
     new IaCScanner(),
+    new DockerfileScanner(),
+    new KubernetesScanner(),
   ];
 
   const projectScanners = [
