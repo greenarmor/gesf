@@ -8,13 +8,17 @@ import * as path from "node:path";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const require = createRequire(import.meta.url);
 
 let pkgVersion = "";
-try {
-  pkgVersion = require(path.join(__dirname, "..", "..", "package.json")).version;
-} catch {
-  // ignore — compiled binary won't have package.json on disk
+// Guard with typeof check so Bun's --define replaces GESF_CLI_VERSION with a literal,
+// dead-code-eliminating this block in compiled binaries (where require cannot find package.json).
+if (typeof GESF_CLI_VERSION === "undefined") {
+  try {
+    const require = createRequire(import.meta.url);
+    pkgVersion = require(path.join(__dirname, "..", "..", "package.json")).version;
+  } catch {
+    // ignore
+  }
 }
 
 export const CLI_VERSION: string = (typeof GESF_CLI_VERSION !== "undefined" ? GESF_CLI_VERSION : "") || pkgVersion || "0.0.0";
