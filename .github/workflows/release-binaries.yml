@@ -52,7 +52,13 @@ jobs:
       - name: Inject version into source
         run: |
           V="${{ steps.version.outputs.version }}"
-          perl -pi -e "s/GESF_VERSION_PLACEHOLDER/${V}/g" packages/cli/src/utils/version.ts
+          # Backup original and inject hardcoded version for binary compile
+          cp packages/cli/src/utils/version.ts packages/cli/src/utils/version.ts.bak
+          echo "export const CLI_VERSION = \"${V}\";" > packages/cli/src/utils/version.ts
+          echo "export const AUTHOR = \"greenarmor\";" >> packages/cli/src/utils/version.ts
+          echo "export const RELEASE_DATE = \"2026-06-20\";" >> packages/cli/src/utils/version.ts
+          echo "export const DONATE_URL = \"https://ko-fi.com/greenarmor\";" >> packages/cli/src/utils/version.ts
+          echo "export const HOMEPAGE = \"https://github.com/greenarmor/gesf\";" >> packages/cli/src/utils/version.ts
 
       - name: Compile standalone binary
         run: |
@@ -60,6 +66,10 @@ jobs:
             --target=${{ matrix.target }} \
             packages/cli/src/cli.ts \
             --outfile ${{ matrix.asset-name }}
+
+      - name: Restore version.ts
+        if: always()
+        run: mv packages/cli/src/utils/version.ts.bak packages/cli/src/utils/version.ts
 
       - name: Test binary
         run: ./${{ matrix.asset-name }} --version
