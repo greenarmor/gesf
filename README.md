@@ -1,6 +1,6 @@
 # 🔰 Green Engineering Standard Framework (GESF)
 
-![GESF Compliance](docs/assets/images/badge.svg)
+![GESF Compliance](badge.svg)
 <!-- GESF-SCORE-START -->
 > **GESF Compliance Score: 100% (A)**
 >
@@ -10,8 +10,10 @@
 > | OWASP | 100% | A | 6/6 passed |
 > | CIS | 100% | A | 5/5 passed |
 >
-> _(Last evaluated: 2026-06-30)_
+> _(Last evaluated: 2026-07-01)_
 <!-- GESF-SCORE-END -->
+
+
 
 
 
