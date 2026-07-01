@@ -51,7 +51,8 @@ jobs:
 
       - name: Inject version into source
         run: |
-          sed -i "s/GESF_VERSION_PLACEHOLDER/${{ steps.version.outputs.version }}/g" packages/cli/src/utils/version.ts
+          V="${{ steps.version.outputs.version }}"
+          perl -pi -e "s/GESF_VERSION_PLACEHOLDER/${V}/g" packages/cli/src/utils/version.ts
 
       - name: Compile standalone binary
         run: |
