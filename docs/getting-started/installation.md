@@ -1,18 +1,21 @@
 # Installation
 
-GESF can be installed four ways — pick the one that fits your workflow.
+GESF can be installed several ways — pick the one that fits your workflow. All methods produce the same `ges` CLI.
 
 ## Option 1 — Homebrew (macOS, Recommended)
 
-Standalone binary — no Node.js, no npm, no dependencies. Fastest startup.
+Installs Node.js and GESF in one command. Best for macOS developers.
 
 ```bash
 brew tap greenarmor/gesf
 brew install ges
 ```
 
+This installs `@greenarmor/ges` globally via npm and symlinks the binary. Node.js >= 22 is installed automatically as a dependency.
 
-Requires Node.js >= 22. Best for teams already using npm.
+## Option 2 — npm (Global Install)
+
+Best for teams already using npm. Requires Node.js >= 22.
 
 ```bash
 npm install -g @greenarmor/ges
@@ -23,6 +26,8 @@ Or with pnpm:
 ```bash
 pnpm add -g @greenarmor/ges
 ```
+
+After installation, the `ges` command is available system-wide.
 
 ## Option 3 — npx (Run Without Installing)
 
@@ -40,6 +45,7 @@ Or with pnpm:
 pnpm dlx @greenarmor/ges init
 ```
 
+## Option 4 — Install from Source
 
 For developers contributing to GESF.
 
@@ -52,14 +58,17 @@ pnpm -r run build
 cd packages/cli && npm link
 ```
 
+After linking, `ges` is available system-wide pointing to your local build.
+
 ---
 
 ## Quick Comparison
 
 | Method | Requires Node? | Install Time | Best For |
 |--------|:---:|:---:|---|
-| Homebrew | No | ~3s | macOS daily use, teams |
+| Homebrew | No (auto) | ~5s | macOS daily use, teams |
 | npm global | Yes (>=22) | ~10s | JS/TS teams, npm workflows |
+| pnpm global | Yes (>=22) | ~10s | pnpm users |
 | npx | Yes (>=22) | ~5s (cached) | One-off audits, CI |
 | Source | Yes (>=22) | ~60s | Contributors, developers |
 
@@ -67,15 +76,15 @@ cd packages/cli && npm link
 
 ## Prerequisites (npm/npx only)
 
-If using npm or npx, you need Node.js.
+If using npm, pnpm, or npx, you need Node.js >= 22.
 
 || Requirement | Minimum Version | Check Command |
 |-------------|----------------|---------------|
 | Node.js | 22.0.0 or higher | `node --version` |
 | npm | 8.0.0 or higher | `npm --version` |
 
-!!! info "Node.js is the CLI runtime, not a project requirement"
-    Your project can be Python, Rust, Go, Java, Ruby, PHP, .NET, or anything else. Node.js is only needed to run the `ges` command when using npm/npx. It does not need to be part of your project's stack. Brew, APT, and manual binary installs do not require Node.js at all.
+!!! info "GESF scans any project"
+    Your project can be Python, Rust, Go, Java, Ruby, PHP, .NET, or anything else. Node.js is only needed to run the `ges` command. It does not need to be part of your project's stack.
 
 Install Node.js if you don't have it:
 
@@ -144,13 +153,13 @@ ges doctor
 
 !!! example "Exercise 2: Compare Install Methods"
 
-    If you have both npm and Homebrew available, try both install paths and compare.
+    If you have both npm and Homebrew available, try both install paths.
 
     1. Install via Homebrew:
 
     ```bash
     brew tap greenarmor/gesf && brew install ges
-    which ges  # should show /opt/homebrew/bin/ges or /usr/local/bin/ges
+    which ges  # should show Homebrew path
     ges --version
     ```
 
@@ -159,7 +168,7 @@ ges doctor
     ```bash
     brew uninstall ges
     npm install -g @greenarmor/ges
-    which ges  # should show a node_modules path
+    which ges  # should show npm global path
     ges --version
     ```
 
@@ -170,5 +179,5 @@ ges doctor
 
     !!! question "Questions"
         - Why might you choose brew over npm in a CI pipeline?
-        - On a server without Node.js, which install methods work?
         - What are the tradeoffs between npx and a global install?
+        - On a server without Node.js, which install methods work?

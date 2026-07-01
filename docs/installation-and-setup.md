@@ -9,11 +9,9 @@ Complete technical guide for installing and using the Green Engineering Standard
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
   - [Option 1: Homebrew (macOS)](#option-1-homebrew-macos-recommended)
-  - [Option 2: APT / .deb (Linux)](#option-2-apt--deb-linux)
-  - [Option 3: Manual Binary Download](#option-3-manual-binary-download)
-  - [Option 4: npm Global Install](#option-4-npm-global-install)
-  - [Option 5: npx (No Install)](#option-5-npx-run-without-installing)
-  - [Option 6: Install from Source](#option-6-install-from-source-contributors)
+  - [Option 2: npm Global Install](#option-2-npm-global-install)
+  - [Option 3: npx (No Install)](#option-3-npx-run-without-installing)
+  - [Option 4: Install from Source](#option-4-install-from-source-contributors)
 - [Verify Installation](#verify-installation)
 - [Quick Start: New Project](#quick-start-new-project)
 - [Quick Start: Existing Project](#quick-start-existing-project)
@@ -69,15 +67,44 @@ fnm use 22
 
 ### Option 1: Homebrew (macOS, Recommended)
 
-Standalone binary — no Node.js, no npm, no dependencies. Fastest startup.
+Installs Node.js and GESF in one command.
 
 ```bash
 brew tap greenarmor/gesf
 brew install ges
 ```
 
+### Option 2: npm Global Install
+
+Requires Node.js >= 22. Best for teams already using npm.
 
 ```bash
+npm install -g @greenarmor/ges
+```
+
+Or with pnpm:
+
+```bash
+pnpm add -g @greenarmor/ges
+```
+
+### Option 3: npx (Run Without Installing)
+
+```bash
+npx @greenarmor/ges init
+npx @greenarmor/ges audit
+```
+
+### Option 4: Install from Source (Contributors)
+
+```bash
+git clone https://github.com/greenarmor/gesf.git
+cd gesf
+npm install -g pnpm
+pnpm install
+pnpm -r run build
+cd packages/cli && npm link
+```
 # macOS ARM:  curl -L <release-url>/ges-darwin-arm64 -o /usr/local/bin/ges
 # macOS x64:  curl -L <release-url>/ges-darwin-x64 -o /usr/local/bin/ges
 # Linux x64:  curl -L <release-url>/ges-linux-x64 -o /usr/local/bin/ges
