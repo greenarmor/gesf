@@ -8,6 +8,7 @@
     "@greenarmor/ges-compliance-engine": "1.5.8",
     "@greenarmor/ges-core": "1.5.8",
     "@greenarmor/ges-doc-generator": "1.5.8",
+    "@greenarmor/ges-inference-engine": "1.5.8",
     "@greenarmor/ges-policy-engine": "1.5.8",
     "@greenarmor/ges-report-generator": "1.5.8",
     "@greenarmor/ges-rules-engine": "1.5.8",

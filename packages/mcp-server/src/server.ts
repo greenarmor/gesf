@@ -41,6 +41,8 @@ import {
 } from "@greenarmor/ges-core";
 import type { GovernanceRecord, GovernanceSystemType, GovernanceRiskLevel, EvidenceType, EvidenceSourceSystem } from "@greenarmor/ges-core";
 import { ProjectConfigSchema } from "@greenarmor/ges-core";
+import { runInference } from "@greenarmor/ges-inference-engine";
+import type { InferenceReport } from "@greenarmor/ges-inference-engine";
 import { safeWriteJson, safeWriteFile } from "@greenarmor/ges-core";
 import { generateComplianceDocs, generateSecurityDocs, generateConfigJson, generateMetadataJson, generateFrameworkVersionJson, generateScoreJson } from "@greenarmor/ges-doc-generator";
 import { generateAllWorkflows } from "@greenarmor/ges-cicd-generator";
@@ -793,6 +795,16 @@ const TOOLS = [
         actor_role: { type: "string", description: "Role of the person performing this action." },
       },
       required: ["project_path", "finding_key", "resolved_by"],
+    },
+  },
+  {
+    name: "run_inference",
+    description: "Run AI-powered inference on GESF compliance data. Analyzes audit findings (clustering + deduplication), identifies root causes via graph analysis, detects score anomalies, and predicts compliance trends. Returns a comprehensive InferenceReport with actionable insights.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+      },
     },
   },
 ];
@@ -4448,6 +4460,66 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
             actor_role: args.actor_role,
           });
           resultText = `# Fix Resolved\n\n**Finding**: ${resolved.finding_rule_id} — ${resolved.finding_title}\n**Governance Record**: ${resolved.governance_system_name}\n**Resolved By**: ${resolver}\n**Method**: ${method}\n**Status**: fixed`;
+          break;
+        }
+        case "run_inference": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const report: InferenceReport = runInference(projectPath);
+
+          const lines: string[] = [];
+          lines.push(`# AI Inference Report\n`);
+          lines.push(`**Generated**: ${report.generatedAt}`);
+          lines.push(`**Findings Analyzed**: ${report.summary.totalFindings}`);
+          lines.push(`**Actionable Insights**: ${report.summary.insightCount}`);
+          lines.push("");
+
+          if (report.clustering) {
+            lines.push("## Finding Clustering");
+            lines.push(`**${report.clustering.totalFindings} findings → ${report.clustering.clusterCount} clusters (${report.clustering.reductionRatio}% reduction)**\n`);
+            for (const c of report.clustering.clusters.slice(0, 5)) {
+              lines.push(`- **${c.clusterId}** [${c.severity}] **${c.ruleId}**: ${c.representativeTitle} — ${c.findingCount} findings in ${c.files.length} file(s)`);
+            }
+            lines.push("");
+          }
+
+          if (report.rootCause && report.rootCause.topCause) {
+            lines.push("## Root Cause Analysis");
+            lines.push(`**Primary Root Cause**: ${report.rootCause.topCause.identifier} (${report.rootCause.topCause.type})`);
+            lines.push(`**Impact**: ${report.rootCause.topCause.connectedFindings.length} of ${report.rootCause.totalFindingsTraced} findings (${Math.round(report.rootCause.topCause.betweenness * 100)}%)`);
+            lines.push(`**Summary**: ${report.rootCause.summary}`);
+            lines.push("");
+          }
+
+          if (report.scoreAnomalies?.hasAnomalies) {
+            lines.push("## Score Anomalies");
+            for (const a of report.scoreAnomalies.anomalies) {
+              if (!a.isAnomalous) continue;
+              const dir = a.delta < 0 ? "↓" : "↑";
+              lines.push(`- **${a.framework}**: ${dir} ${Math.abs(a.delta)}% (${a.previousScore}% → ${a.currentScore}%) z=${a.zScore}`);
+              if (a.triggeringEvent) lines.push(`  - Trigger: ${a.triggeringEvent}`);
+            }
+            lines.push("");
+          }
+
+          if (report.trends?.overall) {
+            lines.push("## Trend Predictions");
+            const o = report.trends.overall;
+            const dir = o.trendDirection === "improving" ? "↑ Improving" : o.trendDirection === "declining" ? "↓ Declining" : "─ Stable";
+            lines.push(`**Overall**: ${dir} — ${o.currentScore}% → ${o.projectedScore}% (R²=${o.rSquared})`);
+            if (o.cyclesToThreshold !== null && o.cyclesToThreshold > 0) {
+              lines.push(`**Threshold (80%)**: In ~${o.cyclesToThreshold} audit cycles`);
+            }
+            for (const p of report.trends.predictions.slice(0, 6)) {
+              lines.push(`- **${p.framework}**: ${p.currentScore}% → ${p.projectedScore}% (${p.trendDirection}, R²=${p.rSquared})`);
+            }
+            lines.push("");
+          }
+
+          if (report.summary.insightCount === 0) {
+            lines.push("No significant insights found. Run more audits to accumulate data for richer inference.");
+          }
+
+          resultText = lines.join("\n");
           break;
         }
         default:

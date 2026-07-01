@@ -39,6 +39,7 @@ import {
 import { getInstalledPackIds as getInstalledPackIdsFromDisk } from "@greenarmor/ges-core";
 import { generateMarkdownReport, generateHtmlReport } from "@greenarmor/ges-report-generator";
 import type { Finding } from "@greenarmor/ges-audit-engine";
+import { runInference } from "@greenarmor/ges-inference-engine";
 import { renderDashboard } from "./template.js";
 
 export interface DashboardOptions {
@@ -858,6 +859,16 @@ export function startDashboard(options: DashboardOptions): http.Server {
       try {
         const data = collectDashboardData(options.projectPath);
         jsonResponse(res, data.activityLog);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (pathname === "/api/inference") {
+      try {
+        const report = runInference(options.projectPath);
+        jsonResponse(res, report);
       } catch (err) {
         jsonError(res, err instanceof Error ? err.message : String(err));
       }

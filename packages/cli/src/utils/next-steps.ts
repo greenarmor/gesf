@@ -24,6 +24,7 @@ const ALL_COMMANDS: Record<string, NextStep> = {
   policy:    { label: "Manage policies",     value: "ges policy list",         description: "List, install, or remove policy packs" },
   update:    { label: "Check updates",       value: "ges update",              description: "Check for GESF updates" },
   governance:{ label: "Governance",          value: "ges governance list",     description: "View approval provenance chains" },
+  infer:     { label: "AI Inference",        value: "ges infer",               description: "AI-powered compliance insights" },
 };
 
 function buildSteps(exclude: string[]): NextStep[] {
@@ -81,6 +82,9 @@ export function getNextStepsForCommand(command: string, context?: Record<string,
 
     case "governance":
       return buildSteps(["governance"]);
+
+    case "infer":
+      return buildSteps(["infer"]);
 
     case "mcp-setup":
       return buildSteps(["mcp-setup"]);

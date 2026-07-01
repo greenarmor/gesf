@@ -1,0 +1,41 @@
+{
+  "dependencies": {
+    "@greenarmor/ges-core": "1.5.8"
+  },
+  "description": "GESF Inference Engine - AI-powered analysis of compliance data (clustering, RCA, anomaly detection, trend prediction)",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^6.0.0",
+    "vitest": "^4.1.8"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "name": "@greenarmor/ges-inference-engine",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greenarmor/gesf.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.5.8"
+}

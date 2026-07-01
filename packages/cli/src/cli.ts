@@ -20,6 +20,7 @@ import { hooksCommand } from "./commands/hooks.js";
 import { dashboardCommand } from "./commands/dashboard.js";
 import { governanceCommand } from "./commands/governance.js";
 import { assignCommand } from "./commands/assign.js";
+import { inferCommand } from "./commands/infer.js";
 import { CLI_VERSION, AUTHOR, RELEASE_DATE, DONATE_URL, HOMEPAGE } from "./utils/version.js";
 import { showUpdateNoticeIfNeeded } from "./utils/update-notice.js";
 import { createRequire } from "node:module";
@@ -68,5 +69,6 @@ program.addCommand(hooksCommand);
 program.addCommand(dashboardCommand);
 program.addCommand(governanceCommand);
 program.addCommand(assignCommand);
+program.addCommand(inferCommand);
 
 program.parse();

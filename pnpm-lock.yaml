@@ -73,6 +73,9 @@ importers:
       '@greenarmor/ges-git-hooks':
         specifier: 1.5.8
         version: link:../git-hooks
+      '@greenarmor/ges-inference-engine':
+        specifier: 1.5.8
+        version: link:../inference-engine
       '@greenarmor/ges-mcp-server':
         specifier: 1.5.8
         version: link:../mcp-server
@@ -206,6 +209,22 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@22.19.19)(vite@8.0.16(@types/node@22.19.19)(esbuild@0.28.1))
 
+  packages/inference-engine:
+    dependencies:
+      '@greenarmor/ges-core':
+        specifier: 1.5.8
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.19
+      typescript:
+        specifier: ^6.0.0
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@22.19.19)(vite@8.0.16(@types/node@22.19.19)(esbuild@0.28.1))
+
   packages/mcp-server:
     dependencies:
       '@greenarmor/ges-audit-engine':
@@ -223,6 +242,9 @@ importers:
       '@greenarmor/ges-doc-generator':
         specifier: 1.5.8
         version: link:../doc-generator
+      '@greenarmor/ges-inference-engine':
+        specifier: 1.5.8
+        version: link:../inference-engine
       '@greenarmor/ges-policy-engine':
         specifier: 1.5.8
         version: link:../policy-engine
@@ -373,6 +395,9 @@ importers:
       '@greenarmor/ges-core':
         specifier: 1.5.8
         version: link:../core
+      '@greenarmor/ges-inference-engine':
+        specifier: 1.5.8
+        version: link:../inference-engine
       '@greenarmor/ges-policy-engine':
         specifier: 1.5.8
         version: link:../policy-engine

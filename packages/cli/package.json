@@ -9,6 +9,7 @@
     "@greenarmor/ges-core": "1.5.8",
     "@greenarmor/ges-doc-generator": "1.5.8",
     "@greenarmor/ges-git-hooks": "1.5.8",
+    "@greenarmor/ges-inference-engine": "1.5.8",
     "@greenarmor/ges-mcp-server": "1.5.8",
     "@greenarmor/ges-policy-engine": "1.5.8",
     "@greenarmor/ges-report-generator": "1.5.8",
