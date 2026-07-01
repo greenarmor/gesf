@@ -1455,7 +1455,7 @@ export function renderDashboard(data: DashboardData): string {
     }
 
     if (s.topRootCause) {
-      h += '<div class="card" style="background:#fef2f2;border:1px solid #fecaca;margin-bottom:12px;"><strong>&#128204; Root Cause:</strong> <code>' + escapeHtml(s.topRootCause) + '</code> — ' + (s.topRootCauseImpact||'') + '</div>';
+      h += '<div class="card" style="background:#fef2f2;border:1px solid #fecaca;margin-bottom:12px;"><strong>&#128204; Root Cause:</strong> <code>' + esc(s.topRootCause) + '</code> — ' + (s.topRootCauseImpact||'') + '</div>';
     }
 
     if (s.hasScoreAnomalies) {
@@ -1475,7 +1475,7 @@ export function renderDashboard(data: DashboardData): string {
         var barW = Math.min(Math.round(n.severityScore / 3), 30);
         for (var j = 0; j < barW; j++) bar += '&#9617;';
         h += '<tr>';
-        h += '<td><code style="font-size:12px;">' + escapeHtml(n.identifier) + '</code></td>';
+        h += '<td><code style="font-size:12px;">' + esc(n.identifier) + '</code></td>';
         h += '<td>' + (n.type==='file'?'&#128196; File':'&#127919; Control') + '</td>';
         h += '<td>' + n.connectedFindings.length + ' (' + pct + '%)</td>';
         h += '<td>' + bar + '</td>';
@@ -1494,9 +1494,9 @@ export function renderDashboard(data: DashboardData): string {
         var c = clusters[i];
         var sevColor = c.severity==='critical'?'#ef4444':c.severity==='high'?'#f97316':c.severity==='medium'?'#eab308':'#22c55e';
         h += '<div style="padding:10px 12px;margin-bottom:8px;border-left:4px solid ' + sevColor + ';background:#f9fafb;border-radius:6px;">';
-        h += '<strong>' + c.clusterId + '</strong> <span style="color:' + sevColor + ';font-weight:600;">[' + c.severity + ']</span> <span style="color:#4b5563;">' + escapeHtml(c.ruleId) + '</span>';
-        h += '<div style="font-size:13px;color:#6b7280;margin-top:4px;">' + escapeHtml(c.representativeTitle) + '</div>';
-        h += '<div style="font-size:12px;color:#9ca3af;margin-top:4px;">' + c.findingCount + ' findings in ' + c.files.length + ' file(s) → Fix: ' + escapeHtml(c.representativeFix.substring(0,100)) + '</div>';
+        h += '<strong>' + c.clusterId + '</strong> <span style="color:' + sevColor + ';font-weight:600;">[' + c.severity + ']</span> <span style="color:#4b5563;">' + esc(c.ruleId) + '</span>';
+        h += '<div style="font-size:13px;color:#6b7280;margin-top:4px;">' + esc(c.representativeTitle) + '</div>';
+        h += '<div style="font-size:12px;color:#9ca3af;margin-top:4px;">' + c.findingCount + ' findings in ' + c.files.length + ' file(s) → Fix: ' + esc(c.representativeFix.substring(0,100)) + '</div>';
         h += '</div>';
       }
       h += '</div>';
@@ -1512,8 +1512,8 @@ export function renderDashboard(data: DashboardData): string {
         var dir = a.delta < 0 ? '&#9660;' : '&#9650;';
         var color = a.delta < 0 ? '#ef4444' : '#22c55e';
         h += '<div style="padding:10px 12px;margin-bottom:6px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;">';
-        h += '<strong>' + escapeHtml(a.framework) + '</strong> <span style="color:' + color + ';">' + dir + ' ' + Math.abs(a.delta) + '%</span> (' + a.previousScore + '% → ' + a.currentScore + '%) z=' + a.zScore;
-        if (a.triggeringEvent) h += '<div style="font-size:12px;color:#6b7280;margin-top:4px;">Trigger: ' + escapeHtml(a.triggeringEvent) + '</div>';
+        h += '<strong>' + esc(a.framework) + '</strong> <span style="color:' + color + ';">' + dir + ' ' + Math.abs(a.delta) + '%</span> (' + a.previousScore + '% → ' + a.currentScore + '%) z=' + a.zScore;
+        if (a.triggeringEvent) h += '<div style="font-size:12px;color:#6b7280;margin-top:4px;">Trigger: ' + esc(a.triggeringEvent) + '</div>';
         h += '</div>';
       }
       h += '</div>';
@@ -1535,7 +1535,7 @@ export function renderDashboard(data: DashboardData): string {
           var pColor = p.trendDirection==='improving'?'#22c55e':p.trendDirection==='declining'?'#ef4444':'#6b7280';
           var pDir = p.trendDirection==='improving'?'&#9650;':p.trendDirection==='declining'?'&#9660;':'&#9472;';
           var pCyc = p.cyclesToThreshold !== null && p.cyclesToThreshold > 0 ? '~' + p.cyclesToThreshold : '-';
-          h += '<tr><td>' + escapeHtml(p.framework) + '</td>';
+          h += '<tr><td>' + esc(p.framework) + '</td>';
           h += '<td style="color:' + pColor + ';">' + pDir + ' ' + p.trendDirection + '</td>';
           h += '<td>' + p.currentScore + '%</td>';
           h += '<td>' + p.projectedScore + '%</td>';
