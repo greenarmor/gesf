@@ -43,9 +43,14 @@ jobs:
       - name: Build all packages
         run: pnpm -r run build
 
+      - name: Get version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
       - name: Compile standalone binary
         run: |
           bun build --compile \
+            --define "GESF_CLI_VERSION:\"${{ steps.version.outputs.version }}\"" \
             --target=${{ matrix.target }} \
             packages/cli/src/cli.ts \
             --outfile ${{ matrix.asset-name }}
