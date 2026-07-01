@@ -4,9 +4,7 @@
 #   brew tap greenarmor/gesf
 #   brew install ges
 #
-# This formula installs the standalone binary from GitHub Releases.
-# The CI workflow (.github/workflows/release-binaries.yml) builds and uploads
-# binaries for linux-x64, darwin-arm64, and darwin-x64 on every release.
+# Requires Node.js >= 22. Installs @greenarmor/ges globally via npm.
 #
 # Repository: https://github.com/greenarmor/homebrew-gesf
 
@@ -16,29 +14,14 @@ class Ges < Formula
   version "1.6.2"
   license "MIT"
 
-  if OS.mac?
-    if Hardware::CPU.arm?
-      url "https://github.com/greenarmor/gesf/releases/download/v#{version}/ges-darwin-arm64"
-      sha256 "REPLACE_WITH_SHA256_DARWIN_ARM64" # brew fetch --build-from-source ges
-    else
-      url "https://github.com/greenarmor/gesf/releases/download/v#{version}/ges-darwin-x64"
-      sha256 "REPLACE_WITH_SHA256_DARWIN_X64"  # brew fetch --build-from-source ges
-    end
-  elsif OS.linux?
-    url "https://github.com/greenarmor/gesf/releases/download/v#{version}/ges-linux-x64"
-    sha256 "REPLACE_WITH_SHA256_LINUX_X64"     # brew fetch --build-from-source ges
-  end
+  url "https://registry.npmjs.org/@greenarmor/ges/-/ges-1.6.2.tgz"
+  sha256 "REPLACE_WITH_NPM_TARBALL_SHA256"
+
+  depends_on "node"
 
   def install
-    if OS.mac?
-      if Hardware::CPU.arm?
-        bin.install "ges-darwin-arm64" => "ges"
-      else
-        bin.install "ges-darwin-x64" => "ges"
-      end
-    elsif OS.linux?
-      bin.install "ges-linux-x64" => "ges"
-    end
+    system "npm", "install", *std_npm_args
+    bin.install_symlink Dir["#{libexec}/bin/*"]
   end
 
   test do

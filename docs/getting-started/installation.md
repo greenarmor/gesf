@@ -11,19 +11,6 @@ brew tap greenarmor/gesf
 brew install ges
 ```
 
-## Option 2 — APT / .deb (Linux)
-
-Standalone binary via Debian package.
-
-```bash
-# Download from GitHub Releases
-# https://github.com/greenarmor/gesf/releases/latest
-# Download from https://github.com/greenarmor/gesf/releases/latest
-# then:
-dpkg -i ges_*_amd64.deb
-```
-
-## Option 3 — npm (Global Install)
 
 Requires Node.js >= 22. Best for teams already using npm.
 
@@ -37,7 +24,7 @@ Or with pnpm:
 pnpm add -g @greenarmor/ges
 ```
 
-## Option 4 — npx (Run Without Installing)
+## Option 3 — npx (Run Without Installing)
 
 Download and run on demand. No global install. Best for one-off audits or CI pipelines.
 
@@ -53,32 +40,6 @@ Or with pnpm:
 pnpm dlx @greenarmor/ges init
 ```
 
-## Option 5 — Manual Binary Download
-
-Standalone binary for any platform. No package manager needed.
-
-=== "macOS (Apple Silicon)"
-
-    ```bash
-    curl -L https://github.com/greenarmor/gesf/releases/download/v1.6.2/ges-darwin-arm64 -o /usr/local/bin/ges
-    chmod +x /usr/local/bin/ges
-    ```
-
-=== "macOS (Intel)"
-
-    ```bash
-    curl -L https://github.com/greenarmor/gesf/releases/download/v1.6.2/ges-darwin-x64 -o /usr/local/bin/ges
-    chmod +x /usr/local/bin/ges
-    ```
-
-=== "Linux (x64)"
-
-    ```bash
-    curl -L https://github.com/greenarmor/gesf/releases/download/v1.6.2/ges-linux-x64 -o /usr/local/bin/ges
-    chmod +x /usr/local/bin/ges
-    ```
-
-## Option 6 — Install from Source
 
 For developers contributing to GESF.
 
@@ -98,10 +59,8 @@ cd packages/cli && npm link
 | Method | Requires Node? | Install Time | Best For |
 |--------|:---:|:---:|---|
 | Homebrew | No | ~3s | macOS daily use, teams |
-| APT .deb | No | ~2s | Linux servers, CI |
 | npm global | Yes (>=22) | ~10s | JS/TS teams, npm workflows |
 | npx | Yes (>=22) | ~5s (cached) | One-off audits, CI |
-| Manual binary | No | ~3s | Air-gapped, custom setups |
 | Source | Yes (>=22) | ~60s | Contributors, developers |
 
 ---

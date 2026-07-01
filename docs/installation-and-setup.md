@@ -76,18 +76,6 @@ brew tap greenarmor/gesf
 brew install ges
 ```
 
-### Option 2: APT / .deb (Linux)
-
-Standalone binary via Debian package.
-
-```bash
-# Download from https://github.com/greenarmor/gesf/releases/latest
-# Download from https://github.com/greenarmor/gesf/releases/latest
-# then:
-dpkg -i ges_*_amd64.deb
-```
-
-### Option 3: Manual Binary Download
 
 ```bash
 # macOS ARM:  curl -L <release-url>/ges-darwin-arm64 -o /usr/local/bin/ges
@@ -96,7 +84,7 @@ dpkg -i ges_*_amd64.deb
 chmod +x /usr/local/bin/ges
 ```
 
-### Option 4: npm Global Install
+### Option 3: npm Global Install
 
 Requires Node.js >= 22. Best for teams already using npm.
 
@@ -110,14 +98,14 @@ Or with pnpm:
 pnpm add -g @greenarmor/ges
 ```
 
-### Option 5: npx (Run Without Installing)
+### Option 4: npx (Run Without Installing)
 
 ```bash
 npx @greenarmor/ges init
 npx @greenarmor/ges audit
 ```
 
-### Option 6: Install from Source (Contributors)
+### Option 5: Install from Source (Contributors)
 
 ```bash
 git clone https://github.com/greenarmor/gesf.git
