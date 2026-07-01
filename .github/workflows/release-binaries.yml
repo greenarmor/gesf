@@ -45,12 +45,17 @@ jobs:
 
       - name: Get version
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(node -e "console.log(require('./packages/cli/package.json').version)")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Inject version into source
+        run: |
+          sed -i "s/GESF_VERSION_PLACEHOLDER/${{ steps.version.outputs.version }}/g" packages/cli/src/utils/version.ts
 
       - name: Compile standalone binary
         run: |
           bun build --compile \
-            --define "GESF_CLI_VERSION:\"${{ steps.version.outputs.version }}\"" \
             --target=${{ matrix.target }} \
             packages/cli/src/cli.ts \
             --outfile ${{ matrix.asset-name }}
