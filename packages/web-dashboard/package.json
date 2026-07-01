@@ -1,11 +1,11 @@
 {
   "dependencies": {
-    "@greenarmor/ges-audit-engine": "1.6.0",
-    "@greenarmor/ges-core": "1.6.0",
-    "@greenarmor/ges-inference-engine": "1.6.0",
-    "@greenarmor/ges-policy-engine": "1.6.0",
-    "@greenarmor/ges-report-generator": "1.6.0",
-    "@greenarmor/ges-scoring-engine": "1.6.0"
+    "@greenarmor/ges-audit-engine": "1.6.1",
+    "@greenarmor/ges-core": "1.6.1",
+    "@greenarmor/ges-inference-engine": "1.6.1",
+    "@greenarmor/ges-policy-engine": "1.6.1",
+    "@greenarmor/ges-report-generator": "1.6.1",
+    "@greenarmor/ges-scoring-engine": "1.6.1"
   },
   "description": "GESF Web Dashboard - Visual compliance dashboard for teams",
   "devDependencies": {
@@ -47,5 +47,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.6.0"
+  "version": "1.6.1"
 }
