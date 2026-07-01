@@ -1,0 +1,8 @@
+# Gitleaks configuration for GESF
+# Docs contain intentional example secrets in exercise code
+# GESF's own audit engine already excludes docs/ via .gesignore
+
+[allowlist]
+paths = [
+  '''docs/''',
+]
