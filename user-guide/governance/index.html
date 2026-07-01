@@ -1,0 +1,3910 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="GESF (pronounced "Gessf") — the framework that helps you "get safe." Compliance-as-Code for GDPR, OWASP, NIST, and CIS.">
+      
+      
+      
+        <link rel="canonical" href="https://greenarmor.github.io/gesf/user-guide/governance/">
+      
+      
+        <link rel="prev" href="../web-dashboard/">
+      
+      
+        <link rel="next" href="../fix-assignments/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Governance Provenance - GESF Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#governance-provenance-chain" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="GESF Documentation" class="md-header__button md-logo" aria-label="GESF Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GESF Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Governance Provenance
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/greenarmor/gesf" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    greenarmor/gesf
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../initializing/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../mcp/overview/" class="md-tabs__link">
+          
+  
+  
+  MCP Integration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../integrations/eslint-plugin/" class="md-tabs__link">
+          
+  
+  
+  Integrations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../cicd/github-actions/" class="md-tabs__link">
+          
+  
+  
+  CI/CD
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/commands/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../governance/architecture/" class="md-tabs__link">
+          
+  
+  
+  Governance
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../privacy-packs/" class="md-tabs__link">
+          
+  
+  
+  Privacy Packs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="GESF Documentation" class="md-nav__button md-logo" aria-label="GESF Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GESF Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/greenarmor/gesf" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    greenarmor/gesf
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../initializing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Initializing Your Project
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../running-an-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running an Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auto-fix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auto-Fix Findings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compliance-score/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compliance Score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compliance-badge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compliance Badge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generating-reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generating Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../external-scanners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External Scanners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../policy-packs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../git-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Git Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../web-dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance Provenance
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-governance-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Governance Provenance?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-provenance-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Provenance Chain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-install-the-governance-pack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1 — Install the Governance Pack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-create-your-first-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2 — Create Your First Record
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-verify-before-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3 — Verify (Before Enrichment)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enriching-the-provenance-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enriching the Provenance Chain
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enriching the Provenance Chain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#risk-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-basis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Basis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approval-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Decision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evidence-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence References
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#review-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Inventory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#committee-approval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Committee Approval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compliance-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compliance Links
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-the-complete-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying the Complete Chain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-the-full-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Viewing the Full Record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listing-all-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Listing All Records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#audit-engine-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audit Engine Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Audit Engine Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#govp-control-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GOVP Control Reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doctor-health-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Doctor Health Checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#actor-attribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actor Attribution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP Tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enrichment-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enrichment Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deleting-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deleting Records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-workflow-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Workflow Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exercises
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fix-assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fix Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Inference Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../complete-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Complete Audit Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MCP Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/tools-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/code-assistants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using with Code Assistants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/eslint-plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESLint Plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/vscode-extension/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code Extension
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CI/CD
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cicd/github-actions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Actions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cicd/manual-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/project-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/audit-scanners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit Scanners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/iac-scanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IaC Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dependency-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/gdpr-controls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GDPR Controls
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/engineering-standards/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering Standards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Governance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../governance/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Packs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Privacy Packs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privacy-packs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privacy-packs/privacy-core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Core (Global Baseline)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privacy-packs/europe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Europe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privacy-packs/asia-pacific/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Asia-Pacific
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privacy-packs/americas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Americas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../privacy-packs/africa-middle-east/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Africa and Middle East
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-governance-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Governance Provenance?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-provenance-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Provenance Chain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Started
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-install-the-governance-pack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1 — Install the Governance Pack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-create-your-first-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2 — Create Your First Record
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-verify-before-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3 — Verify (Before Enrichment)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enriching-the-provenance-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enriching the Provenance Chain
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enriching the Provenance Chain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#risk-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-basis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Basis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approval-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Decision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evidence-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence References
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#review-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Inventory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#committee-approval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Committee Approval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compliance-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compliance Links
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-the-complete-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying the Complete Chain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-the-full-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Viewing the Full Record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listing-all-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Listing All Records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#audit-engine-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audit Engine Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Audit Engine Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#govp-control-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GOVP Control Reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doctor-health-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Doctor Health Checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#actor-attribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actor Attribution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP Tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enrichment-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enrichment Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deleting-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deleting Records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-workflow-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Workflow Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exercises" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exercises
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="governance-provenance-chain">Governance Provenance Chain<a class="headerlink" href="#governance-provenance-chain" title="Permanent link">&para;</a></h1>
+<p>The <code>ges governance</code> command creates linked approval records that connect every dimension of system approval — from risk assessment to evidence to review cycles — into a single defensible chain. Designed for auditors, examiners, and developers who need to answer: <strong>"Who approved this system? Under which authority? Is it still valid? What evidence supports the decision?"</strong></p>
+<hr />
+<h2 id="why-governance-provenance">Why Governance Provenance?<a class="headerlink" href="#why-governance-provenance" title="Permanent link">&para;</a></h2>
+<p>In modern organizations, approval information is scattered across Jira tickets, Confluence pages, meeting minutes, emails, and spreadsheets. When an auditor asks <em>"Can you prove this system was properly approved?"</em>, the answer requires assembling fragments from dozens of sources.</p>
+<p>GESF solves this by creating a <strong>single record per governed system</strong> that links to evidence wherever it lives — without duplicating the content.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>System Identity → Risk Assessment → Policy Basis → Approval Decision
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                                                       ↓
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    Review Cycle ← Evidence Chain ← Committee ← Data Inventory
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                                       ↓
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                                            Compliance Links
+</span></code></pre></div>
+<p>The result: one command (<code>ges governance verify &lt;id&gt;</code>) gives you a complete, auditable answer.</p>
+<hr />
+<h2 id="the-provenance-chain">The Provenance Chain<a class="headerlink" href="#the-provenance-chain" title="Permanent link">&para;</a></h2>
+<p>Each governance record connects <strong>9 dimensions</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dimension</th>
+<th>What It Captures</th>
+<th>Required?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>System Identity</strong></td>
+<td>Name, type, version, description, risk level</td>
+<td>Always</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Risk Assessment</strong></td>
+<td>Assessor, methodology, risk score, residual risk, mitigations</td>
+<td>Blocking if missing</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Policy Basis</strong></td>
+<td>Policy ID, name, version, standard reference, clauses</td>
+<td>Blocking if missing</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Approval Decision</strong></td>
+<td>Approver, role, authority, decision, validity period, conditions</td>
+<td>Blocking if missing</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Evidence Chain</strong></td>
+<td>References to Jira, Confluence, ServiceNow, etc.</td>
+<td>Blocking if empty</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Committee Approval</strong></td>
+<td>Committee name, meeting reference, attendees, summary</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Review Cycle</strong></td>
+<td>Frequency, next review date, review history</td>
+<td>Warning if missing</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Data Inventory</strong></td>
+<td>Data categories, purposes, subjects, transfers, retention</td>
+<td>Warning if missing</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Compliance Links</strong></td>
+<td>Frameworks, controls satisfied, pack IDs</td>
+<td>Warning if missing</td>
+</tr>
+</tbody>
+</table>
+<p>Dimensions 1–5 are <strong>blocking</strong> — if any is missing, <code>verify</code> reports issues. Dimensions 6–9 are recommended; missing them produces warnings but not blocking issues.</p>
+<hr />
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<h3 id="step-1-install-the-governance-pack">Step 1 — Install the Governance Pack<a class="headerlink" href="#step-1-install-the-governance-pack" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ges<span class="w"> </span>policy<span class="w"> </span>install<span class="w"> </span>governance
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>  ✓ Installed policy pack: governance (12 controls)
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  ✓ Dashboard will now reflect this pack&#39;s controls
+</span></code></pre></div>
+<p>This creates <code>controls/governance/controls.json</code> with 12 GOVP controls.</p>
+<h3 id="step-2-create-your-first-record">Step 2 — Create Your First Record<a class="headerlink" href="#step-2-create-your-first-record" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>add<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;Payment API&quot;</span><span class="w"> </span>--type<span class="w"> </span>api<span class="w"> </span>--risk<span class="w"> </span>high
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>  [✓] Governance record created
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>      ID: gov-1718100000000-1
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  ○ gov-1718100000000-1  Payment API
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>     Type: api  |  Risk: HIGH  |  Status: draft
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>     Approval: NOT RECORDED
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>     Evidence: 0 reference(s)
+</span></code></pre></div>
+<p>The record starts in <code>draft</code> status with no linked dimensions. The system assigns a unique ID — you'll use this ID for all subsequent commands.</p>
+<h3 id="step-3-verify-before-enrichment">Step 3 — Verify (Before Enrichment)<a class="headerlink" href="#step-3-verify-before-enrichment" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>verify<span class="w"> </span>gov-1718100000000-1
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>  ═══════════════════════════════════════════════════
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  VERIFICATION: Payment API
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  ═══════════════════════════════════════════════════
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  Overall: ✕ ISSUES FOUND
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  Approval Status: PENDING
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  Evidence Count: 0
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  Completeness Checklist:
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    ✕ Approval Decision
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    ✕ Risk Assessment
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    ✕ Policy Basis
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>    ✕ Evidence Chain
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    △ Review Cycle
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    △ Data Inventory
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>    △ Compliance Links
+</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>
+</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>  BLOCKING ISSUES:
+</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>    ✕ No approval decision recorded
+</span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>    ✕ No risk assessment linked
+</span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>    ✕ No policy basis documented
+</span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>    ✕ No evidence references attached
+</span></code></pre></div>
+<p>This is expected — we haven't enriched the record yet. Let's fix that.</p>
+<hr />
+<h2 id="enriching-the-provenance-chain">Enriching the Provenance Chain<a class="headerlink" href="#enriching-the-provenance-chain" title="Permanent link">&para;</a></h2>
+<h3 id="risk-assessment">Risk Assessment<a class="headerlink" href="#risk-assessment" title="Permanent link">&para;</a></h3>
+<p>Link a risk assessment to document what risks were identified and how they're mitigated:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>risk-assessment<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>--assessor<span class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>--methodology<span class="w"> </span><span class="s2">&quot;NIST RMF&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span>--score<span class="w"> </span><span class="s2">&quot;7/10&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span>--residual<span class="w"> </span><span class="s2">&quot;medium&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;Risk Analyst&quot;</span>
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>  [✓] Risk assessment linked to Payment API
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>      Assessor: John Doe  |  Score: 7/10  |  Residual: medium
+</span></code></pre></div>
+<h3 id="policy-basis">Policy Basis<a class="headerlink" href="#policy-basis" title="Permanent link">&para;</a></h3>
+<p>Document the policy or standard under which the system is approved:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>policy-basis<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--policy-name<span class="w"> </span><span class="s2">&quot;Information Security Policy&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--policy-id<span class="w"> </span><span class="s2">&quot;ISP-2024&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>--pv<span class="w"> </span><span class="s2">&quot;2.1&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span>--standard<span class="w"> </span><span class="s2">&quot;ISO 27001&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;Jane Smith&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;Compliance Officer&quot;</span>
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>  [✓] Policy basis documented for Payment API
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>      Information Security Policy (ISP-2024 v2.1) — ISO 27001
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">The <code>--pv</code> flag</p>
+<p>The flag for policy version is <code>--pv</code> (short for "policy version"), not <code>--version</code>. This avoids a conflict with commander.js's built-in <code>--version</code> flag that prints the CLI version.</p>
+</div>
+<h3 id="approval-decision">Approval Decision<a class="headerlink" href="#approval-decision" title="Permanent link">&para;</a></h3>
+<p>Record who approved the system, under what authority, and for how long:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>approve<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>--approver<span class="w"> </span><span class="s2">&quot;Jane Smith&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>--role<span class="w"> </span><span class="s2">&quot;CISO&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span>--email<span class="w"> </span><span class="s2">&quot;jane@company.com&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span>--authority<span class="w"> </span><span class="s2">&quot;Executive Board&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span>--decision<span class="w"> </span>approved<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">  </span>--valid-until<span class="w"> </span><span class="s2">&quot;2027-06-01&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">  </span>--rationale<span class="w"> </span><span class="s2">&quot;All critical controls verified. Risk accepted.&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;Jane Smith&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;CISO&quot;</span>
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>  [✓] Approval recorded for Payment API
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>      Decision: APPROVED
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>      Approver: Jane Smith (CISO)
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>      Valid: 2026-06-11 → 2027-06-01
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Approval Expiry</p>
+<p>Always set a <code>--valid-until</code> date. The audit engine flags expired approvals as <strong>critical</strong> severity findings. Approvals expiring within 30 days generate a <strong>medium</strong> warning.</p>
+</div>
+<h3 id="evidence-references">Evidence References<a class="headerlink" href="#evidence-references" title="Permanent link">&para;</a></h3>
+<p>Attach evidence from external systems. Evidence is <strong>referenced, not duplicated</strong> — you point to where the evidence lives:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>evidence<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;DPIA Report Q2 2026&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>--source<span class="w"> </span>jira<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span>--reference<span class="w"> </span><span class="s2">&quot;DPIA-2026-0042&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;Risk Analyst&quot;</span>
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>  [✓] Evidence added to Payment API
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>      DPIA Report Q2 2026
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>      Source: jira  |  Ref: DPIA-2026-0042
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>      Total evidence: 1 reference(s)
+</span></code></pre></div>
+<p>You can attach multiple evidence references — each points to a different source:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Jira Ticket</label><label for="__tabbed_1_2">Confluence Page</label><label for="__tabbed_1_3">ServiceNow Record</label><label for="__tabbed_1_4">External URL</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>evidence<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;Security Review Ticket&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span>--source<span class="w"> </span>jira<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span>--reference<span class="w"> </span><span class="s2">&quot;SEC-1234&quot;</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>evidence<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;Architecture Decision Record&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span>--source<span class="w"> </span>confluence<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span>--reference<span class="w"> </span><span class="s2">&quot;SPACE:ADR-001&quot;</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>evidence<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;Change Advisory Board Approval&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span>--source<span class="w"> </span>servicenow<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span>--reference<span class="w"> </span><span class="s2">&quot;CHG0004521&quot;</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>evidence<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;Penetration Test Report&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span>--source<span class="w"> </span>url<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span>--reference<span class="w"> </span><span class="s2">&quot;https://security.company.com/reports/pen-test-2026&quot;</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="review-cycle">Review Cycle<a class="headerlink" href="#review-cycle" title="Permanent link">&para;</a></h3>
+<p>Define how often the approval must be re-reviewed:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>review-cycle<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span>--frequency<span class="w"> </span>annual<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span>--next-review<span class="w"> </span><span class="m">2027</span>-06-01<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;Jane Smith&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;CISO&quot;</span>
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>  [✓] Review cycle set for Payment API
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>      Frequency: annual  |  Next review: 2027-06-01
+</span></code></pre></div>
+<p>Available frequencies: <code>quarterly</code>, <code>semi-annual</code>, <code>annual</code>, <code>biennial</code>.</p>
+<h3 id="data-inventory">Data Inventory<a class="headerlink" href="#data-inventory" title="Permanent link">&para;</a></h3>
+<p>Document what personal data the system processes:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>data-inventory<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span>--categories<span class="w"> </span><span class="s2">&quot;emails,IP addresses,payment data&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span>--purposes<span class="w"> </span><span class="s2">&quot;payment processing,analytics&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span>--retention<span class="w"> </span><span class="s2">&quot;2 years after transaction&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;Data Protection Officer&quot;</span>
+</span></code></pre></div>
+<p>This step is critical for GDPR alignment — it documents what data flows through the system and how long it's kept.</p>
+<h3 id="committee-approval">Committee Approval<a class="headerlink" href="#committee-approval" title="Permanent link">&para;</a></h3>
+<p>For systems requiring committee review (e.g., AI Ethics Board, Data Protection Committee):</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>committee<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span>--committee<span class="w"> </span><span class="s2">&quot;AI Ethics Board&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span>--meeting-ref<span class="w"> </span><span class="s2">&quot;MIN-2026-003&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span>--meeting-date<span class="w"> </span><span class="s2">&quot;2026-05-15&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;Board Secretary&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;Secretary&quot;</span>
+</span></code></pre></div>
+<p>Interactive prompts will also ask for attendees and a decision summary.</p>
+<h3 id="compliance-links">Compliance Links<a class="headerlink" href="#compliance-links" title="Permanent link">&para;</a></h3>
+<p>Map the governance record to compliance frameworks:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>compliance-links<span class="w"> </span>gov-1718100000000-1<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">  </span>--frameworks<span class="w"> </span><span class="s2">&quot;GDPR,OWASP,ISO 27001&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">  </span>--controls<span class="w"> </span><span class="s2">&quot;GDPR-ART32-001,GDPR-ART32-002,OWASP-ASVS-001&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;Jane Smith&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;Compliance Officer&quot;</span>
+</span></code></pre></div>
+<hr />
+<h2 id="verifying-the-complete-chain">Verifying the Complete Chain<a class="headerlink" href="#verifying-the-complete-chain" title="Permanent link">&para;</a></h2>
+<p>After enriching all dimensions, verify the record:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>verify<span class="w"> </span>gov-1718100000000-1
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>  ═══════════════════════════════════════════════════
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>  VERIFICATION: Payment API
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>  ═══════════════════════════════════════════════════
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>  Overall: ✓ VALID
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>  Approval Status: VALID
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>  Expiry: 355 days remaining
+</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>  Evidence Count: 1
+</span><span id="__span-25-9"><a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>
+</span><span id="__span-25-10"><a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>  Completeness Checklist:
+</span><span id="__span-25-11"><a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>    ✓ Approval Decision
+</span><span id="__span-25-12"><a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>    ✓ Risk Assessment
+</span><span id="__span-25-13"><a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>    ✓ Policy Basis
+</span><span id="__span-25-14"><a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>    ✓ Evidence Chain
+</span><span id="__span-25-15"><a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>    ✓ Review Cycle
+</span><span id="__span-25-16"><a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>    ✓ Data Inventory
+</span><span id="__span-25-17"><a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>    ✓ Compliance Links
+</span><span id="__span-25-18"><a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a>    ✓ Currently Valid
+</span></code></pre></div>
+<p>All dimensions green. This is the <strong>single defensible answer</strong> for auditors.</p>
+<hr />
+<h2 id="viewing-the-full-record">Viewing the Full Record<a class="headerlink" href="#viewing-the-full-record" title="Permanent link">&para;</a></h2>
+<p>To see every dimension in detail:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>show<span class="w"> </span>gov-1718100000000-1
+</span></code></pre></div>
+<p>This displays the complete record including system identity, risk assessment details, policy basis, approval decision, committee, evidence chain, review cycle, data inventory, and compliance links.</p>
+<hr />
+<h2 id="listing-all-records">Listing All Records<a class="headerlink" href="#listing-all-records" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>list
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>  Governance Records (3):
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>  ● gov-001  Payment API
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>     Type: api  |  Risk: HIGH  |  Status: approved
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>     Approved by: Jane Smith (CISO)
+</span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>     Valid: 2026-06-11 → 2027-06-01
+</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>     Evidence: 3 reference(s)
+</span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>
+</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>  ◐ gov-002  ML Recommendation Engine
+</span><span id="__span-28-10"><a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>     Type: ai-system  |  Risk: HIGH  |  Status: pending-review
+</span><span id="__span-28-11"><a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>     Approval: NOT RECORDED
+</span><span id="__span-28-12"><a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a>     Evidence: 1 reference(s)
+</span><span id="__span-28-13"><a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>
+</span><span id="__span-28-14"><a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a>  ○ gov-003  Analytics Dashboard
+</span><span id="__span-28-15"><a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a>     Type: application  |  Risk: MEDIUM  |  Status: draft
+</span><span id="__span-28-16"><a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a>     Approval: NOT RECORDED
+</span><span id="__span-28-17"><a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a>     Evidence: 0 reference(s)
+</span></code></pre></div>
+<p>Status badges: <code>●</code> approved, <code>◐</code> pending-review, <code>○</code> draft, <code>✕</code> rejected/revoked, <code>⚠</code> expired.</p>
+<hr />
+<h2 id="audit-engine-integration">Audit Engine Integration<a class="headerlink" href="#audit-engine-integration" title="Permanent link">&para;</a></h2>
+<p>When the governance pack is installed, <code>ges audit</code> automatically validates GOVP controls. The audit engine checks each governance record for missing dimensions, expired approvals, and verification failures.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>ges<span class="w"> </span>audit
+</span></code></pre></div>
+<p>Findings you might see:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>  GOVP-002 [MEDIUM]  Missing risk assessment: Analytics Dashboard
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>  GOVP-004 [HIGH]    Missing approval decision: ML Recommendation Engine
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>  GOVP-005 [HIGH]    No evidence references: Analytics Dashboard
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>  GOVP-008 [CRITICAL] Expired approval: Legacy Auth Service
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>  GOVP-011 [HIGH]    Verification failed: ML Recommendation Engine
+</span></code></pre></div>
+<p><strong>Zero governance findings</strong> are produced when all records have complete provenance chains with valid approvals.</p>
+<h3 id="govp-control-reference">GOVP Control Reference<a class="headerlink" href="#govp-control-reference" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Severity</th>
+<th>What It Checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GOVP-001</td>
+<td>High</td>
+<td>At least one governance record exists</td>
+</tr>
+<tr>
+<td>GOVP-002</td>
+<td>Medium</td>
+<td>Risk assessment linked to each record</td>
+</tr>
+<tr>
+<td>GOVP-003</td>
+<td>Medium</td>
+<td>Policy basis documented for each record</td>
+</tr>
+<tr>
+<td>GOVP-004</td>
+<td>High</td>
+<td>Approval decision recorded for each record</td>
+</tr>
+<tr>
+<td>GOVP-005</td>
+<td>High</td>
+<td>At least one evidence reference attached</td>
+</tr>
+<tr>
+<td>GOVP-006</td>
+<td>—</td>
+<td>Committee approval (when required)</td>
+</tr>
+<tr>
+<td>GOVP-007</td>
+<td>Low</td>
+<td>Review cycle defined for each record</td>
+</tr>
+<tr>
+<td>GOVP-008</td>
+<td>Critical</td>
+<td>Approval not expired (or expiring within 30 days)</td>
+</tr>
+<tr>
+<td>GOVP-009</td>
+<td>Low</td>
+<td>Data inventory documented</td>
+</tr>
+<tr>
+<td>GOVP-010</td>
+<td>Low</td>
+<td>Compliance frameworks mapped</td>
+</tr>
+<tr>
+<td>GOVP-011</td>
+<td>High</td>
+<td>Verification returns no blocking issues</td>
+</tr>
+<tr>
+<td>GOVP-012</td>
+<td>—</td>
+<td>Dashboard governance tab accessible</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="doctor-health-checks">Doctor Health Checks<a class="headerlink" href="#doctor-health-checks" title="Permanent link">&para;</a></h2>
+<p><code>ges doctor</code> includes governance health reporting:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>ges<span class="w"> </span>doctor
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>  [✓] Governance records - 3 record(s), 2 approved, 0 with blocking issues
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>  [!] Governance review cycles - 1 record(s) without review cycle
+</span></code></pre></div>
+<p>Checks performed:</p>
+<ul>
+<li>Total record count</li>
+<li>How many records are approved</li>
+<li>Records with blocking verification issues</li>
+<li>Expired approvals</li>
+<li>Records without review cycles</li>
+</ul>
+<hr />
+<h2 id="actor-attribution">Actor Attribution<a class="headerlink" href="#actor-attribution" title="Permanent link">&para;</a></h2>
+<p>Every governance command accepts <code>--actor &lt;name&gt;</code> and <code>--actor-role &lt;role&gt;</code> flags. These are recorded in the activity log, providing an audit trail of who performed each action:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>approve<span class="w"> </span>gov-001<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="w">  </span>--approver<span class="w"> </span><span class="s2">&quot;Jane Smith&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="w">  </span>--role<span class="w"> </span><span class="s2">&quot;CISO&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="w">  </span>--decision<span class="w"> </span>approved<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-33-5"><a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;Jane Smith&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-33-6"><a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;CISO&quot;</span>
+</span></code></pre></div>
+<p>The activity log entry will show:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="p">{</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span><span class="nt">&quot;action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;control_override&quot;</span><span class="p">,</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Governance approval: Payment API → approved&quot;</span><span class="p">,</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">  </span><span class="nt">&quot;actor_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jane Smith&quot;</span><span class="p">,</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">  </span><span class="nt">&quot;actor_role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CISO&quot;</span><span class="p">,</span>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-06-11T14:30:00Z&quot;</span>
+</span><span id="__span-34-7"><a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Actor attribution is <strong>optional</strong> — commands work without it, but existing entries are displayed in the dashboard Activity Log table.</p>
+<hr />
+<h2 id="dashboard-integration">Dashboard Integration<a class="headerlink" href="#dashboard-integration" title="Permanent link">&para;</a></h2>
+<p>The web dashboard includes a <strong>Governance tab</strong> (7th tab) that provides an auditor-facing view:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>ges<span class="w"> </span>dashboard
+</span></code></pre></div>
+<p>Features:</p>
+<ul>
+<li><strong>Summary cards</strong> — Total records, approved, pending, blocked</li>
+<li><strong>High-risk alerts</strong> — Records with high/critical risk levels</li>
+<li><strong>Provenance chain cards</strong> — Expandable cards showing the full chain for each record</li>
+<li><strong>Verification checklist</strong> — Visual ✓/✕ for each dimension</li>
+<li><strong>Report downloads</strong> — Compliance and governance reports in Markdown/HTML</li>
+</ul>
+<p>API endpoints:</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/governance</code></td>
+<td>GET</td>
+<td>All governance records with summaries</td>
+</tr>
+<tr>
+<td><code>/api/governance/:id</code></td>
+<td>GET</td>
+<td>Full provenance chain for a record</td>
+</tr>
+<tr>
+<td><code>/api/report/compliance</code></td>
+<td>GET</td>
+<td>Compliance report (Markdown or HTML)</td>
+</tr>
+<tr>
+<td><code>/api/report/governance</code></td>
+<td>GET</td>
+<td>Governance provenance report</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="mcp-tools">MCP Tools<a class="headerlink" href="#mcp-tools" title="Permanent link">&para;</a></h2>
+<p>AI assistants can manage governance records through 12 MCP tools:</p>
+<h3 id="core-tools">Core Tools<a class="headerlink" href="#core-tools" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>create_governance_record</code></td>
+<td>Create a new governance record</td>
+</tr>
+<tr>
+<td><code>approve_governance_record</code></td>
+<td>Record an approval decision</td>
+</tr>
+<tr>
+<td><code>add_governance_evidence</code></td>
+<td>Attach an evidence reference</td>
+</tr>
+<tr>
+<td><code>list_governance_records</code></td>
+<td>List all records</td>
+</tr>
+<tr>
+<td><code>get_governance_record</code></td>
+<td>Get full provenance chain</td>
+</tr>
+<tr>
+<td><code>verify_governance_record</code></td>
+<td>Verify provenance completeness</td>
+</tr>
+</tbody>
+</table>
+<h3 id="enrichment-tools">Enrichment Tools<a class="headerlink" href="#enrichment-tools" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>set_governance_risk_assessment</code></td>
+<td>Link a risk assessment</td>
+</tr>
+<tr>
+<td><code>set_governance_policy_basis</code></td>
+<td>Document policy basis</td>
+</tr>
+<tr>
+<td><code>set_governance_review_cycle</code></td>
+<td>Set up periodic review</td>
+</tr>
+<tr>
+<td><code>set_governance_data_inventory</code></td>
+<td>Document data inventory</td>
+</tr>
+<tr>
+<td><code>set_governance_committee</code></td>
+<td>Record committee approval</td>
+</tr>
+<tr>
+<td><code>set_governance_compliance_links</code></td>
+<td>Map compliance frameworks</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example prompt for AI assistants:</strong></p>
+<blockquote>
+<p>"Create a governance record for our Customer Support Chatbot. It's an AI system with high risk. Then link a risk assessment using ISO 31000 methodology, score it 6/10 with medium residual risk. Record approval from the CTO. Attach evidence from Jira ticket AI-REVIEW-001."</p>
+</blockquote>
+<hr />
+<h2 id="deleting-records">Deleting Records<a class="headerlink" href="#deleting-records" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>delete<span class="w"> </span>gov-001
+</span></code></pre></div>
+<p>Output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>  [✓] Deleted governance record: Payment API (gov-001)
+</span></code></pre></div>
+<div class="admonition danger">
+<p class="admonition-title">Irreversible</p>
+<p>Deletion is permanent. The record and all its linked dimensions are removed from <code>.ges/governance-records.json</code>. Consider keeping records for historical audit trails rather than deleting them.</p>
+</div>
+<hr />
+<h2 id="storage">Storage<a class="headerlink" href="#storage" title="Permanent link">&para;</a></h2>
+<p>Governance records are stored in a single JSON file:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>.ges/governance-records.json
+</span></code></pre></div>
+<p>Each record is a self-contained JSON object with all 9 dimensions. The file is an array of records — you can version-control it alongside your project.</p>
+<hr />
+<h2 id="complete-workflow-example">Complete Workflow Example<a class="headerlink" href="#complete-workflow-example" title="Permanent link">&para;</a></h2>
+<p>Here's a realistic scenario: a team deploying a new AI-powered customer support chatbot that processes personal data.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="c1"># 1. Initialize project and install governance pack</span>
+</span><span id="__span-39-2"><a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>ges<span class="w"> </span>init<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;SupportAI&quot;</span><span class="w"> </span>--type<span class="w"> </span>ai-application<span class="w"> </span>--frameworks<span class="w"> </span>GDPR,OWASP
+</span><span id="__span-39-3"><a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a>ges<span class="w"> </span>policy<span class="w"> </span>install<span class="w"> </span>governance
+</span><span id="__span-39-4"><a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a>
+</span><span id="__span-39-5"><a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="c1"># 2. Create governance record for the chatbot</span>
+</span><span id="__span-39-6"><a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a>ges<span class="w"> </span>governance<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-7"><a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="w">  </span>--name<span class="w"> </span><span class="s2">&quot;Customer Support Chatbot&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-8"><a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="w">  </span>--type<span class="w"> </span>ai-system<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-9"><a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="w">  </span>--risk<span class="w"> </span>high<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-10"><a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a><span class="w">  </span>--desc<span class="w"> </span><span class="s2">&quot;LLM-powered chatbot handling customer PII&quot;</span>
+</span><span id="__span-39-11"><a id="__codelineno-39-11" name="__codelineno-39-11" href="#__codelineno-39-11"></a>
+</span><span id="__span-39-12"><a id="__codelineno-39-12" name="__codelineno-39-12" href="#__codelineno-39-12"></a><span class="c1"># 3. Link risk assessment (performed by security team)</span>
+</span><span id="__span-39-13"><a id="__codelineno-39-13" name="__codelineno-39-13" href="#__codelineno-39-13"></a>ges<span class="w"> </span>governance<span class="w"> </span>risk-assessment<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-14"><a id="__codelineno-39-14" name="__codelineno-39-14" href="#__codelineno-39-14"></a><span class="w">  </span>--assessor<span class="w"> </span><span class="s2">&quot;Security Team&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-15"><a id="__codelineno-39-15" name="__codelineno-39-15" href="#__codelineno-39-15"></a><span class="w">  </span>--methodology<span class="w"> </span><span class="s2">&quot;NIST AI RMF&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-16"><a id="__codelineno-39-16" name="__codelineno-39-16" href="#__codelineno-39-16"></a><span class="w">  </span>--score<span class="w"> </span><span class="s2">&quot;8/10&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-17"><a id="__codelineno-39-17" name="__codelineno-39-17" href="#__codelineno-39-17"></a><span class="w">  </span>--residual<span class="w"> </span><span class="s2">&quot;medium&quot;</span>
+</span><span id="__span-39-18"><a id="__codelineno-39-18" name="__codelineno-39-18" href="#__codelineno-39-18"></a>
+</span><span id="__span-39-19"><a id="__codelineno-39-19" name="__codelineno-39-19" href="#__codelineno-39-19"></a><span class="c1"># 4. Document policy basis</span>
+</span><span id="__span-39-20"><a id="__codelineno-39-20" name="__codelineno-39-20" href="#__codelineno-39-20"></a>ges<span class="w"> </span>governance<span class="w"> </span>policy-basis<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-21"><a id="__codelineno-39-21" name="__codelineno-39-21" href="#__codelineno-39-21"></a><span class="w">  </span>--policy-name<span class="w"> </span><span class="s2">&quot;AI Systems Governance Policy&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-22"><a id="__codelineno-39-22" name="__codelineno-39-22" href="#__codelineno-39-22"></a><span class="w">  </span>--policy-id<span class="w"> </span><span class="s2">&quot;AIGOV-2024&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-23"><a id="__codelineno-39-23" name="__codelineno-39-23" href="#__codelineno-39-23"></a><span class="w">  </span>--pv<span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-24"><a id="__codelineno-39-24" name="__codelineno-39-24" href="#__codelineno-39-24"></a><span class="w">  </span>--standard<span class="w"> </span><span class="s2">&quot;GDPR Article 35&quot;</span>
+</span><span id="__span-39-25"><a id="__codelineno-39-25" name="__codelineno-39-25" href="#__codelineno-39-25"></a>
+</span><span id="__span-39-26"><a id="__codelineno-39-26" name="__codelineno-39-26" href="#__codelineno-39-26"></a><span class="c1"># 5. Record approval from Data Protection Committee</span>
+</span><span id="__span-39-27"><a id="__codelineno-39-27" name="__codelineno-39-27" href="#__codelineno-39-27"></a>ges<span class="w"> </span>governance<span class="w"> </span>approve<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-28"><a id="__codelineno-39-28" name="__codelineno-39-28" href="#__codelineno-39-28"></a><span class="w">  </span>--approver<span class="w"> </span><span class="s2">&quot;Dr. Sarah Chen&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-29"><a id="__codelineno-39-29" name="__codelineno-39-29" href="#__codelineno-39-29"></a><span class="w">  </span>--role<span class="w"> </span><span class="s2">&quot;DPO&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-30"><a id="__codelineno-39-30" name="__codelineno-39-30" href="#__codelineno-39-30"></a><span class="w">  </span>--authority<span class="w"> </span><span class="s2">&quot;Data Protection Committee&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-31"><a id="__codelineno-39-31" name="__codelineno-39-31" href="#__codelineno-39-31"></a><span class="w">  </span>--decision<span class="w"> </span>conditional<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-32"><a id="__codelineno-39-32" name="__codelineno-39-32" href="#__codelineno-39-32"></a><span class="w">  </span>--valid-until<span class="w"> </span><span class="s2">&quot;2026-12-31&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-33"><a id="__codelineno-39-33" name="__codelineno-39-33" href="#__codelineno-39-33"></a><span class="w">  </span>--conditions<span class="w"> </span><span class="s2">&quot;quarterly bias audit,human review of escalations&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-34"><a id="__codelineno-39-34" name="__codelineno-39-34" href="#__codelineno-39-34"></a><span class="w">  </span>--rationale<span class="w"> </span><span class="s2">&quot;Approved with conditions pending first bias audit&quot;</span>
+</span><span id="__span-39-35"><a id="__codelineno-39-35" name="__codelineno-39-35" href="#__codelineno-39-35"></a>
+</span><span id="__span-39-36"><a id="__codelineno-39-36" name="__codelineno-39-36" href="#__codelineno-39-36"></a><span class="c1"># 6. Attach evidence</span>
+</span><span id="__span-39-37"><a id="__codelineno-39-37" name="__codelineno-39-37" href="#__codelineno-39-37"></a>ges<span class="w"> </span>governance<span class="w"> </span>evidence<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-38"><a id="__codelineno-39-38" name="__codelineno-39-38" href="#__codelineno-39-38"></a><span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;DPIA — Customer Support Chatbot&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-39"><a id="__codelineno-39-39" name="__codelineno-39-39" href="#__codelineno-39-39"></a><span class="w">  </span>--source<span class="w"> </span>confluence<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-40"><a id="__codelineno-39-40" name="__codelineno-39-40" href="#__codelineno-39-40"></a><span class="w">  </span>--reference<span class="w"> </span><span class="s2">&quot;SECURITY:DPIA-CHATBOT-2026&quot;</span>
+</span><span id="__span-39-41"><a id="__codelineno-39-41" name="__codelineno-39-41" href="#__codelineno-39-41"></a>
+</span><span id="__span-39-42"><a id="__codelineno-39-42" name="__codelineno-39-42" href="#__codelineno-39-42"></a>ges<span class="w"> </span>governance<span class="w"> </span>evidence<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-43"><a id="__codelineno-39-43" name="__codelineno-39-43" href="#__codelineno-39-43"></a><span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;Bias Audit Results Q1&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-44"><a id="__codelineno-39-44" name="__codelineno-39-44" href="#__codelineno-39-44"></a><span class="w">  </span>--source<span class="w"> </span>jira<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-45"><a id="__codelineno-39-45" name="__codelineno-39-45" href="#__codelineno-39-45"></a><span class="w">  </span>--reference<span class="w"> </span><span class="s2">&quot;AI-AUDIT-001&quot;</span>
+</span><span id="__span-39-46"><a id="__codelineno-39-46" name="__codelineno-39-46" href="#__codelineno-39-46"></a>
+</span><span id="__span-39-47"><a id="__codelineno-39-47" name="__codelineno-39-47" href="#__codelineno-39-47"></a><span class="c1"># 7. Set review cycle</span>
+</span><span id="__span-39-48"><a id="__codelineno-39-48" name="__codelineno-39-48" href="#__codelineno-39-48"></a>ges<span class="w"> </span>governance<span class="w"> </span>review-cycle<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-49"><a id="__codelineno-39-49" name="__codelineno-39-49" href="#__codelineno-39-49"></a><span class="w">  </span>--frequency<span class="w"> </span>quarterly<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-50"><a id="__codelineno-39-50" name="__codelineno-39-50" href="#__codelineno-39-50"></a><span class="w">  </span>--next-review<span class="w"> </span><span class="m">2026</span>-09-30
+</span><span id="__span-39-51"><a id="__codelineno-39-51" name="__codelineno-39-51" href="#__codelineno-39-51"></a>
+</span><span id="__span-39-52"><a id="__codelineno-39-52" name="__codelineno-39-52" href="#__codelineno-39-52"></a><span class="c1"># 8. Document data inventory</span>
+</span><span id="__span-39-53"><a id="__codelineno-39-53" name="__codelineno-39-53" href="#__codelineno-39-53"></a>ges<span class="w"> </span>governance<span class="w"> </span>data-inventory<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-54"><a id="__codelineno-39-54" name="__codelineno-39-54" href="#__codelineno-39-54"></a><span class="w">  </span>--categories<span class="w"> </span><span class="s2">&quot;names,emails,phone numbers,chat transcripts&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-55"><a id="__codelineno-39-55" name="__codelineno-39-55" href="#__codelineno-39-55"></a><span class="w">  </span>--purposes<span class="w"> </span><span class="s2">&quot;customer support,AI training&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-56"><a id="__codelineno-39-56" name="__codelineno-39-56" href="#__codelineno-39-56"></a><span class="w">  </span>--retention<span class="w"> </span><span class="s2">&quot;90 days for transcripts, 2 years for training data&quot;</span>
+</span><span id="__span-39-57"><a id="__codelineno-39-57" name="__codelineno-39-57" href="#__codelineno-39-57"></a>
+</span><span id="__span-39-58"><a id="__codelineno-39-58" name="__codelineno-39-58" href="#__codelineno-39-58"></a><span class="c1"># 9. Map compliance frameworks</span>
+</span><span id="__span-39-59"><a id="__codelineno-39-59" name="__codelineno-39-59" href="#__codelineno-39-59"></a>ges<span class="w"> </span>governance<span class="w"> </span>compliance-links<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-60"><a id="__codelineno-39-60" name="__codelineno-39-60" href="#__codelineno-39-60"></a><span class="w">  </span>--frameworks<span class="w"> </span><span class="s2">&quot;GDPR,OWASP,AI&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-39-61"><a id="__codelineno-39-61" name="__codelineno-39-61" href="#__codelineno-39-61"></a><span class="w">  </span>--controls<span class="w"> </span><span class="s2">&quot;GDPR-ART35-001,AI-001,AI-002&quot;</span>
+</span><span id="__span-39-62"><a id="__codelineno-39-62" name="__codelineno-39-62" href="#__codelineno-39-62"></a>
+</span><span id="__span-39-63"><a id="__codelineno-39-63" name="__codelineno-39-63" href="#__codelineno-39-63"></a><span class="c1"># 10. Verify the complete chain</span>
+</span><span id="__span-39-64"><a id="__codelineno-39-64" name="__codelineno-39-64" href="#__codelineno-39-64"></a>ges<span class="w"> </span>governance<span class="w"> </span>verify<span class="w"> </span>&lt;id&gt;
+</span></code></pre></div>
+<hr />
+<h2 id="exercises">Exercises<a class="headerlink" href="#exercises" title="Permanent link">&para;</a></h2>
+<div class="admonition example">
+<p class="admonition-title">Exercise 1: Create and Verify a Record</p>
+<p>Set up a governance record for a system you work with.</p>
+<ol>
+<li>Initialize a test project:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>mkdir<span class="w"> </span>/tmp/gov-101<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/tmp/gov-101
+</span><span id="__span-40-2"><a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>ges<span class="w"> </span>init<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;GovExercise&quot;</span><span class="w"> </span>--type<span class="w"> </span>saas<span class="w"> </span>--frameworks<span class="w"> </span>GDPR,OWASP
+</span><span id="__span-40-3"><a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>ges<span class="w"> </span>policy<span class="w"> </span>install<span class="w"> </span>governance
+</span></code></pre></div>
+<ol>
+<li>Create a governance record:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>add<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;My API&quot;</span><span class="w"> </span>--type<span class="w"> </span>api<span class="w"> </span>--risk<span class="w"> </span>medium
+</span></code></pre></div>
+<ol>
+<li>Verify the record (it should have blocking issues):</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>verify<span class="w"> </span>&lt;id&gt;
+</span></code></pre></div>
+<ol>
+<li>How many blocking issues are there? How many warnings?</li>
+</ol>
+<div class="admonition question">
+<p class="admonition-title">Questions</p>
+<ul>
+<li>Which 4 dimensions are blocking?</li>
+<li>Which 3 dimensions produce warnings?</li>
+<li>What is the record's status before any approval?</li>
+</ul>
+</div>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Exercise 2: Complete the Provenance Chain</p>
+<p>Using the record from Exercise 1, enrich all dimensions to achieve a valid verification.</p>
+<ol>
+<li>Link a risk assessment:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>risk-assessment<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-43-2"><a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="w">  </span>--assessor<span class="w"> </span><span class="s2">&quot;Your Name&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-43-3"><a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="w">  </span>--methodology<span class="w"> </span><span class="s2">&quot;ISO 31000&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-43-4"><a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="w">  </span>--score<span class="w"> </span><span class="s2">&quot;5/10&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-43-5"><a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="w">  </span>--residual<span class="w"> </span><span class="s2">&quot;low&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>Document a policy basis:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-44-1"><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>policy-basis<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-44-2"><a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a><span class="w">  </span>--policy-name<span class="w"> </span><span class="s2">&quot;Security Policy&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-44-3"><a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a><span class="w">  </span>--standard<span class="w"> </span><span class="s2">&quot;ISO 27001&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-44-4"><a id="__codelineno-44-4" name="__codelineno-44-4" href="#__codelineno-44-4"></a><span class="w">  </span>--pv<span class="w"> </span><span class="s2">&quot;1.0&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>Record an approval:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-45-1"><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>approve<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-45-2"><a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a><span class="w">  </span>--approver<span class="w"> </span><span class="s2">&quot;Your Manager&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-45-3"><a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a><span class="w">  </span>--role<span class="w"> </span><span class="s2">&quot;CTO&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-45-4"><a id="__codelineno-45-4" name="__codelineno-45-4" href="#__codelineno-45-4"></a><span class="w">  </span>--authority<span class="w"> </span><span class="s2">&quot;Engineering Leadership&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-45-5"><a id="__codelineno-45-5" name="__codelineno-45-5" href="#__codelineno-45-5"></a><span class="w">  </span>--decision<span class="w"> </span>approved<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-45-6"><a id="__codelineno-45-6" name="__codelineno-45-6" href="#__codelineno-45-6"></a><span class="w">  </span>--valid-until<span class="w"> </span><span class="s2">&quot;2027-12-31&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>Attach evidence:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-46-1"><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>evidence<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-46-2"><a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a><span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;Code Review Record&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-46-3"><a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a><span class="w">  </span>--source<span class="w"> </span>git<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-46-4"><a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a><span class="w">  </span>--reference<span class="w"> </span><span class="s2">&quot;PR #142 — Security review&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>Set a review cycle:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-47-1"><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>review-cycle<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-47-2"><a id="__codelineno-47-2" name="__codelineno-47-2" href="#__codelineno-47-2"></a><span class="w">  </span>--frequency<span class="w"> </span>annual<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-47-3"><a id="__codelineno-47-3" name="__codelineno-47-3" href="#__codelineno-47-3"></a><span class="w">  </span>--next-review<span class="w"> </span><span class="m">2027</span>-06-01
+</span></code></pre></div>
+<ol>
+<li>Document data inventory:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-48-1"><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>data-inventory<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-48-2"><a id="__codelineno-48-2" name="__codelineno-48-2" href="#__codelineno-48-2"></a><span class="w">  </span>--categories<span class="w"> </span><span class="s2">&quot;emails,user IDs&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-48-3"><a id="__codelineno-48-3" name="__codelineno-48-3" href="#__codelineno-48-3"></a><span class="w">  </span>--purposes<span class="w"> </span><span class="s2">&quot;authentication&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-48-4"><a id="__codelineno-48-4" name="__codelineno-48-4" href="#__codelineno-48-4"></a><span class="w">  </span>--retention<span class="w"> </span><span class="s2">&quot;1 year&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>Map compliance links:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-49-1"><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>compliance-links<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-49-2"><a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="w">  </span>--frameworks<span class="w"> </span><span class="s2">&quot;GDPR,OWASP&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>Verify:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-50-1"><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>verify<span class="w"> </span>&lt;id&gt;
+</span></code></pre></div>
+<div class="admonition question">
+<p class="admonition-title">Questions</p>
+<ul>
+<li>Did verification return ✓ VALID?</li>
+<li>How many days until the approval expires?</li>
+<li>What happens if you run <code>ges audit</code> now — are there governance findings?</li>
+</ul>
+</div>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Exercise 3: Test Approval Expiry Detection</p>
+<p>Test what happens when an approval expires.</p>
+<ol>
+<li>Create a new record and approve it with a <strong>past</strong> expiry date:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-51-1"><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>add<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;Legacy System&quot;</span><span class="w"> </span>--type<span class="w"> </span>application<span class="w"> </span>--risk<span class="w"> </span>low
+</span><span id="__span-51-2"><a id="__codelineno-51-2" name="__codelineno-51-2" href="#__codelineno-51-2"></a>ges<span class="w"> </span>governance<span class="w"> </span>approve<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-51-3"><a id="__codelineno-51-3" name="__codelineno-51-3" href="#__codelineno-51-3"></a><span class="w">  </span>--approver<span class="w"> </span><span class="s2">&quot;Old Admin&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-51-4"><a id="__codelineno-51-4" name="__codelineno-51-4" href="#__codelineno-51-4"></a><span class="w">  </span>--role<span class="w"> </span><span class="s2">&quot;Manager&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-51-5"><a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a><span class="w">  </span>--authority<span class="w"> </span><span class="s2">&quot;IT&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-51-6"><a id="__codelineno-51-6" name="__codelineno-51-6" href="#__codelineno-51-6"></a><span class="w">  </span>--decision<span class="w"> </span>approved<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-51-7"><a id="__codelineno-51-7" name="__codelineno-51-7" href="#__codelineno-51-7"></a><span class="w">  </span>--valid-until<span class="w"> </span><span class="s2">&quot;2020-01-01&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>
+<p>Complete the other required dimensions (risk assessment, policy basis, evidence).</p>
+</li>
+<li>
+<p>Verify the record:</p>
+</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-52-1"><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>verify<span class="w"> </span>&lt;id&gt;
+</span></code></pre></div>
+<ol>
+<li>Run an audit:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-53-1"><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a>ges<span class="w"> </span>audit
+</span></code></pre></div>
+<div class="admonition question">
+<p class="admonition-title">Questions</p>
+<ul>
+<li>What severity does the audit engine assign to an expired approval?</li>
+<li>Does verification report the approval as "expired" or "valid"?</li>
+<li>What does <code>ges doctor</code> show for this record?</li>
+</ul>
+</div>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Exercise 4: Audit a Multi-System Project</p>
+<p>Simulate a realistic project with multiple systems at different stages.</p>
+<ol>
+<li>Create 3 governance records:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-54-1"><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a><span class="c1"># System A: Fully approved</span>
+</span><span id="__span-54-2"><a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a>ges<span class="w"> </span>governance<span class="w"> </span>add<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;Core API&quot;</span><span class="w"> </span>--type<span class="w"> </span>api<span class="w"> </span>--risk<span class="w"> </span>high
+</span><span id="__span-54-3"><a id="__codelineno-54-3" name="__codelineno-54-3" href="#__codelineno-54-3"></a><span class="c1"># System B: In review, no approval yet</span>
+</span><span id="__span-54-4"><a id="__codelineno-54-4" name="__codelineno-54-4" href="#__codelineno-54-4"></a>ges<span class="w"> </span>governance<span class="w"> </span>add<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;ML Pipeline&quot;</span><span class="w"> </span>--type<span class="w"> </span>ai-system<span class="w"> </span>--risk<span class="w"> </span>high
+</span><span id="__span-54-5"><a id="__codelineno-54-5" name="__codelineno-54-5" href="#__codelineno-54-5"></a><span class="c1"># System C: Draft, nothing filled in</span>
+</span><span id="__span-54-6"><a id="__codelineno-54-6" name="__codelineno-54-6" href="#__codelineno-54-6"></a>ges<span class="w"> </span>governance<span class="w"> </span>add<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;Internal Wiki&quot;</span><span class="w"> </span>--type<span class="w"> </span>application<span class="w"> </span>--risk<span class="w"> </span>low
+</span></code></pre></div>
+<ol>
+<li>
+<p>Fully enrich System A (complete all dimensions, approve with future date).</p>
+</li>
+<li>
+<p>Add risk assessment and evidence to System B, but <strong>don't</strong> approve it.</p>
+</li>
+<li>
+<p>Leave System C as a draft.</p>
+</li>
+<li>
+<p>Run the audit and review the governance findings:</p>
+</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-55-1"><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>ges<span class="w"> </span>audit
+</span></code></pre></div>
+<ol>
+<li>Run doctor:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-56-1"><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a>ges<span class="w"> </span>doctor
+</span></code></pre></div>
+<div class="admonition question">
+<p class="admonition-title">Questions</p>
+<ul>
+<li>How many governance findings did the audit produce?</li>
+<li>Which GOVP rules fired for System B vs System C?</li>
+<li>What does doctor report for each system?</li>
+<li>Can you get the audit to show <strong>zero</strong> governance findings by completing all chains?</li>
+</ul>
+</div>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Exercise 5: Actor Attribution Audit Trail</p>
+<p>Test the actor attribution system and verify it appears in the activity log.</p>
+<ol>
+<li>Create a record with actor attribution:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-57-1"><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-57-2"><a id="__codelineno-57-2" name="__codelineno-57-2" href="#__codelineno-57-2"></a><span class="w">  </span>--name<span class="w"> </span><span class="s2">&quot;Attribution Test&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-57-3"><a id="__codelineno-57-3" name="__codelineno-57-3" href="#__codelineno-57-3"></a><span class="w">  </span>--type<span class="w"> </span>api<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-57-4"><a id="__codelineno-57-4" name="__codelineno-57-4" href="#__codelineno-57-4"></a><span class="w">  </span>--risk<span class="w"> </span>medium<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-57-5"><a id="__codelineno-57-5" name="__codelineno-57-5" href="#__codelineno-57-5"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;Alice Anderson&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-57-6"><a id="__codelineno-57-6" name="__codelineno-57-6" href="#__codelineno-57-6"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;Security Engineer&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>Approve with a different actor:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-58-1"><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a>ges<span class="w"> </span>governance<span class="w"> </span>approve<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-58-2"><a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a><span class="w">  </span>--approver<span class="w"> </span><span class="s2">&quot;Bob Brown&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-58-3"><a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a><span class="w">  </span>--role<span class="w"> </span><span class="s2">&quot;VP Engineering&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-58-4"><a id="__codelineno-58-4" name="__codelineno-58-4" href="#__codelineno-58-4"></a><span class="w">  </span>--authority<span class="w"> </span><span class="s2">&quot;Leadership&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-58-5"><a id="__codelineno-58-5" name="__codelineno-58-5" href="#__codelineno-58-5"></a><span class="w">  </span>--decision<span class="w"> </span>approved<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-58-6"><a id="__codelineno-58-6" name="__codelineno-58-6" href="#__codelineno-58-6"></a><span class="w">  </span>--valid-until<span class="w"> </span><span class="s2">&quot;2027-01-01&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-58-7"><a id="__codelineno-58-7" name="__codelineno-58-7" href="#__codelineno-58-7"></a><span class="w">  </span>--actor<span class="w"> </span><span class="s2">&quot;Bob Brown&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-58-8"><a id="__codelineno-58-8" name="__codelineno-58-8" href="#__codelineno-58-8"></a><span class="w">  </span>--actor-role<span class="w"> </span><span class="s2">&quot;VP Engineering&quot;</span>
+</span></code></pre></div>
+<ol>
+<li>Check the activity log:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-59-1"><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a>cat<span class="w"> </span>.ges/activity-log.json<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>json.tool
+</span></code></pre></div>
+<div class="admonition question">
+<p class="admonition-title">Questions</p>
+<ul>
+<li>Does the activity log show <code>actor_name</code> and <code>actor_role</code> for each action?</li>
+<li>Can you see both Alice (who created) and Bob (who approved)?</li>
+<li>What happens if you run a command <strong>without</strong> <code>--actor</code> — is the field absent or null?</li>
+</ul>
+</div>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Exercise 6: Dashboard Governance View</p>
+<p>Explore the governance dashboard.</p>
+<ol>
+<li>Start the dashboard in a project with governance records:</li>
+</ol>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-60-1"><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a>ges<span class="w"> </span>dashboard<span class="w"> </span>--port<span class="w"> </span><span class="m">13580</span>
+</span></code></pre></div>
+<ol>
+<li>
+<p>Open <code>http://localhost:13580</code> in your browser.</p>
+</li>
+<li>
+<p>Navigate to the <strong>Governance</strong> tab (7th tab).</p>
+</li>
+<li>
+<p>Click on a record to see its provenance chain.</p>
+</li>
+<li>
+<p>Try downloading a governance report.</p>
+</li>
+</ol>
+<div class="admonition question">
+<p class="admonition-title">Questions</p>
+<ul>
+<li>Does the provenance chain visualization match the CLI <code>show</code> output?</li>
+<li>Can you see the verification checklist (✓/✕) for each dimension?</li>
+<li>Does the activity log table show the Actor column?</li>
+</ul>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/greenarmor/gesf" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

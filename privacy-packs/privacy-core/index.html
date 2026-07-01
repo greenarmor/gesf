@@ -1,0 +1,4683 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="GESF (pronounced "Gessf") — the framework that helps you "get safe." Compliance-as-Code for GDPR, OWASP, NIST, and CIS.">
+      
+      
+      
+        <link rel="canonical" href="https://greenarmor.github.io/gesf/privacy-packs/privacy-core/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../europe/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Privacy Core (Global Baseline) - GESF Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#privacy-core-framework-global-baseline" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="GESF Documentation" class="md-header__button md-logo" aria-label="GESF Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GESF Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Privacy Core (Global Baseline)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/greenarmor/gesf" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    greenarmor/gesf
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../user-guide/initializing/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../mcp/overview/" class="md-tabs__link">
+          
+  
+  
+  MCP Integration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../integrations/eslint-plugin/" class="md-tabs__link">
+          
+  
+  
+  Integrations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../cicd/github-actions/" class="md-tabs__link">
+          
+  
+  
+  CI/CD
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/commands/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../governance/architecture/" class="md-tabs__link">
+          
+  
+  
+  Governance
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Privacy Packs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../faq/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  FAQ
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="GESF Documentation" class="md-nav__button md-logo" aria-label="GESF Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GESF Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/greenarmor/gesf" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    greenarmor/gesf
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/initializing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Initializing Your Project
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/running-an-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running an Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/auto-fix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auto-Fix Findings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/compliance-score/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compliance Score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/compliance-badge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compliance Badge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/generating-reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generating Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/external-scanners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External Scanners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/policy-packs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policy Packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/git-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Git Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/web-dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/fix-assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fix Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/ai-inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Inference Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/complete-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Complete Audit Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    MCP Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/tools-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mcp/code-assistants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using with Code Assistants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/eslint-plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ESLint Plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/vscode-extension/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code Extension
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CI/CD
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cicd/github-actions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub Actions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cicd/manual-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/project-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/audit-scanners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit Scanners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/iac-scanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IaC Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dependency-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependency Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/gdpr-controls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GDPR Controls
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/engineering-standards/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering Standards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Governance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../governance/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Packs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Privacy Packs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Core (Global Baseline)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy Core (Global Baseline)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#domain-1-privacy-governance-priv-gov" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 1: Privacy Governance (PRIV-GOV)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 1: Privacy Governance (PRIV-GOV)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-01-privacy-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-01: Privacy Program
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-02-privacy-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-02: Privacy Policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-03-data-protection-officer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-03: Data Protection Officer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-04-privacy-risk-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-04: Privacy Risk Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-05-management-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-05: Management Review
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-2-data-inventory-priv-inv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 2: Data Inventory (PRIV-INV)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 2: Data Inventory (PRIV-INV)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-inv-01-data-inventory-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INV-01: Data Inventory Register
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inv-02-data-flow-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INV-02: Data Flow Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inv-03-processing-activity-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INV-03: Processing Activity Records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inv-04-system-classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INV-04: System Classification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-3-consent-and-legal-basis-priv-cns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 3: Consent and Legal Basis (PRIV-CNS)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 3: Consent and Legal Basis (PRIV-CNS)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-cns-01-consent-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-CNS-01: Consent Collection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-cns-02-consent-withdrawal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-CNS-02: Consent Withdrawal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-cns-03-legal-basis-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-CNS-03: Legal Basis Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-cns-04-purpose-limitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-CNS-04: Purpose Limitation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-4-data-subject-rights-priv-dsr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 4: Data Subject Rights (PRIV-DSR)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 4: Data Subject Rights (PRIV-DSR)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-01-right-of-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-01: Right of Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-02-right-to-rectification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-02: Right to Rectification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-03-right-to-erasure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-03: Right to Erasure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-04-right-to-data-portability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-04: Right to Data Portability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-05-right-to-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-05: Right to Object
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-06-automated-decision-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-06: Automated Decision Review
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-5-security-controls-priv-sec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 5: Security Controls (PRIV-SEC)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 5: Security Controls (PRIV-SEC)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-sec-01-access-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-SEC-01: Access Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-sec-02-encryption" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-SEC-02: Encryption
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-sec-03-pseudonymisation-and-anonymisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-SEC-03: Pseudonymisation and Anonymisation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-sec-04-secure-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-SEC-04: Secure Development
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-6-incident-and-breach-management-priv-inc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 6: Incident and Breach Management (PRIV-INC)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 6: Incident and Breach Management (PRIV-INC)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-inc-01-incident-response-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INC-01: Incident Response Plan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inc-02-breach-classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INC-02: Breach Classification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inc-03-regulatory-notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INC-03: Regulatory Notification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inc-04-data-subject-notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INC-04: Data Subject Notification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-7-third-party-management-priv-ven" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 7: Third-Party Management (PRIV-VEN)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 7: Third-Party Management (PRIV-VEN)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-ven-01-vendor-due-diligence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-VEN-01: Vendor Due Diligence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-ven-02-processor-agreements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-VEN-02: Processor Agreements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-ven-03-ongoing-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-VEN-03: Ongoing Monitoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-8-cross-border-transfers-priv-xbt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 8: Cross-Border Transfers (PRIV-XBT)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 8: Cross-Border Transfers (PRIV-XBT)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-xbt-01-transfer-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-XBT-01: Transfer Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-xbt-02-adequacy-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-XBT-02: Adequacy Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-xbt-03-standard-contractual-clauses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-XBT-03: Standard Contractual Clauses
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-xbt-04-data-localization-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-XBT-04: Data Localization Requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-9-retention-and-disposal-priv-ret" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 9: Retention and Disposal (PRIV-RET)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 9: Retention and Disposal (PRIV-RET)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-ret-01-retention-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-RET-01: Retention Schedule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-ret-02-secure-disposal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-RET-02: Secure Disposal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-ret-03-data-minimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-RET-03: Data Minimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-10-training-and-awareness-priv-trn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 10: Training and Awareness (PRIV-TRN)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 10: Training and Awareness (PRIV-TRN)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-trn-01-employee-privacy-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-TRN-01: Employee Privacy Training
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-trn-02-specialized-role-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-TRN-02: Specialized Role Training
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-trn-03-privacy-awareness-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-TRN-03: Privacy Awareness Program
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../europe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Europe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../asia-pacific/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Asia-Pacific
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../americas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Americas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../africa-middle-east/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Africa and Middle East
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#domain-1-privacy-governance-priv-gov" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 1: Privacy Governance (PRIV-GOV)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 1: Privacy Governance (PRIV-GOV)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-01-privacy-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-01: Privacy Program
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-02-privacy-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-02: Privacy Policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-03-data-protection-officer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-03: Data Protection Officer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-04-privacy-risk-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-04: Privacy Risk Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-gov-05-management-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-GOV-05: Management Review
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-2-data-inventory-priv-inv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 2: Data Inventory (PRIV-INV)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 2: Data Inventory (PRIV-INV)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-inv-01-data-inventory-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INV-01: Data Inventory Register
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inv-02-data-flow-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INV-02: Data Flow Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inv-03-processing-activity-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INV-03: Processing Activity Records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inv-04-system-classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INV-04: System Classification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-3-consent-and-legal-basis-priv-cns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 3: Consent and Legal Basis (PRIV-CNS)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 3: Consent and Legal Basis (PRIV-CNS)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-cns-01-consent-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-CNS-01: Consent Collection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-cns-02-consent-withdrawal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-CNS-02: Consent Withdrawal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-cns-03-legal-basis-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-CNS-03: Legal Basis Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-cns-04-purpose-limitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-CNS-04: Purpose Limitation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-4-data-subject-rights-priv-dsr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 4: Data Subject Rights (PRIV-DSR)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 4: Data Subject Rights (PRIV-DSR)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-01-right-of-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-01: Right of Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-02-right-to-rectification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-02: Right to Rectification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-03-right-to-erasure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-03: Right to Erasure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-04-right-to-data-portability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-04: Right to Data Portability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-05-right-to-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-05: Right to Object
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-dsr-06-automated-decision-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-DSR-06: Automated Decision Review
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-5-security-controls-priv-sec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 5: Security Controls (PRIV-SEC)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 5: Security Controls (PRIV-SEC)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-sec-01-access-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-SEC-01: Access Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-sec-02-encryption" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-SEC-02: Encryption
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-sec-03-pseudonymisation-and-anonymisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-SEC-03: Pseudonymisation and Anonymisation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-sec-04-secure-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-SEC-04: Secure Development
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-6-incident-and-breach-management-priv-inc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 6: Incident and Breach Management (PRIV-INC)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 6: Incident and Breach Management (PRIV-INC)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-inc-01-incident-response-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INC-01: Incident Response Plan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inc-02-breach-classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INC-02: Breach Classification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inc-03-regulatory-notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INC-03: Regulatory Notification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-inc-04-data-subject-notification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-INC-04: Data Subject Notification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-7-third-party-management-priv-ven" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 7: Third-Party Management (PRIV-VEN)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 7: Third-Party Management (PRIV-VEN)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-ven-01-vendor-due-diligence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-VEN-01: Vendor Due Diligence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-ven-02-processor-agreements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-VEN-02: Processor Agreements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-ven-03-ongoing-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-VEN-03: Ongoing Monitoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-8-cross-border-transfers-priv-xbt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 8: Cross-Border Transfers (PRIV-XBT)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 8: Cross-Border Transfers (PRIV-XBT)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-xbt-01-transfer-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-XBT-01: Transfer Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-xbt-02-adequacy-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-XBT-02: Adequacy Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-xbt-03-standard-contractual-clauses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-XBT-03: Standard Contractual Clauses
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-xbt-04-data-localization-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-XBT-04: Data Localization Requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-9-retention-and-disposal-priv-ret" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 9: Retention and Disposal (PRIV-RET)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 9: Retention and Disposal (PRIV-RET)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-ret-01-retention-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-RET-01: Retention Schedule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-ret-02-secure-disposal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-RET-02: Secure Disposal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-ret-03-data-minimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-RET-03: Data Minimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-10-training-and-awareness-priv-trn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain 10: Training and Awareness (PRIV-TRN)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain 10: Training and Awareness (PRIV-TRN)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priv-trn-01-employee-privacy-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-TRN-01: Employee Privacy Training
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-trn-02-specialized-role-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-TRN-02: Specialized Role Training
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#priv-trn-03-privacy-awareness-program" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRIV-TRN-03: Privacy Awareness Program
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="privacy-core-framework-global-baseline">Privacy Core Framework (Global Baseline)<a class="headerlink" href="#privacy-core-framework-global-baseline" title="Permanent link">&para;</a></h1>
+<p>The <code>privacy-core</code> pack provides <strong>40 universal privacy controls</strong> across 10 domains. It is installed automatically for every project alongside country-specific packs. These controls apply regardless of jurisdiction.</p>
+<p><strong>Pack ID</strong>: <code>privacy-core</code>
+<strong>Framework</strong>: <code>PRIVACY-CORE</code>
+<strong>Controls</strong>: 40 (13 critical, 20 high, 6 medium, 1 low)</p>
+<hr />
+<h2 id="domain-1-privacy-governance-priv-gov">Domain 1: Privacy Governance (PRIV-GOV)<a class="headerlink" href="#domain-1-privacy-governance-priv-gov" title="Permanent link">&para;</a></h2>
+<h3 id="priv-gov-01-privacy-program">PRIV-GOV-01: Privacy Program<a class="headerlink" href="#priv-gov-01-privacy-program" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Establish and maintain a formal privacy program with defined scope, objectives, and oversight.</p>
+<p><strong>Implementation</strong>: Define a privacy program charter with scope, objectives, governance structure, and reporting cadence. Assign executive sponsorship. Document alignment with business objectives and regulatory requirements. Review and update the charter annually.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-GOV-01-C1</td>
+<td>Privacy program charter documented and approved</td>
+</tr>
+<tr>
+<td>PRIV-GOV-01-C2</td>
+<td>Executive sponsor assigned and documented</td>
+</tr>
+<tr>
+<td>PRIV-GOV-01-C3</td>
+<td>Program reviewed and updated annually</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-gov-02-privacy-policies">PRIV-GOV-02: Privacy Policies<a class="headerlink" href="#priv-gov-02-privacy-policies" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Develop, approve, and maintain privacy policies that govern personal data processing.</p>
+<p><strong>Implementation</strong>: Create a comprehensive privacy policy covering data collection, use, sharing, retention, and individual rights. Ensure policies are accessible, written in plain language, and available in relevant languages. Review at least annually.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-GOV-02-C1</td>
+<td>Privacy policy published and accessible</td>
+</tr>
+<tr>
+<td>PRIV-GOV-02-C2</td>
+<td>Internal privacy procedures documented</td>
+</tr>
+<tr>
+<td>PRIV-GOV-02-C3</td>
+<td>Policies reviewed at least annually</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-gov-03-data-protection-officer">PRIV-GOV-03: Data Protection Officer<a class="headerlink" href="#priv-gov-03-data-protection-officer" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Appoint a DPO or privacy lead with defined responsibilities and authority.</p>
+<p><strong>Implementation</strong>: Define responsibilities: monitoring compliance, advising on DPIAs, cooperating with regulators, serving as contact point. Ensure DPO reports to highest management level and operates independently.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-GOV-03-C1</td>
+<td>DPO or privacy lead appointed and documented</td>
+</tr>
+<tr>
+<td>PRIV-GOV-03-C2</td>
+<td>DPO responsibilities defined and communicated</td>
+</tr>
+<tr>
+<td>PRIV-GOV-03-C3</td>
+<td>DPO contact information publicly available</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-gov-04-privacy-risk-management">PRIV-GOV-04: Privacy Risk Management<a class="headerlink" href="#priv-gov-04-privacy-risk-management" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Establish a privacy risk management process integrated with the overall risk framework.</p>
+<p><strong>Implementation</strong>: Define methodology, identify/analyze/evaluate risks, define thresholds and treatment strategies (accept, mitigate, transfer, avoid). Document decisions and track remediation.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-GOV-04-C1</td>
+<td>Privacy risk methodology documented</td>
+</tr>
+<tr>
+<td>PRIV-GOV-04-C2</td>
+<td>Privacy risk register maintained</td>
+</tr>
+<tr>
+<td>PRIV-GOV-04-C3</td>
+<td>Risk treatment decisions documented</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-gov-05-management-review">PRIV-GOV-05: Management Review<a class="headerlink" href="#priv-gov-05-management-review" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Medium Severity</p>
+<p>Conduct regular management reviews of the privacy program's effectiveness.</p>
+<p><strong>Implementation</strong>: Schedule reviews at least quarterly with senior management. Review metrics, incident trends, audit findings, risk status, and regulatory changes. Document outcomes and action items.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-GOV-05-C1</td>
+<td>Management review conducted at least quarterly</td>
+</tr>
+<tr>
+<td>PRIV-GOV-05-C2</td>
+<td>Review outcomes and actions documented</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-2-data-inventory-priv-inv">Domain 2: Data Inventory (PRIV-INV)<a class="headerlink" href="#domain-2-data-inventory-priv-inv" title="Permanent link">&para;</a></h2>
+<h3 id="priv-inv-01-data-inventory-register">PRIV-INV-01: Data Inventory Register<a class="headerlink" href="#priv-inv-01-data-inventory-register" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Maintain a comprehensive inventory of all personal data collected, processed, and stored.</p>
+<p><strong>Implementation</strong>: Document data categories, sources, collection methods, processing purposes, storage locations, retention periods, access controls, and third-party sharing. Use automated discovery tools. Review annually.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-INV-01-C1</td>
+<td>Data inventory register maintained and up-to-date</td>
+</tr>
+<tr>
+<td>PRIV-INV-01-C2</td>
+<td>Inventory includes all required metadata fields</td>
+</tr>
+<tr>
+<td>PRIV-INV-01-C3</td>
+<td>Inventory reviewed at least annually</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-inv-02-data-flow-mapping">PRIV-INV-02: Data Flow Mapping<a class="headerlink" href="#priv-inv-02-data-flow-mapping" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Document the flow of personal data through systems, applications, and third parties.</p>
+<p><strong>Implementation</strong>: Create data flow maps showing collection points, processing systems, storage locations, third-party transfers, and deletion points. Identify cross-border flows. Update when processing changes.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-INV-02-C1</td>
+<td>Data flow maps documented for all processing activities</td>
+</tr>
+<tr>
+<td>PRIV-INV-02-C2</td>
+<td>Cross-border data flows identified and mapped</td>
+</tr>
+<tr>
+<td>PRIV-INV-02-C3</td>
+<td>Maps updated when processing activities change</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-inv-03-processing-activity-records">PRIV-INV-03: Processing Activity Records<a class="headerlink" href="#priv-inv-03-processing-activity-records" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Maintain records of processing activities (ROPA) as required by applicable privacy laws.</p>
+<p><strong>Implementation</strong>: Document processing purposes, data categories, data subjects, recipients, third-country transfers, retention periods, and security measures. Align with GDPR Article 30 or equivalent.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-INV-03-C1</td>
+<td>ROPA maintained and accessible for regulatory inspection</td>
+</tr>
+<tr>
+<td>PRIV-INV-03-C2</td>
+<td>ROPA includes all legally required fields</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-inv-04-system-classification">PRIV-INV-04: System Classification<a class="headerlink" href="#priv-inv-04-system-classification" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Medium Severity</p>
+<p>Classify systems and applications based on the sensitivity of personal data they process.</p>
+<p><strong>Implementation</strong>: Assign classification levels (public, internal, confidential, restricted). Define handling requirements per level. Implement access controls aligned with classification.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-INV-04-C1</td>
+<td>All systems classified by data sensitivity</td>
+</tr>
+<tr>
+<td>PRIV-INV-04-C2</td>
+<td>Handling requirements defined per classification</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-3-consent-and-legal-basis-priv-cns">Domain 3: Consent and Legal Basis (PRIV-CNS)<a class="headerlink" href="#domain-3-consent-and-legal-basis-priv-cns" title="Permanent link">&para;</a></h2>
+<h3 id="priv-cns-01-consent-collection">PRIV-CNS-01: Consent Collection<a class="headerlink" href="#priv-cns-01-consent-collection" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Implement mechanisms for collecting, recording, and managing consent.</p>
+<p><strong>Implementation</strong>: Capture granular, informed, freely given consent. Record: what was consented to, when, how, the privacy policy version, and withdrawal options. Support separate consent per purpose. Ensure withdrawal is as easy as giving consent.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-CNS-01-C1</td>
+<td>Consent management platform deployed</td>
+</tr>
+<tr>
+<td>PRIV-CNS-01-C2</td>
+<td>Granular consent per processing purpose</td>
+</tr>
+<tr>
+<td>PRIV-CNS-01-C3</td>
+<td>Consent records include timestamp, method, and policy version</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-cns-02-consent-withdrawal">PRIV-CNS-02: Consent Withdrawal<a class="headerlink" href="#priv-cns-02-consent-withdrawal" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Provide mechanisms for individuals to withdraw consent as easily as it was given.</p>
+<p><strong>Implementation</strong>: User-facing withdrawal mechanism accessible from account settings or privacy preferences. Process within defined SLAs. Stop processing upon withdrawal. Notify third parties.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-CNS-02-C1</td>
+<td>Consent withdrawal mechanism available to users</td>
+</tr>
+<tr>
+<td>PRIV-CNS-02-C2</td>
+<td>Withdrawal processed within defined SLA</td>
+</tr>
+<tr>
+<td>PRIV-CNS-02-C3</td>
+<td>Third parties notified of withdrawn consent</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-cns-03-legal-basis-documentation">PRIV-CNS-03: Legal Basis Documentation<a class="headerlink" href="#priv-cns-03-legal-basis-documentation" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Document the legal basis for each personal data processing activity.</p>
+<p><strong>Implementation</strong>: Identify legal basis (consent, contract, legal obligation, vital interests, public task, legitimate interests). Conduct legitimate interest assessments where applicable. Maintain alongside ROPA.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-CNS-03-C1</td>
+<td>Legal basis documented for each processing activity</td>
+</tr>
+<tr>
+<td>PRIV-CNS-03-C2</td>
+<td>Legitimate interest assessments conducted where applicable</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-cns-04-purpose-limitation">PRIV-CNS-04: Purpose Limitation<a class="headerlink" href="#priv-cns-04-purpose-limitation" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Ensure personal data is processed only for specified, explicit, and legitimate purposes.</p>
+<p><strong>Implementation</strong>: Define specific purposes. Implement technical controls preventing use beyond stated purposes. Conduct compatibility assessments before reuse. Communicate purposes at collection.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-CNS-04-C1</td>
+<td>Processing purposes documented per data collection</td>
+</tr>
+<tr>
+<td>PRIV-CNS-04-C2</td>
+<td>Compatibility assessment before data reuse</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-4-data-subject-rights-priv-dsr">Domain 4: Data Subject Rights (PRIV-DSR)<a class="headerlink" href="#domain-4-data-subject-rights-priv-dsr" title="Permanent link">&para;</a></h2>
+<h3 id="priv-dsr-01-right-of-access">PRIV-DSR-01: Right of Access<a class="headerlink" href="#priv-dsr-01-right-of-access" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Provide individuals with the ability to access their personal data upon request.</p>
+<p><strong>Implementation</strong>: Implement DSAR process. Verify identity before disclosure. Provide data in structured, machine-readable format. Respond within statutory timeframes (typically 30 days). Document all requests.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-DSR-01-C1</td>
+<td>DSAR process implemented and documented</td>
+</tr>
+<tr>
+<td>PRIV-DSR-01-C2</td>
+<td>Identity verification before disclosure</td>
+</tr>
+<tr>
+<td>PRIV-DSR-01-C3</td>
+<td>Responses provided within statutory timeframes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-dsr-02-right-to-rectification">PRIV-DSR-02: Right to Rectification<a class="headerlink" href="#priv-dsr-02-right-to-rectification" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Allow individuals to correct inaccurate or incomplete personal data.</p>
+<p><strong>Implementation</strong>: Request mechanism, verification process. Update data across all systems. Notify third parties of corrections.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-DSR-02-C1</td>
+<td>Rectification request mechanism available</td>
+</tr>
+<tr>
+<td>PRIV-DSR-02-C2</td>
+<td>Corrections propagated across all systems</td>
+</tr>
+<tr>
+<td>PRIV-DSR-02-C3</td>
+<td>Third parties notified of corrections</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-dsr-03-right-to-erasure">PRIV-DSR-03: Right to Erasure<a class="headerlink" href="#priv-dsr-03-right-to-erasure" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Allow individuals to request deletion of their personal data (right to be forgotten).</p>
+<p><strong>Implementation</strong>: Process with defined criteria. Verify identity and assess legal obligations. Delete from all systems including backups. Notify third parties. Document the action.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-DSR-03-C1</td>
+<td>Erasure request process implemented</td>
+</tr>
+<tr>
+<td>PRIV-DSR-03-C2</td>
+<td>Data deleted from all systems including backups</td>
+</tr>
+<tr>
+<td>PRIV-DSR-03-C3</td>
+<td>Third parties notified of erasure</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-dsr-04-right-to-data-portability">PRIV-DSR-04: Right to Data Portability<a class="headerlink" href="#priv-dsr-04-right-to-data-portability" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Medium Severity</p>
+<p>Provide personal data in a structured, machine-readable format for transfer.</p>
+<p><strong>Implementation</strong>: Export in JSON, CSV, or XML. Include all personal data provided by the individual and data generated from their activity. Provide direct transfer where feasible.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-DSR-04-C1</td>
+<td>Data export in machine-readable format available</td>
+</tr>
+<tr>
+<td>PRIV-DSR-04-C2</td>
+<td>Direct transfer to another controller supported</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-dsr-05-right-to-object">PRIV-DSR-05: Right to Object<a class="headerlink" href="#priv-dsr-05-right-to-object" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Allow individuals to object to processing for specific purposes.</p>
+<p><strong>Implementation</strong>: Objection mechanism for direct marketing, profiling, research. Stop processing upon valid objection unless compelling legitimate grounds exist. Communicate right to object in privacy notices.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-DSR-05-C1</td>
+<td>Objection mechanism available to individuals</td>
+</tr>
+<tr>
+<td>PRIV-DSR-05-C2</td>
+<td>Processing stopped upon valid objection</td>
+</tr>
+<tr>
+<td>PRIV-DSR-05-C3</td>
+<td>Right to object communicated in privacy notices</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-dsr-06-automated-decision-review">PRIV-DSR-06: Automated Decision Review<a class="headerlink" href="#priv-dsr-06-automated-decision-review" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Protect individuals from solely automated decisions with legal or significant effects.</p>
+<p><strong>Implementation</strong>: Identify automated decision systems. Implement safeguards: human intervention, ability to contest, explanation of logic. Obtain explicit consent where required. Document algorithms and criteria.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-DSR-06-C1</td>
+<td>Automated decision systems identified and documented</td>
+</tr>
+<tr>
+<td>PRIV-DSR-06-C2</td>
+<td>Human intervention capability available</td>
+</tr>
+<tr>
+<td>PRIV-DSR-06-C3</td>
+<td>Decision explanation provided to individuals</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-5-security-controls-priv-sec">Domain 5: Security Controls (PRIV-SEC)<a class="headerlink" href="#domain-5-security-controls-priv-sec" title="Permanent link">&para;</a></h2>
+<h3 id="priv-sec-01-access-management">PRIV-SEC-01: Access Management<a class="headerlink" href="#priv-sec-01-access-management" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Implement role-based access controls for systems processing personal data.</p>
+<p><strong>Implementation</strong>: RBAC with least privilege. Quarterly access reviews. Just-in-time access for privileged operations. Log and monitor all access to personal data.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-SEC-01-C1</td>
+<td>RBAC implemented for all personal data systems</td>
+</tr>
+<tr>
+<td>PRIV-SEC-01-C2</td>
+<td>Quarterly access reviews conducted</td>
+</tr>
+<tr>
+<td>PRIV-SEC-01-C3</td>
+<td>All personal data access logged</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-sec-02-encryption">PRIV-SEC-02: Encryption<a class="headerlink" href="#priv-sec-02-encryption" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Encrypt personal data at rest and in transit using industry-standard algorithms.</p>
+<p><strong>Implementation</strong>: AES-256-GCM at rest. TLS 1.2+ in transit. Field-level encryption for sensitive PII. KMS/HSM key management. Periodic key rotation.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-SEC-02-C1</td>
+<td>AES-256 encryption at rest for personal data</td>
+</tr>
+<tr>
+<td>PRIV-SEC-02-C2</td>
+<td>TLS 1.2+ for all data in transit</td>
+</tr>
+<tr>
+<td>PRIV-SEC-02-C3</td>
+<td>Field-level encryption for sensitive PII</td>
+</tr>
+<tr>
+<td>PRIV-SEC-02-C4</td>
+<td>Key management via KMS/HSM</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-sec-03-pseudonymisation-and-anonymisation">PRIV-SEC-03: Pseudonymisation and Anonymisation<a class="headerlink" href="#priv-sec-03-pseudonymisation-and-anonymisation" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Implement pseudonymisation and anonymisation to reduce privacy risk.</p>
+<p><strong>Implementation</strong>: Pseudonymise data for analytics, testing, research. Store mapping keys separately. Apply k-anonymity or differential privacy for published datasets. Verify effectiveness before publishing.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-SEC-03-C1</td>
+<td>Pseudonymisation implemented for analytics/testing</td>
+</tr>
+<tr>
+<td>PRIV-SEC-03-C2</td>
+<td>Mapping keys stored separately</td>
+</tr>
+<tr>
+<td>PRIV-SEC-03-C3</td>
+<td>Anonymisation verified before data publication</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-sec-04-secure-development">PRIV-SEC-04: Secure Development<a class="headerlink" href="#priv-sec-04-secure-development" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Integrate privacy and security controls into the software development lifecycle.</p>
+<p><strong>Implementation</strong>: Privacy by design in SDLC. Privacy impact assessments for new features. SAST/DAST in CI/CD. Security code reviews. Developer training.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-SEC-04-C1</td>
+<td>Privacy by design integrated into SDLC</td>
+</tr>
+<tr>
+<td>PRIV-SEC-04-C2</td>
+<td>SAST/DAST in CI/CD pipelines</td>
+</tr>
+<tr>
+<td>PRIV-SEC-04-C3</td>
+<td>Security code reviews conducted</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-6-incident-and-breach-management-priv-inc">Domain 6: Incident and Breach Management (PRIV-INC)<a class="headerlink" href="#domain-6-incident-and-breach-management-priv-inc" title="Permanent link">&para;</a></h2>
+<h3 id="priv-inc-01-incident-response-plan">PRIV-INC-01: Incident Response Plan<a class="headerlink" href="#priv-inc-01-incident-response-plan" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Develop and maintain a privacy incident response plan with defined roles and procedures.</p>
+<p><strong>Implementation</strong>: Cover detection, classification, containment, eradication, notification, recovery. Define roles (IR team, legal, communications, DPO). Test annually via tabletop exercises.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-INC-01-C1</td>
+<td>Privacy incident response plan documented</td>
+</tr>
+<tr>
+<td>PRIV-INC-01-C2</td>
+<td>Roles and responsibilities defined</td>
+</tr>
+<tr>
+<td>PRIV-INC-01-C3</td>
+<td>Plan tested annually</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-inc-02-breach-classification">PRIV-INC-02: Breach Classification<a class="headerlink" href="#priv-inc-02-breach-classification" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Establish criteria for classifying privacy breach severity and determining notification obligations.</p>
+<p><strong>Implementation</strong>: Define severity levels based on data types, volume, sensitivity, risk. Create decision matrix for regulatory notification thresholds. Train responders.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-INC-02-C1</td>
+<td>Breach classification criteria documented</td>
+</tr>
+<tr>
+<td>PRIV-INC-02-C2</td>
+<td>Notification decision matrix defined</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-inc-03-regulatory-notification">PRIV-INC-03: Regulatory Notification<a class="headerlink" href="#priv-inc-03-regulatory-notification" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Implement procedures for notifying regulators of qualifying breaches within statutory timeframes.</p>
+<p><strong>Implementation</strong>: Map timeframes per jurisdiction (GDPR 72 hours, various state laws 30-90 days). Prepare templates. Maintain regulator contacts. Test workflows.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-INC-03-C1</td>
+<td>Notification procedures documented per jurisdiction</td>
+</tr>
+<tr>
+<td>PRIV-INC-03-C2</td>
+<td>Notification templates prepared</td>
+</tr>
+<tr>
+<td>PRIV-INC-03-C3</td>
+<td>Regulator contact information maintained</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-inc-04-data-subject-notification">PRIV-INC-04: Data Subject Notification<a class="headerlink" href="#priv-inc-04-data-subject-notification" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Implement procedures for notifying affected individuals of qualifying breaches.</p>
+<p><strong>Implementation</strong>: Define criteria for when individual notification is required. Prepare multi-language templates. Define communication channels. Coordinate timing with regulatory notifications.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-INC-04-C1</td>
+<td>Individual notification criteria defined</td>
+</tr>
+<tr>
+<td>PRIV-INC-04-C2</td>
+<td>Multi-language notification templates prepared</td>
+</tr>
+<tr>
+<td>PRIV-INC-04-C3</td>
+<td>Communication channels defined</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-7-third-party-management-priv-ven">Domain 7: Third-Party Management (PRIV-VEN)<a class="headerlink" href="#domain-7-third-party-management-priv-ven" title="Permanent link">&para;</a></h2>
+<h3 id="priv-ven-01-vendor-due-diligence">PRIV-VEN-01: Vendor Due Diligence<a class="headerlink" href="#priv-ven-01-vendor-due-diligence" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Conduct privacy and security due diligence before engaging vendors.</p>
+<p><strong>Implementation</strong>: Evaluate privacy practices, security controls, certifications (ISO 27001, SOC 2), compliance history. Classify by risk. Require security questionnaires. Document results.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-VEN-01-C1</td>
+<td>Vendor assessment process documented and enforced</td>
+</tr>
+<tr>
+<td>PRIV-VEN-01-C2</td>
+<td>Vendors classified by risk level</td>
+</tr>
+<tr>
+<td>PRIV-VEN-01-C3</td>
+<td>Security questionnaires completed for high-risk vendors</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-ven-02-processor-agreements">PRIV-VEN-02: Processor Agreements<a class="headerlink" href="#priv-ven-02-processor-agreements" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Execute data processing agreements (DPAs) with all vendors acting as data processors.</p>
+<p><strong>Implementation</strong>: Define processing scope, security obligations, sub-processor controls, breach notification timelines, data return/deletion, audit rights. Review annually.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-VEN-02-C1</td>
+<td>DPAs executed with all processors</td>
+</tr>
+<tr>
+<td>PRIV-VEN-02-C2</td>
+<td>DPAs include all legally required clauses</td>
+</tr>
+<tr>
+<td>PRIV-VEN-02-C3</td>
+<td>DPAs reviewed and renewed annually</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-ven-03-ongoing-monitoring">PRIV-VEN-03: Ongoing Monitoring<a class="headerlink" href="#priv-ven-03-ongoing-monitoring" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Medium Severity</p>
+<p>Monitor vendor compliance throughout the relationship.</p>
+<p><strong>Implementation</strong>: Periodic security reviews. Annual SOC 2 reports. Track vendor breach notifications. Monitor certification changes. Reassess on scope changes.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-VEN-03-C1</td>
+<td>Annual vendor security reviews conducted</td>
+</tr>
+<tr>
+<td>PRIV-VEN-03-C2</td>
+<td>Vendor breach notifications tracked</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-8-cross-border-transfers-priv-xbt">Domain 8: Cross-Border Transfers (PRIV-XBT)<a class="headerlink" href="#domain-8-cross-border-transfers-priv-xbt" title="Permanent link">&para;</a></h2>
+<h3 id="priv-xbt-01-transfer-assessment">PRIV-XBT-01: Transfer Assessment<a class="headerlink" href="#priv-xbt-01-transfer-assessment" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Identify and document all cross-border personal data transfers.</p>
+<p><strong>Implementation</strong>: Map source/destination countries, data categories, transfer mechanisms, recipients, purpose. Maintain transfer register. Identify non-adequate transfers.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-XBT-01-C1</td>
+<td>Cross-border transfer register maintained</td>
+</tr>
+<tr>
+<td>PRIV-XBT-01-C2</td>
+<td>All transfers mapped with countries and mechanisms</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-xbt-02-adequacy-assessment">PRIV-XBT-02: Adequacy Assessment<a class="headerlink" href="#priv-xbt-02-adequacy-assessment" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Determine whether destination countries have adequate data protection levels.</p>
+<p><strong>Implementation</strong>: Maintain adequacy lists (EU decisions, UK regulations). Verify before transferring. Implement safeguards for non-adequate countries.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-XBT-02-C1</td>
+<td>Adequacy status tracked per destination country</td>
+</tr>
+<tr>
+<td>PRIV-XBT-02-C2</td>
+<td>Safeguards implemented for non-adequate transfers</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-xbt-03-standard-contractual-clauses">PRIV-XBT-03: Standard Contractual Clauses<a class="headerlink" href="#priv-xbt-03-standard-contractual-clauses" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Execute SCCs or equivalent safeguards for non-adequate transfers.</p>
+<p><strong>Implementation</strong>: Use latest SCCs (EU SCCs, UK IDTA). Conduct Transfer Impact Assessments. Implement supplementary measures where needed.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-XBT-03-C1</td>
+<td>SCCs executed for all non-adequate transfers</td>
+</tr>
+<tr>
+<td>PRIV-XBT-03-C2</td>
+<td>Transfer Impact Assessments conducted</td>
+</tr>
+<tr>
+<td>PRIV-XBT-03-C3</td>
+<td>Supplementary measures implemented where needed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-xbt-04-data-localization-requirements">PRIV-XBT-04: Data Localization Requirements<a class="headerlink" href="#priv-xbt-04-data-localization-requirements" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Identify and comply with data localization mandates.</p>
+<p><strong>Implementation</strong>: Identify countries with localization requirements (China PIPL, Russia, India DPDPA). Implement technical controls ensuring data residency. Monitor regulatory changes.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-XBT-04-C1</td>
+<td>Data localization requirements identified per jurisdiction</td>
+</tr>
+<tr>
+<td>PRIV-XBT-04-C2</td>
+<td>Technical controls enforce localization</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-9-retention-and-disposal-priv-ret">Domain 9: Retention and Disposal (PRIV-RET)<a class="headerlink" href="#domain-9-retention-and-disposal-priv-ret" title="Permanent link">&para;</a></h2>
+<h3 id="priv-ret-01-retention-schedule">PRIV-RET-01: Retention Schedule<a class="headerlink" href="#priv-ret-01-retention-schedule" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">Critical Severity</p>
+<p>Define and enforce data retention periods for each category of personal data.</p>
+<p><strong>Implementation</strong>: Create schedule based on legal requirements, business needs, contractual obligations. Implement automated enforcement (TTL, scheduled deletion). Review annually.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-RET-01-C1</td>
+<td>Retention schedule documented per data category</td>
+</tr>
+<tr>
+<td>PRIV-RET-01-C2</td>
+<td>Automated retention enforcement implemented</td>
+</tr>
+<tr>
+<td>PRIV-RET-01-C3</td>
+<td>Retention schedule reviewed annually</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-ret-02-secure-disposal">PRIV-RET-02: Secure Disposal<a class="headerlink" href="#priv-ret-02-secure-disposal" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Implement secure disposal procedures for personal data that has exceeded retention.</p>
+<p><strong>Implementation</strong>: Cryptographic erase, overwriting, secure deletion for digital data. Shredding, degaussing for physical media. Document disposal actions. Verify effectiveness.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-RET-02-C1</td>
+<td>Secure disposal procedures documented</td>
+</tr>
+<tr>
+<td>PRIV-RET-02-C2</td>
+<td>Disposal actions logged and verified</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-ret-03-data-minimization">PRIV-RET-03: Data Minimization<a class="headerlink" href="#priv-ret-03-data-minimization" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Medium Severity</p>
+<p>Collect and retain only the minimum personal data necessary for stated purposes.</p>
+<p><strong>Implementation</strong>: Collect only necessary data. Field-level controls in forms. Periodic minimization reviews. Anonymize or delete unneeded data.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-RET-03-C1</td>
+<td>Data minimization principles applied to collection forms</td>
+</tr>
+<tr>
+<td>PRIV-RET-03-C2</td>
+<td>Periodic minimization reviews conducted</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="domain-10-training-and-awareness-priv-trn">Domain 10: Training and Awareness (PRIV-TRN)<a class="headerlink" href="#domain-10-training-and-awareness-priv-trn" title="Permanent link">&para;</a></h2>
+<h3 id="priv-trn-01-employee-privacy-training">PRIV-TRN-01: Employee Privacy Training<a class="headerlink" href="#priv-trn-01-employee-privacy-training" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">High Severity</p>
+<p>Provide privacy awareness training to all employees upon hire and at least annually.</p>
+<p><strong>Implementation</strong>: Cover data handling, individual rights, breach reporting, data minimization, secure communication, applicable laws. Track completion. Annual refreshers.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-TRN-01-C1</td>
+<td>Privacy training provided on hire</td>
+</tr>
+<tr>
+<td>PRIV-TRN-01-C2</td>
+<td>Annual refresher training completed by all staff</td>
+</tr>
+<tr>
+<td>PRIV-TRN-01-C3</td>
+<td>Training completion tracked</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-trn-02-specialized-role-training">PRIV-TRN-02: Specialized Role Training<a class="headerlink" href="#priv-trn-02-specialized-role-training" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Medium Severity</p>
+<p>Provide role-specific privacy training to personnel with specialized privacy responsibilities.</p>
+<p><strong>Implementation</strong>: Identify roles (developers, sysadmins, support, HR, legal). Role-specific modules with hands-on exercises for DSAR processing and breach response.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-TRN-02-C1</td>
+<td>Specialized roles identified and documented</td>
+</tr>
+<tr>
+<td>PRIV-TRN-02-C2</td>
+<td>Role-specific training modules delivered</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priv-trn-03-privacy-awareness-program">PRIV-TRN-03: Privacy Awareness Program<a class="headerlink" href="#priv-trn-03-privacy-awareness-program" title="Permanent link">&para;</a></h3>
+<div class="admonition tip">
+<p class="admonition-title">Low Severity</p>
+<p>Maintain ongoing privacy awareness activities beyond formal training.</p>
+<p><strong>Implementation</strong>: Newsletters, awareness campaigns (Data Privacy Day), phishing simulations, privacy tips in internal communications. Measure through periodic assessments.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Check ID</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRIV-TRN-03-C1</td>
+<td>Ongoing awareness activities conducted</td>
+</tr>
+<tr>
+<td>PRIV-TRN-03-C2</td>
+<td>Awareness measured through periodic assessments</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<div class="admonition example">
+<p class="admonition-title">Exercise: Map Your Privacy Program</p>
+<p>Use the 10 domains above to assess your current privacy program:</p>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Controls</th>
+<th>Implemented?</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Governance</td>
+<td>5</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Data Inventory</td>
+<td>4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Consent</td>
+<td>4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Data Subject Rights</td>
+<td>6</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Security</td>
+<td>4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Incident Management</td>
+<td>4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Vendor Management</td>
+<td>3</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Cross-Border Transfers</td>
+<td>4</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Retention</td>
+<td>3</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Training</td>
+<td>3</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>For each domain, mark how many controls you currently satisfy</li>
+<li>Identify the biggest gaps</li>
+<li>Prioritize: critical controls first, then high, then medium</li>
+</ol>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Exercise: Build a Data Flow Map</p>
+<p>Pick a single processing activity in your project (e.g., user registration):</p>
+<ol>
+<li>What data is collected? (list every field)</li>
+<li>Where is it stored? (database, cache, logs)</li>
+<li>Who has access? (roles, teams, vendors)</li>
+<li>Where does it flow? (APIs, third parties, analytics)</li>
+<li>How long is it kept? (retention period)</li>
+<li>How is it deleted? (process, automation)</li>
+</ol>
+<p>Map this against PRIV-INV-01 and PRIV-INV-02 to identify gaps.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/greenarmor/gesf" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
