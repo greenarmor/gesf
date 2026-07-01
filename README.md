@@ -19,36 +19,48 @@ Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and 
 
 ## Install
 
-=== "Homebrew (macOS)"
+<details open>
+<summary><b>🍺 &nbsp;Homebrew (macOS)</b></summary>
 
-    ```bash
-    brew tap greenarmor/gesf
-    brew install ges
-    ```
+```bash
+brew tap greenarmor/gesf
+brew install ges
+```
 
-    Requires Node.js >= 22 (installed automatically via Homebrew).
+Installs Node.js automatically. One command, zero config.
 
-=== "npm"
+</details>
 
-    ```bash
-    npm install -g @greenarmor/ges
-    ```
+<details>
+<summary><b>📦 &nbsp;npm</b></summary>
 
-    Requires Node.js >= 22.
+```bash
+npm install -g @greenarmor/ges
+```
 
-=== "pnpm"
+Requires Node.js >= 22. The `ges` command is available system-wide.
 
-    ```bash
-    pnpm add -g @greenarmor/ges
-    ```
+</details>
 
-=== "npx (no install)"
+<details>
+<summary><b>📦 &nbsp;pnpm</b></summary>
 
-    ```bash
-    npx @greenarmor/ges init
-    ```
+```bash
+pnpm add -g @greenarmor/ges
+```
 
-    Downloads and runs on demand. No global install needed.
+</details>
+
+<details>
+<summary><b>⚡ &nbsp;npx (no install)</b></summary>
+
+```bash
+npx @greenarmor/ges init
+```
+
+Downloads and runs on demand. No global install. Best for CI/one-off use.
+
+</details>
 
 All methods produce the same `ges` CLI. Homebrew manages Node.js automatically. npm/pnpm require Node.js installed separately. npx requires nothing — it fetches everything at runtime.
 

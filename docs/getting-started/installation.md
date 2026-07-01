@@ -1,64 +1,85 @@
 # Installation
 
-GESF can be installed several ways — pick the one that fits your workflow. All methods produce the same `ges` CLI.
+GESF can be installed several ways — all produce the same `ges` CLI.
 
-## Option 1 — Homebrew (macOS, Recommended)
+## Choose Your Install Method
 
-Installs Node.js and GESF in one command. Best for macOS developers.
+=== ":fontawesome-brands-apple: Homebrew (macOS)"
 
-```bash
-brew tap greenarmor/gesf
-brew install ges
-```
+    Installs Node.js and GESF in one command. Best for macOS developers.
 
-This installs `@greenarmor/ges` globally via npm and symlinks the binary. Node.js >= 22 is installed automatically as a dependency.
+    ```bash
+    brew tap greenarmor/gesf
+    brew install ges
+    ```
 
-## Option 2 — npm (Global Install)
+    | Detail | Value |
+    |--------|-------|
+    | Requires Node? | No (auto-installed) |
+    | Install time | ~5 seconds |
+    | Best for | macOS daily use, teams |
+    | Uninstall | `brew uninstall ges` |
 
-Best for teams already using npm. Requires Node.js >= 22.
+=== ":material-package-variant-closed: npm"
 
-```bash
-npm install -g @greenarmor/ges
-```
+    Best for teams already using npm.
 
-Or with pnpm:
+    ```bash
+    npm install -g @greenarmor/ges
+    ```
 
-```bash
-pnpm add -g @greenarmor/ges
-```
+    | Detail | Value |
+    |--------|-------|
+    | Requires Node? | Yes (>= 22) |
+    | Install time | ~10 seconds |
+    | Best for | JS/TS teams, npm workflows |
+    | Uninstall | `npm uninstall -g @greenarmor/ges` |
 
-After installation, the `ges` command is available system-wide.
+=== ":material-package-variant-closed: pnpm"
 
-## Option 3 — npx (Run Without Installing)
+    ```bash
+    pnpm add -g @greenarmor/ges
+    ```
 
-Download and run on demand. No global install. Best for one-off audits or CI pipelines.
+    | Detail | Value |
+    |--------|-------|
+    | Requires Node? | Yes (>= 22) |
+    | Install time | ~10 seconds |
+    | Best for | pnpm users |
 
-```bash
-npx @greenarmor/ges init
-npx @greenarmor/ges audit
-npx @greenarmor/ges score
-```
+=== ":material-rocket-launch: npx"
 
-Or with pnpm:
+    No install. Runs on demand.
 
-```bash
-pnpm dlx @greenarmor/ges init
-```
+    ```bash
+    npx @greenarmor/ges init
+    ```
 
-## Option 4 — Install from Source
+    | Detail | Value |
+    |--------|-------|
+    | Requires Node? | Yes (>= 22) |
+    | Install time | ~5 seconds (cached) |
+    | Best for | One-off audits, CI pipelines |
+    | Uninstall | N/A (not installed) |
 
-For developers contributing to GESF.
+=== ":material-github: Source"
 
-```bash
-git clone https://github.com/greenarmor/gesf.git
-cd gesf
-npm install -g pnpm    # if not already installed
-pnpm install
-pnpm -r run build
-cd packages/cli && npm link
-```
+    For contributors.
 
-After linking, `ges` is available system-wide pointing to your local build.
+    ```bash
+    git clone https://github.com/greenarmor/gesf.git
+    cd gesf
+    npm install -g pnpm
+    pnpm install
+    pnpm -r run build
+    cd packages/cli && npm link
+    ```
+
+    | Detail | Value |
+    |--------|-------|
+    | Requires Node? | Yes (>= 22) |
+    | Install time | ~60 seconds |
+    | Best for | Developers, contributors |
 
 ---
 
@@ -74,7 +95,7 @@ After linking, `ges` is available system-wide pointing to your local build.
 
 ---
 
-## Prerequisites (npm/npx only)
+## Prerequisites (npm/pnpm/npx only)
 
 If using npm, pnpm, or npx, you need Node.js >= 22.
 
