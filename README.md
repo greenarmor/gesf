@@ -21,11 +21,34 @@ Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and 
 
 ## Install
 
-```bash
-npm install -g @greenarmor/ges
-```
+=== "Homebrew (macOS)"
 
-Requires Node.js >= 20.
+    ```bash
+    brew tap greenarmor/gesf
+    brew install ges
+    ```
+
+=== "Linux (.deb)"
+
+    ```bash
+    # Download from https://github.com/greenarmor/gesf/releases/latest
+# then:
+dpkg -i ges_*_amd64.deb
+    ```
+
+=== "npm"
+
+    ```bash
+    npm install -g @greenarmor/ges
+    ```
+
+=== "npx (no install)"
+
+    ```bash
+    npx @greenarmor/ges init
+    ```
+
+Brew/apt install standalone binaries (no Node.js). npm/npx require Node.js >= 22.
 
 <details>
 <summary>Windows troubleshooting</summary>

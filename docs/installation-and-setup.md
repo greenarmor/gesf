@@ -8,9 +8,12 @@ Complete technical guide for installing and using the Green Engineering Standard
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-  - [Option 1: Install Globally (Recommended)](#option-1-install-globally-recommended)
-  - [Option 2: Use Without Installing (npx)](#option-2-use-without-installing-npx)
-  - [Option 3: Install from Source (Contributors)](#option-3-install-from-source-contributors)
+  - [Option 1: Homebrew (macOS)](#option-1-homebrew-macos-recommended)
+  - [Option 2: APT / .deb (Linux)](#option-2-apt--deb-linux)
+  - [Option 3: Manual Binary Download](#option-3-manual-binary-download)
+  - [Option 4: npm Global Install](#option-4-npm-global-install)
+  - [Option 5: npx (No Install)](#option-5-npx-run-without-installing)
+  - [Option 6: Install from Source](#option-6-install-from-source-contributors)
 - [Verify Installation](#verify-installation)
 - [Quick Start: New Project](#quick-start-new-project)
 - [Quick Start: Existing Project](#quick-start-existing-project)
@@ -27,6 +30,10 @@ Complete technical guide for installing and using the Green Engineering Standard
 ---
 
 ## Prerequisites
+
+!!! info "Brew and APT installs need no prerequisites"
+    Homebrew and .deb packages are standalone binaries — no Node.js, npm, or any other runtime required. The prerequisites below apply only to npm/npx installs.
+
 
 | Requirement | Minimum Version | Check Command |
 |-------------|----------------|---------------|
@@ -60,9 +67,38 @@ fnm use 22
 
 ## Installation
 
-### Option 1: Install Globally (Recommended)
+### Option 1: Homebrew (macOS, Recommended)
 
-Best for teams and individuals who want `ges` available everywhere.
+Standalone binary — no Node.js, no npm, no dependencies. Fastest startup.
+
+```bash
+brew tap greenarmor/gesf
+brew install ges
+```
+
+### Option 2: APT / .deb (Linux)
+
+Standalone binary via Debian package.
+
+```bash
+# Download from https://github.com/greenarmor/gesf/releases/latest
+# Download from https://github.com/greenarmor/gesf/releases/latest
+# then:
+dpkg -i ges_*_amd64.deb
+```
+
+### Option 3: Manual Binary Download
+
+```bash
+# macOS ARM:  curl -L <release-url>/ges-darwin-arm64 -o /usr/local/bin/ges
+# macOS x64:  curl -L <release-url>/ges-darwin-x64 -o /usr/local/bin/ges
+# Linux x64:  curl -L <release-url>/ges-linux-x64 -o /usr/local/bin/ges
+chmod +x /usr/local/bin/ges
+```
+
+### Option 4: npm Global Install
+
+Requires Node.js >= 22. Best for teams already using npm.
 
 ```bash
 npm install -g @greenarmor/ges
@@ -74,54 +110,23 @@ Or with pnpm:
 pnpm add -g @greenarmor/ges
 ```
 
-Or with yarn:
-
-```bash
-yarn global add @greenarmor/ges
-```
-
-After installation, the `ges` command is available system-wide.
-
-### Option 2: Use Without Installing (npx)
-
-Run directly without a global install. Downloads and executes on demand.
+### Option 5: npx (Run Without Installing)
 
 ```bash
 npx @greenarmor/ges init
 npx @greenarmor/ges audit
-npx @greenarmor/ges score
 ```
 
-Or with pnpm:
+### Option 6: Install from Source (Contributors)
 
 ```bash
-pnpm dlx @greenarmor/ges init
-```
-
-### Option 3: Install from Source (Contributors)
-
-For developers contributing to GESF or building from source.
-
-```bash
-# Clone the repository
 git clone https://github.com/greenarmor/gesf.git
 cd gesf
-
-# Install pnpm if not available
 npm install -g pnpm
-
-# Install all dependencies
 pnpm install
-
-# Build all packages
 pnpm -r run build
-
-# Link the CLI globally
-cd packages/cli
-npm link
+cd packages/cli && npm link
 ```
-
-After linking, `ges` is available system-wide pointing to your local build.
 
 ---
 
@@ -859,9 +864,24 @@ npm install -g @greenarmor/ges
 
 ## Uninstall
 
-```bash
-# Remove global installation
-npm uninstall -g @greenarmor/ges
+=== "Homebrew"
+
+    ```bash
+    brew uninstall ges
+    brew untap greenarmor/gesf
+    ```
+
+=== "APT"
+
+    ```bash
+    dpkg -r ges
+    ```
+
+=== "npm"
+
+    ```bash
+    # Remove global installation
+    npm uninstall -g @greenarmor/ges
 
 # If linked from source
 cd /path/to/gesf/packages/cli

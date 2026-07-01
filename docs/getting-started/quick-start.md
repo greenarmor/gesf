@@ -2,6 +2,26 @@
 
 Get from zero to a full compliance audit in under 5 minutes. Works with **any** programming language.
 
+## Step 0 — Install GESF
+
+```bash
+# macOS (Homebrew — no Node.js needed)
+brew tap greenarmor/gesf && brew install ges
+
+# Linux (.deb)
+# Download from https://github.com/greenarmor/gesf/releases/latest
+# then:
+dpkg -i ges_*_amd64.deb
+
+# npm (requires Node.js >= 22)
+npm install -g @greenarmor/ges
+
+# Or run without installing
+npx @greenarmor/ges init
+```
+
+See the [Installation guide](installation.md) for all options.
+
 ## Step 1 — Create a Test Project
 
 We will create a deliberately vulnerable project so you can see GESF in action.

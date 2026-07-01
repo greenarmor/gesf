@@ -25,15 +25,45 @@ Compliance-as-Code framework that automatically enforces GDPR, OWASP, NIST, and 
 
 ## Quick Start
 
-```bash
-npm install -g @greenarmor/ges
-cd your-project
-ges init
-ges audit
-ges score
-```
+=== "Homebrew (macOS)"
 
-GESF requires Node.js to run the CLI, but it scans **any** project — Python, Rust, Go, Java, Ruby, PHP, .NET, and more.
+    ```bash
+    brew tap greenarmor/gesf
+    brew install ges
+    cd your-project
+    ges init
+    ges audit
+    ```
+
+=== "Linux (.deb)"
+
+    ```bash
+    # Download from https://github.com/greenarmor/gesf/releases/latest
+# then:
+dpkg -i ges_*_amd64.deb
+    cd your-project
+    ges init
+    ges audit
+    ```
+
+=== "npm"
+
+    ```bash
+    npm install -g @greenarmor/ges
+    cd your-project
+    ges init
+    ges audit
+    ```
+
+=== "npx (no install)"
+
+    ```bash
+    cd your-project
+    npx @greenarmor/ges init
+    npx @greenarmor/ges audit
+    ```
+
+GESF scans **any** project — Python, Rust, Go, Java, Ruby, PHP, .NET, and more. The brew/apt binary installs require no Node.js.
 
 ## Key Features
 

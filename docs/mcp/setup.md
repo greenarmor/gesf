@@ -33,9 +33,33 @@ This guide covers installation and configuration on **macOS**, **Linux**, and **
 
 GESF must be installed before setting up the MCP server:
 
-```bash
-npm install -g @greenarmor/ges
-```
+=== "Homebrew (macOS)"
+
+    ```bash
+    brew tap greenarmor/gesf
+    brew install ges
+    ```
+
+=== "Linux (.deb)"
+
+    ```bash
+    # Download from https://github.com/greenarmor/gesf/releases/latest
+# then:
+dpkg -i ges_*_amd64.deb
+    ```
+
+=== "npm"
+
+    ```bash
+    npm install -g @greenarmor/ges
+    ```
+
+=== "npx (no install)"
+
+    ```bash
+    # All commands below work with npx @greenarmor/ges as a prefix
+    npx @greenarmor/ges mcp setup claude
+    ```
 
 If you don't want to install globally, you can use `npx` instead — all commands below work with `npx @greenarmor/ges` as a prefix.
 
