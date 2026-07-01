@@ -1,6 +1,8 @@
 packages:
   - "packages/*"
 linkWorkspacePackages: true
+overrides:
+  js-yaml: 4.2.0
 allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:

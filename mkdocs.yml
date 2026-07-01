@@ -90,6 +90,7 @@ nav:
       - Web Dashboard: user-guide/web-dashboard.md
       - Governance Provenance: user-guide/governance.md
       - Fix Assignments: user-guide/fix-assignments.md
+      - AI Inference Engine: user-guide/ai-inference.md
       - Complete Audit Workflow: user-guide/complete-workflow.md
   - MCP Integration:
       - Overview: mcp/overview.md

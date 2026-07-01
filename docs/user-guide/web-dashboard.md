@@ -35,7 +35,7 @@ Open `http://localhost:3001` in your browser to view the dashboard.
 
 ## What the Dashboard Shows
 
-The dashboard has **seven pages**, accessible via the navigation tabs at the top.
+The dashboard has **eight pages**, accessible via the navigation tabs at the top.
 
 ### Overview Page
 
@@ -101,6 +101,19 @@ Approval provenance chain visualization (appears when the `governance` pack is i
 - **Report downloads** — Download compliance and governance reports in Markdown or HTML
 
 See the [Governance guide](governance.md) for creating and managing governance records.
+
+### AI Insights Page
+
+The AI-powered inference engine results (eighth tab, labeled "🤖 AI Insights"):
+
+- **Lazy-loading** — click "▶ Run Inference" to analyze the project on demand
+- **Summary cards** — total findings, distinct patterns, trend direction, actionable insight count
+- **Root cause table** — top 6 impact nodes (files and controls) with severity-weighted bars and betweenness percentages
+- **Finding clusters** — expandable cards with rule ID, severity badge, representative title, fix guidance, and file counts
+- **Score anomalies** — framework-by-framework z-score analysis with triggering events from the activity log
+- **Trend predictions** — per-framework table showing current score, projected score, R² fit quality, and cycles to 80% threshold
+
+See the [AI Inference guide](ai-inference.md) for full documentation.
 
 ### API Endpoints — Governance
 
@@ -174,9 +187,34 @@ Health check endpoint for monitoring:
 ```json
 {
   "status": "ok",
-  "timestamp": "2026-06-11T10:30:00.000Z"
+  "timestamp": "2026-07-01T10:30:00.000Z"
 }
 ```
+
+### `GET /api/inference`
+
+Runs the AI inference engine on the project and returns the full `InferenceReport`:
+
+```json
+{
+  "summary": {
+    "totalFindings": 15,
+    "distinctPatterns": 3,
+    "reductionRatio": 80,
+    "topRootCause": "src/auth/middleware.ts",
+    "topRootCauseImpact": "8 of 15 findings (53%)",
+    "hasScoreAnomalies": true,
+    "overallTrend": "declining",
+    "insightCount": 4
+  },
+  "clustering": { ... },
+  "rootCause": { ... },
+  "scoreAnomalies": { ... },
+  "trends": { ... }
+}
+```
+
+This endpoint is called by the **🤖 AI Insights** tab in the dashboard UI.
 
 ### `GET /`
 

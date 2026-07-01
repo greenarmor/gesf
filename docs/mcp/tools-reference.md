@@ -1178,6 +1178,36 @@ documents, and auto-fix our codebase for security issues.
         - Did the compliance score improve after the fixes?
         - Which controls still need manual implementation?
 
+### `run_inference`
+
+Run AI-powered inference on GESF compliance data. Analyzes audit findings (clustering + deduplication), identifies root causes via graph analysis, detects score anomalies, and predicts compliance trends.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `project_path` | string | No | Project root path (defaults to CWD) |
+
+**Returns:** Structured report with four sections — Finding Clustering, Root Cause Analysis, Score Anomalies, and Trend Predictions.
+
+**Example prompt:**
+
+```
+Run AI inference on my project and tell me:
+1. What is the root cause of most findings?
+2. Are my compliance scores trending up or down?
+3. Should I be concerned about any anomalies?
+```
+
+**Example exercise:**
+
+```
+For /path/to/my/project, run AI inference and interpret the results.
+Which 3 actions would have the biggest impact on our compliance score?
+```
+
+See the [AI Inference guide](../user-guide/ai-inference.md) for full documentation with output examples and interactive exercises.
+
 !!! example "Exercise: Control Override Workflow"
 
     Practice marking controls that don't apply or have been manually verified:

@@ -561,3 +561,29 @@ ges assign --resolve "SECRETS-001:src/auth.ts:1" \
 Assignments are stored in `.ges/fix-assignments.json` and visible in the dashboard's Fix Detail page with inline provenance chain display.
 
 ---
+
+## `ges infer`
+
+Run AI-powered inference on compliance data. Analyzes audit findings, score history, and activity logs to surface patterns, root causes, anomalies, and trends.
+
+```bash
+ges infer              # Full inference report (human-readable)
+ges infer --ci         # JSON output for CI/CD pipelines
+```
+
+| Flag | Description |
+|------|-------------|
+| `--ci` | Output raw JSON suitable for scripts and pipelines |
+
+The inference engine uses four statistical analyzers:
+
+| Analyzer | What It Does |
+|----------|-------------|
+| **Finding Clusterer** | Groups similar findings into patterns using n-gram similarity |
+| **Root Cause Analyzer** | Identifies files/controls causing the most findings via graph analysis |
+| **Score Anomaly Detector** | Flags statistically significant score drops |
+| **Trend Predictor** | Projects future scores using linear regression |
+
+See the [AI Inference guide](../user-guide/ai-inference.md) for full details with output examples, MCP integration, dashboard visualization, and interactive exercises.
+
+---
