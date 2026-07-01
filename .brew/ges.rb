@@ -13,7 +13,7 @@
 class Ges < Formula
   desc "Green Engineering Standard Framework — Compliance-as-Code CLI"
   homepage "https://github.com/greenarmor/gesf"
-  version "1.6.1"
+  version "1.6.2"
   license "MIT"
 
   if OS.mac?

@@ -324,7 +324,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
     projectName: config?.project_name || "Unknown Project",
     projectType: config?.project_type || "unknown",
     frameworks: allFrameworks,
-    gesfVersion: "1.6.1",
+    gesfVersion: "1.6.2",
     score,
     controls,
     findings,

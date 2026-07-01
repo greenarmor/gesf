@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "@greenarmor/ges-audit-engine": "1.6.1",
-    "@greenarmor/ges-core": "1.6.1"
+    "@greenarmor/ges-audit-engine": "1.6.2",
+    "@greenarmor/ges-core": "1.6.2"
   },
   "description": "GESF Git Hooks - Pre-commit compliance enforcement",
   "devDependencies": {
@@ -43,5 +43,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.6.1"
+  "version": "1.6.2"
 }
