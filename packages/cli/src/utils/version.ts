@@ -1,27 +1,24 @@
-// When compiled with bun build --compile, GESF_CLI_VERSION is injected at build time.
-// When running via node/npm, it falls back to reading package.json.
-declare var GESF_CLI_VERSION: string | undefined;
+// When compiled with bun build --compile --define GESF_CLI_VERSION:"1.2.3",
+// bun replaces the GESF_CLI_VERSION identifier with the version string.
+// In npm/node mode (no --define), GESF_CLI_VERSION stays undefined and
+// the code falls through to read package.json at runtime.
 
 import { createRequire } from "node:module";
 import * as url from "node:url";
 import * as path from "node:path";
 
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+declare var GESF_CLI_VERSION: string | undefined;
 
-let pkgVersion = "";
-// Guard with typeof check so Bun's --define replaces GESF_CLI_VERSION with a literal,
-// dead-code-eliminating this block in compiled binaries (where require cannot find package.json).
-if (typeof GESF_CLI_VERSION === "undefined") {
-  try {
-    const require = createRequire(import.meta.url);
-    pkgVersion = require(path.join(__dirname, "..", "..", "package.json")).version;
-  } catch {
-    // ignore
-  }
+function readVersionFromPackageJson(): string {
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const require = createRequire(import.meta.url);
+  return require(path.join(__dirname, "..", "..", "package.json")).version;
 }
 
-export const CLI_VERSION: string = (typeof GESF_CLI_VERSION !== "undefined" ? GESF_CLI_VERSION : "") || pkgVersion || "0.0.0";
+export const CLI_VERSION: string =
+  typeof GESF_CLI_VERSION !== "undefined" ? GESF_CLI_VERSION : readVersionFromPackageJson();
+
 export const AUTHOR: string = "greenarmor";
 export const RELEASE_DATE: string = "2026-06-20";
 export const DONATE_URL: string = "https://ko-fi.com/greenarmor";
