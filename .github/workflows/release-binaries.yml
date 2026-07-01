@@ -52,13 +52,16 @@ jobs:
       - name: Inject version into source
         run: |
           V="${{ steps.version.outputs.version }}"
-          # Backup original and inject hardcoded version for binary compile
+          # Replace CLI version.ts with hardcoded exports (no require/import)
           cp packages/cli/src/utils/version.ts packages/cli/src/utils/version.ts.bak
           echo "export const CLI_VERSION = \"${V}\";" > packages/cli/src/utils/version.ts
           echo "export const AUTHOR = \"greenarmor\";" >> packages/cli/src/utils/version.ts
           echo "export const RELEASE_DATE = \"2026-06-20\";" >> packages/cli/src/utils/version.ts
           echo "export const DONATE_URL = \"https://ko-fi.com/greenarmor\";" >> packages/cli/src/utils/version.ts
           echo "export const HOMEPAGE = \"https://github.com/greenarmor/gesf\";" >> packages/cli/src/utils/version.ts
+          # Replace core GESF_VERSION with hardcoded value (avoids require("../../package.json"))
+          cp packages/core/src/constants/index.ts packages/core/src/constants/index.ts.bak
+          perl -pi -e "s|export const GESF_VERSION: string = pkg\.version;|export const GESF_VERSION: string = \"${V}\";|" packages/core/src/constants/index.ts
 
       - name: Compile standalone binary
         run: |
@@ -67,9 +70,11 @@ jobs:
             packages/cli/src/cli.ts \
             --outfile ${{ matrix.asset-name }}
 
-      - name: Restore version.ts
+      - name: Restore source files
         if: always()
-        run: mv packages/cli/src/utils/version.ts.bak packages/cli/src/utils/version.ts
+        run: |
+          mv packages/cli/src/utils/version.ts.bak packages/cli/src/utils/version.ts
+          mv packages/core/src/constants/index.ts.bak packages/core/src/constants/index.ts
 
       - name: Test binary
         run: ./${{ matrix.asset-name }} --version
