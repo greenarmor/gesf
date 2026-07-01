@@ -15,7 +15,7 @@ class Ges < Formula
   license "MIT"
 
   url "https://registry.npmjs.org/@greenarmor/ges/-/ges-1.6.2.tgz"
-  sha256 "REPLACE_WITH_NPM_TARBALL_SHA256"
+  sha256 "70e3adbc2e0ab7e21491f84197bb78647d83c12ab18acca796e3ef5025c120f3"
 
   depends_on "node"
 
