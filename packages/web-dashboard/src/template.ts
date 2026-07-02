@@ -908,6 +908,7 @@ export function renderDashboard(data: DashboardData): string {
         }
         html += '</div>';
         html += '<div class="fix-section"><div class="fix-section-title">Governance Provenance Chain</div>';
+        var ctrlAssignment = ctrlAssignmentMap[fix.controlId];
         if (ctrlAssignment) {
           var aRec = null;
           for (var gr = 0; gr < govRecordsForAssign.length; gr++) {
