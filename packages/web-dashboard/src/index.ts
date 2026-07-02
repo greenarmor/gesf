@@ -88,6 +88,7 @@ export interface PackDetailReport {
   severityBreakdown: { critical: number; high: number; medium: number; low: number };
   statusBreakdown: { pass: number; fail: number; warning: number; "not-implemented": number; "not-applicable": number };
   topFixes: { controlId: string; controlName: string; severity: string; findings: Finding[]; guidance: string }[];
+  fixAssignments: FixAssignment[];
 }
 
 export interface DashboardData {
@@ -417,6 +418,16 @@ export function collectPackDetail(projectPath: string, packId: string): PackDeta
       guidance: ctrl.implementation_guidance,
     }));
 
+  // Load fix assignments related to this pack's controls
+  const allAssignments = loadFixAssignments(projectPath);
+  const packAssignments = allAssignments.filter(a => {
+    // Direct match: finding_key is the control ID
+    if (packControlIds.has(a.finding_key)) return true;
+    // Indirect match: finding_control_ids includes a pack control
+    if (a.finding_control_ids?.some(cid => packControlIds.has(cid))) return true;
+    return false;
+  });
+
   return {
     pack: packSummary,
     controls: controlDetails,
@@ -424,6 +435,7 @@ export function collectPackDetail(projectPath: string, packId: string): PackDeta
     severityBreakdown,
     statusBreakdown,
     topFixes,
+    fixAssignments: packAssignments,
   };
 }
 

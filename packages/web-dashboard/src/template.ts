@@ -835,6 +835,22 @@ export function renderDashboard(data: DashboardData): string {
     var color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#eab308' : pct >= 40 ? '#f97316' : '#ef4444';
     var controls = data.controls || [];
     var topFixes = data.topFixes || [];
+    var fixAssignments = data.fixAssignments || [];
+
+    // Build control-level assignment map (finding_key = controlId)
+    var ctrlAssignmentMap = {};
+    for (var a = 0; a < fixAssignments.length; a++) {
+      var fa = fixAssignments[a];
+      ctrlAssignmentMap[fa.finding_key] = fa;
+      // Also map from finding_control_ids for findings linked to this control
+      if (fa.finding_control_ids) {
+        for (var fc = 0; fc < fa.finding_control_ids.length; fc++) {
+          if (!ctrlAssignmentMap[fa.finding_control_ids[fc]]) {
+            ctrlAssignmentMap[fa.finding_control_ids[fc]] = fa;
+          }
+        }
+      }
+    }
 
     var html = '<div class="detail-back" onclick="backToPacks()">&larr; Back to all packs</div>';
     html += '<div class="detail-header">';
@@ -890,6 +906,31 @@ export function renderDashboard(data: DashboardData): string {
             html += '<div class="fix-guidance-box" style="margin-top:8px;background:#eff6ff;border-color:#bfdbfe;"><strong>Fix for ' + esc(fix.findings[j].ruleId) + ':</strong> ' + esc(fix.findings[j].fix) + '</div>';
           }
         }
+        html += '</div>';
+        html += '<div class="fix-section"><div class="fix-section-title">Governance Provenance Chain</div>';
+        var ctrlAssignment = ctrlAssignmentMap[fix.controlId];
+        if (ctrlAssignment) {
+          var aRec = null;
+          for (var gr = 0; gr < govRecordsForAssign.length; gr++) {
+            if (govRecordsForAssign[gr].id === ctrlAssignment.governance_record_id) { aRec = govRecordsForAssign[gr]; break; }
+          }
+          var aStatusColor = ctrlAssignment.status === "fixed" || ctrlAssignment.status === "verified"
+            ? '#22c55e' : ctrlAssignment.status === "in-progress"
+            ? '#3b82f6' : '#f97316';
+          html += '<div style="padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;margin-bottom:8px;">';
+          html += '<span class="badge" style="background:' + aStatusColor + ';color:#fff;font-size:10px;text-transform:uppercase;">' + esc(ctrlAssignment.status) + '</span> ';
+          html += '<span style="font-size:12px;font-weight:600;color:#166534;">Assignee: ' + esc(ctrlAssignment.assignee) + (ctrlAssignment.assignee_role ? ' (' + esc(ctrlAssignment.assignee_role) + ')' : '') + '</span>';
+          html += '<span style="font-size:11px;color:#6b7280;margin-left:8px;">Assigned by ' + esc(ctrlAssignment.assigned_by) + ' on ' + esc(new Date(ctrlAssignment.assigned_at).toLocaleDateString()) + '</span>';
+          if (aRec) {
+            html += '<div style="font-size:12px;color:#4b5563;margin-top:4px;">Governance Record: <strong>' + esc(aRec.name) + '</strong> (' + esc(aRec.status) + ', ' + esc(aRec.risk) + ' risk)</div>';
+          }
+          if (ctrlAssignment.notes) {
+            html += '<div style="font-size:12px;color:#4b5563;margin-top:4px;"><strong>Notes:</strong> ' + esc(ctrlAssignment.notes) + '</div>';
+          }
+          html += '</div>';
+        }
+        html += '<button class="gov-action-btn" style="background:#4f46e5;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;margin-bottom:8px;" onclick="event.stopPropagation();openAssignModal(\\'' + fix.controlId + '\\',\\'' + fix.controlId + '\\',\\'' + fix.controlName.replace(/'/g, "\\\\'") + '\\',\\'\\',0,\\'' + fix.severity + '\\',\\'' + fix.controlId + '\\')">' + (ctrlAssignment ? 'Manage Assignment' : '+ Assign to Governance Record') + '</button>';
+        html += '<p style="font-size:12px;color:#6b7280;margin-top:8px;">Link this control to a governance provenance record to establish traceability: System &rarr; Risk Assessment &rarr; Policy &rarr; Approval &rarr; Evidence.</p>';
         html += '</div>';
         html += '</div></div>';
       }
