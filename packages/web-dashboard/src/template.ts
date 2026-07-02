@@ -546,34 +546,10 @@ export function renderDashboard(data: DashboardData): string {
 
   <div id="page-packs" class="page">
     <div id="packs-list">
-      <h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">Policy Packs &mdash; Detailed Reports</h2>
-      <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Click any pack to drill down into controls, findings, and fix guidance.</p>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">Installed Policy Packs</h2>
+      <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Packs selected during <code>ges init</code> for your project type. Click any pack to drill down into controls, findings, and fix guidance.</p>
       <div class="grid grid-2">
-        ${packs.map(p => {
-          const pct = p.score;
-          const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#eab308' : pct >= 40 ? '#f97316' : '#ef4444';
-          return `<div class="card pack-card" onclick="loadPackDetail('${p.id}')">
-          <div class="pack-header">
-            <div>
-              <div class="pack-name">${escapeHtml(p.name)}</div>
-              <div style="font-size:12px;color:#6b7280;margin-top:2px;">${escapeHtml(p.id)} v${escapeHtml(p.version)}</div>
-            </div>
-            <div class="pack-score" style="color:${color};">${pct}%</div>
-          </div>
-          <div class="pack-desc">${escapeHtml(p.description)}</div>
-          ${scoreBarHtml(pct)}
-          <div class="pack-stats" style="margin-top:12px;">
-            <span><span class="badge badge-status" style="background:#22c55e;">${p.passedCount - p.notApplicableCount}</span> pass</span>
-            <span><span class="badge badge-status" style="background:#ef4444;">${p.failedCount}</span> fail</span>
-            <span><span class="badge badge-status" style="background:#eab308;">${p.warningCount}</span> warn</span>
-            <span><span class="badge badge-status" style="background:#6b7280;">${p.notImplementedCount}</span> not impl</span>
-            <span><span class="badge badge-status" style="background:#9ca3af;">${p.notApplicableCount}</span> N/A</span>
-            <span style="color:#ef4444;font-weight:600;">${p.findingsCount} findings</span>
-            <span>${p.controlCount} controls</span>
-            ${p.installed ? '<span style="color:#0f766e;font-weight:600;">Installed</span>' : '<span style="color:#9ca3af;">Not installed</span>'}
-          </div>
-        </div>`;
-        }).join('')}
+        ${renderInstalledPacks(packs)}
       </div>
     </div>
     <div id="pack-detail" style="display:none;"></div>
@@ -1826,6 +1802,37 @@ function renderDetailedFixesList(findings: Finding[], controls: Control[], packs
   }
 
   return html;
+}
+
+function renderInstalledPacks(packs: { id: string; name: string; version: string; description: string; score: number; installed: boolean; passedCount: number; notApplicableCount: number; failedCount: number; warningCount: number; notImplementedCount: number; findingsCount: number; controlCount: number }[]): string {
+  const installed = packs.filter(p => p.installed);
+  if (installed.length === 0) {
+    return '<div class="empty-state" style="grid-column:1/-1;"><div class="msg">No policy packs installed</div><div class="sub">Run <code>ges init</code> or <code>ges policy install &lt;pack-id&gt;</code> to install packs.</div></div>';
+  }
+  return installed.map(p => {
+    const pct = p.score;
+    const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#eab308' : pct >= 40 ? '#f97316' : '#ef4444';
+    return `<div class="card pack-card" onclick="loadPackDetail('${p.id}')">
+    <div class="pack-header">
+      <div>
+        <div class="pack-name">${escapeHtml(p.name)}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px;">${escapeHtml(p.id)} v${escapeHtml(p.version)}</div>
+      </div>
+      <div class="pack-score" style="color:${color};">${pct}%</div>
+    </div>
+    <div class="pack-desc">${escapeHtml(p.description)}</div>
+    ${scoreBarHtml(pct)}
+    <div class="pack-stats" style="margin-top:12px;">
+      <span><span class="badge badge-status" style="background:#22c55e;">${p.passedCount - p.notApplicableCount}</span> pass</span>
+      <span><span class="badge badge-status" style="background:#ef4444;">${p.failedCount}</span> fail</span>
+      <span><span class="badge badge-status" style="background:#eab308;">${p.warningCount}</span> warn</span>
+      <span><span class="badge badge-status" style="background:#6b7280;">${p.notImplementedCount}</span> not impl</span>
+      <span><span class="badge badge-status" style="background:#9ca3af;">${p.notApplicableCount}</span> N/A</span>
+      <span style="color:#ef4444;font-weight:600;">${p.findingsCount} findings</span>
+      <span>${p.controlCount} controls</span>
+    </div>
+  </div>`;
+  }).join('');
 }
 
 function renderFixHistorySection(entries: import("@greenarmor/ges-core").FixHistoryEntry[], complianceIssues: ComplianceIssue[] = []): string {
