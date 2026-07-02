@@ -908,7 +908,6 @@ export function renderDashboard(data: DashboardData): string {
         }
         html += '</div>';
         html += '<div class="fix-section"><div class="fix-section-title">Governance Provenance Chain</div>';
-        var ctrlAssignment = ctrlAssignmentMap[fix.controlId];
         if (ctrlAssignment) {
           var aRec = null;
           for (var gr = 0; gr < govRecordsForAssign.length; gr++) {
@@ -916,21 +915,48 @@ export function renderDashboard(data: DashboardData): string {
           }
           var aStatusColor = ctrlAssignment.status === "fixed" || ctrlAssignment.status === "verified"
             ? '#22c55e' : ctrlAssignment.status === "in-progress"
-            ? '#3b82f6' : '#f97316';
-          html += '<div style="padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;margin-bottom:8px;">';
-          html += '<span class="badge" style="background:' + aStatusColor + ';color:#fff;font-size:10px;text-transform:uppercase;">' + esc(ctrlAssignment.status) + '</span> ';
+            ? '#3b82f6' : '#eab308';
+          html += '<div style="padding:12px 16px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;margin-bottom:10px;">';
+          html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+          html += '<span class="badge" style="background:' + aStatusColor + ';color:#fff;font-size:10px;text-transform:uppercase;">' + esc(ctrlAssignment.status) + '</span>';
           html += '<span style="font-size:12px;font-weight:600;color:#166534;">Assignee: ' + esc(ctrlAssignment.assignee) + (ctrlAssignment.assignee_role ? ' (' + esc(ctrlAssignment.assignee_role) + ')' : '') + '</span>';
-          html += '<span style="font-size:11px;color:#6b7280;margin-left:8px;">Assigned by ' + esc(ctrlAssignment.assigned_by) + ' on ' + esc(new Date(ctrlAssignment.assigned_at).toLocaleDateString()) + '</span>';
-          if (aRec) {
-            html += '<div style="font-size:12px;color:#4b5563;margin-top:4px;">Governance Record: <strong>' + esc(aRec.name) + '</strong> (' + esc(aRec.status) + ', ' + esc(aRec.risk) + ' risk)</div>';
-          }
+          html += '<span style="font-size:11px;color:#6b7280;">Assigned by ' + esc(ctrlAssignment.assigned_by) + ' on ' + esc(new Date(ctrlAssignment.assigned_at).toLocaleDateString()) + '</span>';
+          html += '</div>';
           if (ctrlAssignment.notes) {
-            html += '<div style="font-size:12px;color:#4b5563;margin-top:4px;"><strong>Notes:</strong> ' + esc(ctrlAssignment.notes) + '</div>';
+            html += '<div style="font-size:12px;color:#4b5563;margin-bottom:6px;"><strong>Notes:</strong> ' + esc(ctrlAssignment.notes) + '</div>';
+          }
+          if (ctrlAssignment.resolution) {
+            var r = ctrlAssignment.resolution;
+            html += '<div style="font-size:12px;padding:6px 10px;background:#dcfce7;border-radius:6px;margin-top:6px;">';
+            html += '<strong>&#10003; Resolved</strong> by ' + esc(r.resolved_by) + (r.resolved_by_role ? ' (' + esc(r.resolved_by_role) + ')' : '') + ' via <strong>' + esc(r.method) + '</strong> on ' + esc(new Date(r.resolved_at).toLocaleDateString());
+            if (r.resolution_notes) html += '<br><span style="color:#4b5563;">' + esc(r.resolution_notes) + '</span>';
+            html += '</div>';
+          }
+          html += '<div style="margin-top:8px;display:flex;gap:6px;">';
+          if (ctrlAssignment.status !== "fixed" && ctrlAssignment.status !== "verified") {
+            html += '<button class="gov-action-btn" style="background:#22c55e;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;" onclick="event.stopPropagation();resolveFindingFix(\\'' + fix.controlId + '\\')">Mark Fixed</button>';
+          }
+          html += '<button class="gov-action-btn" style="background:#fee2e2;color:#991b1b;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;" onclick="event.stopPropagation();unassignFix(\\'' + fix.controlId + '\\')">Unassign</button>';
+          html += '</div>';
+          if (aRec) {
+            html += '<div style="margin-top:8px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">';
+            html += '<div style="background:#f3f4f6;padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+            html += '<span style="font-size:13px;font-weight:700;color:#1f2937;">' + esc(aRec.name) + '</span>';
+            var recStatusColor = aRec.status === "approved" ? '#22c55e' : aRec.status === "rejected" || aRec.status === "revoked" ? '#ef4444' : '#eab308';
+            html += '<span class="badge" style="background:' + recStatusColor + ';color:#fff;font-size:10px;text-transform:uppercase;">' + esc(aRec.status) + '</span>';
+            var riskColor = aRec.risk === "critical" ? '#ef4444' : aRec.risk === "high" ? '#f97316' : aRec.risk === "medium" ? '#eab308' : '#22c55e';
+            html += '<span class="badge" style="background:' + riskColor + ';color:#fff;font-size:10px;text-transform:uppercase;">' + esc(aRec.risk).toUpperCase() + ' RISK</span>';
+            html += '</div></div>';
           }
           html += '</div>';
+        } else {
+          html += '<div style="padding:12px 16px;border-radius:8px;background:#f9fafb;border:1px dashed #d1d5db;">';
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">';
+          html += '<div style="font-size:13px;color:#6b7280;">This control is not linked to any governance record. Assign it to create a provenance chain for auditors.</div>';
+          html += '<button class="gov-action-btn" style="background:#4f46e5;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;" onclick="event.stopPropagation();openAssignModal(\\'' + fix.controlId + '\\',\\'' + fix.controlId + '\\',\\'' + fix.controlName.replace(/'/g, "\\\\'") + '\\',\\'\\',0,\\'' + fix.severity + '\\',\\'' + fix.controlId + '\\')">+ Assign to Governance Record</button>';
+          html += '</div>';
+          html += '</div>';
         }
-        html += '<button class="gov-action-btn" style="background:#4f46e5;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;margin-bottom:8px;" onclick="event.stopPropagation();openAssignModal(\\'' + fix.controlId + '\\',\\'' + fix.controlId + '\\',\\'' + fix.controlName.replace(/'/g, "\\\\'") + '\\',\\'\\',0,\\'' + fix.severity + '\\',\\'' + fix.controlId + '\\')">' + (ctrlAssignment ? 'Manage Assignment' : '+ Assign to Governance Record') + '</button>';
-        html += '<p style="font-size:12px;color:#6b7280;margin-top:8px;">Link this control to a governance provenance record to establish traceability: System &rarr; Risk Assessment &rarr; Policy &rarr; Approval &rarr; Evidence.</p>';
         html += '</div>';
         html += '</div></div>';
       }
