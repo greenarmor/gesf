@@ -1,0 +1,58 @@
+name: Sync Docs to Wiki
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Clone wiki
+        run: |
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git /tmp/wiki
+          cd /tmp/wiki
+          rm -rf *.md
+
+      - name: Copy docs to wiki
+        run: |
+          # Flatten subdirectories into wiki root
+          find docs -name '*.md' | while read f; do
+            name=$(basename "$f")
+            dir=$(dirname "$f" | sed 's|docs/||')
+            if [ "$dir" = "docs" ]; then
+              cp "$f" "/tmp/wiki/$name"
+            else
+              mkdir -p "/tmp/wiki/$dir"
+              cp "$f" "/tmp/wiki/$dir/$name"
+            fi
+          done
+
+      - name: Generate sidebar
+        run: |
+          echo "# GESF Documentation" > /tmp/wiki/_Sidebar.md
+          echo "" >> /tmp/wiki/_Sidebar.md
+          echo "📖 [Full site →](https://greenarmor.github.io/gesf)" >> /tmp/wiki/_Sidebar.md
+          echo "" >> /tmp/wiki/_Sidebar.md
+          find /tmp/wiki -name '*.md' ! -name '_*' | sort | while read f; do
+            name=$(basename "$f" .md)
+            rel=$(echo "$f" | sed 's|/tmp/wiki/||')
+            echo "- [$name]($rel)" >> /tmp/wiki/_Sidebar.md
+          done
+
+      - name: Push wiki
+        run: |
+          cd /tmp/wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "Sync docs from main repo (${{ github.sha }})"
+          git push
