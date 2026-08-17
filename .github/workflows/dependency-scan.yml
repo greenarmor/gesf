@@ -26,13 +26,13 @@ jobs:
           exit-code: '1'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
 
       - name: Setup pnpm
         if: hashFiles('pnpm-lock.yaml') != ''
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Install dependencies and audit (pnpm)
         if: hashFiles('pnpm-lock.yaml') != ''
