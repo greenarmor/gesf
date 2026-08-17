@@ -1,10 +1,10 @@
 {
   "dependencies": {
-    "@greenarmor/ges-audit-engine": "1.6.7",
-    "@greenarmor/ges-compliance-engine": "1.6.7",
-    "@greenarmor/ges-core": "1.6.7",
-    "@greenarmor/ges-policy-engine": "1.6.7",
-    "@greenarmor/ges-scoring-engine": "1.6.7"
+    "@greenarmor/ges-audit-engine": "1.6.8",
+    "@greenarmor/ges-compliance-engine": "1.6.8",
+    "@greenarmor/ges-core": "1.6.8",
+    "@greenarmor/ges-policy-engine": "1.6.8",
+    "@greenarmor/ges-scoring-engine": "1.6.8"
   },
   "description": "GESF Report Generator - Markdown/HTML/PDF compliance reports",
   "devDependencies": {
@@ -33,5 +33,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.6.7"
+  "version": "1.6.8"
 }
