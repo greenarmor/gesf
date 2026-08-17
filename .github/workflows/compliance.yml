@@ -26,6 +26,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+          package-manager-cache: false
 
       - name: Install GESF
         run: npm install -g @greenarmor/ges
@@ -41,7 +42,7 @@ jobs:
 
       - name: Upload Compliance Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compliance-report
           path: reports/

@@ -37,7 +37,7 @@ jobs:
 
       - name: Upload filesystem SBOM
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-filesystem
           path: sbom-filesystem.json
@@ -72,7 +72,7 @@ jobs:
 
       - name: Upload container scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: container-scan
           path: trivy-container.sarif
@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload IaC scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: iac-scan
           path: trivy-iac.sarif
