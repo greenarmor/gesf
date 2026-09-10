@@ -21,7 +21,7 @@
     "@types/node": "^22.0.0",
     "esbuild": "^0.28.1",
     "typescript": "^6.0.0",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=20.0.0"

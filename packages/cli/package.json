@@ -24,7 +24,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^6.0.0",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11"
   },
   "optionalDependencies": {
     "@inquirer/checkbox": "^5.2.1",
