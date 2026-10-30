@@ -3674,7 +3674,7 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
               lines.push("✅ **Configuration** is valid");
             } else {
               lines.push("❌ **Configuration** validation errors:");
-              for (const error of result.error.errors) {
+              for (const error of result.error.issues) {
                 lines.push(`  - ${error.path.join(".")}: ${error.message}`);
               }
               hasErrors = true;

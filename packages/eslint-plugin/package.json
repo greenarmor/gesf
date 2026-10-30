@@ -1,11 +1,10 @@
 {
-  "dependencies": {},
   "description": "GESF ESLint Plugin - Real-time security and compliance rules for GESF standards",
   "devDependencies": {
     "@types/node": "^22.0.0",
     "eslint": "^9.0.0",
     "typescript": "^6.0.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "exports": {
     ".": {

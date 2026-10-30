@@ -1,12 +1,12 @@
 {
   "dependencies": {
-    "zod": "^3.23.0"
+    "zod": "^4.6.6"
   },
   "description": "GESF Core - Types, schemas, and constants",
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^6.0.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "exports": {
     ".": {

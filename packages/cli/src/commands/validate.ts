@@ -28,7 +28,7 @@ export const validateCommand = new Command("validate")
         console.log("  [✓] Configuration is valid");
       } else {
         console.log("  [✗] Configuration validation errors:");
-        for (const error of result.error.errors) {
+        for (const error of result.error.issues) {
           console.log(`    - ${error.path.join(".")}: ${error.message}`);
         }
         hasErrors = true;

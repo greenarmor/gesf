@@ -125,7 +125,7 @@ export const AuditEntrySchema = z.object({
   resource: z.string(),
   timestamp: z.string(),
   ipAddress: z.string(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const ReportOptionsSchema = z.object({
