@@ -7,17 +7,17 @@
     "typescript": "^6.0.0"
   },
   "engines": {
-    "node": "\u003e=22.0.0",
-    "pnpm": "\u003e=11.0.0"
+    "node": ">=22.0.0",
+    "pnpm": ">=11.0.0"
   },
   "name": "gesf",
   "packageManager": "pnpm@11.4.0",
   "private": true,
   "scripts": {
     "build": "pnpm -r run build",
-    "clean": "pnpm -r run clean \u0026\u0026 find packages -name '*.tsbuildinfo' -delete",
+    "clean": "pnpm -r run clean && find packages -name '*.tsbuildinfo' -delete",
     "lint": "eslint 'packages/*/src/**/*.ts'",
     "test": "pnpm -r run test"
   },
-  "version": "1.6.9"
+  "version": "1.7.0"
 }
