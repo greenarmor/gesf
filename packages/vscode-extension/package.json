@@ -38,7 +38,7 @@
   },
   "description": "Compliance warnings for GDPR, 15+ country privacy laws, OWASP, NIST, ISO 27001, CIS, HIPAA, and PCI DSS, plus a built-in MCP server for AI assistants",
   "devDependencies": {
-    "@greenarmor/ges-mcp-server": "1.8.0",
+    "@greenarmor/ges-mcp-server": "1.7.0",
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.120.0",
     "esbuild": "^0.28.1",
