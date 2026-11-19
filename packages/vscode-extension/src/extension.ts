@@ -22,6 +22,11 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("gesf.generateReport", generateReport),
   );
+  context.subscriptions.push(
+    vscode.commands.registerCommand("gesf.configureMcp", () => configureMcp()),
+  );
+
+  registerMcpProvider(context);
 
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(() => checkProject()),
@@ -31,6 +36,104 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   checkProject();
+}
+
+type McpStdioDefinitionConstructor = new (
+  label: string,
+  command: string,
+  args?: string[],
+  env?: Record<string, string | number | null>,
+  version?: string,
+) => vscode.McpStdioServerDefinition;
+
+function registerMcpProvider(context: vscode.ExtensionContext): void {
+  const lm = vscode.lm as typeof vscode.lm & {
+    registerMcpServerDefinitionProvider?: (
+      id: string,
+      provider: vscode.McpServerDefinitionProvider,
+    ) => vscode.Disposable;
+  };
+  const StdioDefinition = (vscode as unknown as {
+    McpStdioServerDefinition?: McpStdioDefinitionConstructor;
+  }).McpStdioServerDefinition;
+
+  if (
+    typeof lm.registerMcpServerDefinitionProvider !== "function" ||
+    typeof StdioDefinition !== "function"
+  ) {
+    return;
+  }
+
+  const serverPath = context.asAbsolutePath(path.join("dist", "server", "index.mjs"));
+  const version =
+    (context.extension.packageJSON as { version?: string }).version ?? "0.0.0";
+
+  const provider: vscode.McpServerDefinitionProvider = {
+    provideMcpServerDefinitions() {
+      const definition = new StdioDefinition(
+        "GESF Compliance",
+        process.execPath,
+        [serverPath],
+        { ELECTRON_RUN_AS_NODE: "1" },
+        version,
+      );
+      const root = vscode.workspace.workspaceFolders?.[0]?.uri;
+      if (root) definition.cwd = root;
+      return [definition];
+    },
+  };
+
+  context.subscriptions.push(
+    lm.registerMcpServerDefinitionProvider("gesf.mcp", provider),
+  );
+}
+
+async function configureMcp(): Promise<void> {
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    vscode.window.showWarningMessage(
+      "GESF: open a workspace folder before configuring the MCP server.",
+    );
+    return;
+  }
+
+  const folderUri = folders[0].uri;
+  const configUri = vscode.Uri.joinPath(folderUri, ".vscode", "mcp.json");
+  let config: Record<string, unknown> = {};
+
+  try {
+    const raw = await vscode.workspace.fs.readFile(configUri);
+    const parsed = JSON.parse(Buffer.from(raw).toString("utf8"));
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      config = parsed as Record<string, unknown>;
+    }
+  } catch {
+    config = {};
+  }
+
+  const servers =
+    config.servers && typeof config.servers === "object" && !Array.isArray(config.servers)
+      ? (config.servers as Record<string, unknown>)
+      : {};
+
+  servers.gesf = {
+    type: "stdio",
+    command: "npx",
+    args: ["-y", "@greenarmor/ges-mcp-server"],
+  };
+  config.servers = servers;
+
+  await vscode.workspace.fs.createDirectory(
+    vscode.Uri.joinPath(folderUri, ".vscode"),
+  );
+  await vscode.workspace.fs.writeFile(
+    configUri,
+    Buffer.from(JSON.stringify(config, null, 2) + "\n", "utf8"),
+  );
+
+  vscode.window.showInformationMessage(
+    "GESF: MCP server added to .vscode/mcp.json. Start it from the MCP view or reload the window.",
+  );
 }
 
 function getProjectRoot(): string | undefined {

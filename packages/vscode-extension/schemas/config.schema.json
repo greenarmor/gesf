@@ -1,0 +1,456 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "project_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project_type": {
+      "type": "string",
+      "enum": [
+        "saas",
+        "ai-application",
+        "mcp-server",
+        "blockchain",
+        "wallet",
+        "government-system",
+        "healthcare-system",
+        "event-platform",
+        "photo-storage-platform",
+        "vulnerability-scanner",
+        "generic-web-application",
+        "api-backend",
+        "mobile-application"
+      ]
+    },
+    "frameworks": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "GDPR",
+          "OWASP",
+          "CIS",
+          "NIST",
+          "NIST-800-53",
+          "ISO27001",
+          "ISO27701",
+          "HIPAA",
+          "PRIVACY-CORE",
+          "UK-GDPR",
+          "LGPD",
+          "PDPA-SG",
+          "DPA-PH",
+          "PDPA-TH",
+          "APPI",
+          "PIPA",
+          "PIPL",
+          "PDPO-HK",
+          "PIPEDA",
+          "CPRA",
+          "POPIA",
+          "PDPL-UAE",
+          "PDPL-SA",
+          "DPDPA",
+          "FADP",
+          "PDPA-MY",
+          "PDP-ID",
+          "PDP-VN",
+          "NDPA-NG",
+          "DPA-KE",
+          "PDPA-QA"
+        ]
+      }
+    },
+    "country": {
+      "type": "string"
+    },
+    "requirements": {
+      "type": "object",
+      "properties": {
+        "encryption": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "mfa": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "audit_logs": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "backups": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "retention_policy": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "vulnerability_scanning": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "authentication": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "authorization": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "secrets_management": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "logging": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "monitoring": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "data_classification": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "disaster_recovery": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "incident_response": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        },
+        "privacy_controls": {
+          "type": "object",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": [
+                "mandatory",
+                "recommended",
+                "optional"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "required"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "encryption",
+        "mfa",
+        "audit_logs",
+        "backups",
+        "retention_policy",
+        "vulnerability_scanning",
+        "authentication",
+        "authorization",
+        "secrets_management",
+        "logging",
+        "monitoring",
+        "data_classification",
+        "disaster_recovery",
+        "incident_response",
+        "privacy_controls"
+      ],
+      "additionalProperties": false
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "project_name",
+    "project_type",
+    "frameworks",
+    "requirements",
+    "created_at",
+    "version"
+  ],
+  "additionalProperties": false,
+  "title": "GESF Project Configuration",
+  "description": "Schema for .ges/config.json (Green Engineering Standard Framework)"
+}

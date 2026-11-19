@@ -1,10 +1,14 @@
 {
   "activationEvents": [
-    "workspaceContains:.ges/config.json"
+    "workspaceContains:.ges/config.json",
+    "onStartupFinished"
   ],
+  "bugs": {
+    "url": "https://github.com/greenarmor/gesf/issues"
+  },
   "categories": [
     "Linters",
-    "Security"
+    "Other"
   ],
   "contributes": {
     "commands": [
@@ -19,38 +23,72 @@
       {
         "command": "gesf.generateReport",
         "title": "GESF: Generate Report"
+      },
+      {
+        "command": "gesf.configureMcp",
+        "title": "GESF: Configure MCP Server for This Workspace"
       }
     ],
     "jsonValidation": [
       {
         "fileMatch": ".ges/config.json",
-        "url": "https://raw.githubusercontent.com/greenarmor/gesf/main/packages/core/src/schemas/config.schema.json"
+        "url": "./schemas/config.schema.json"
       }
     ]
   },
-  "description": "Real-time GDPR, security, and compliance warnings for your project",
+  "description": "Compliance warnings for GDPR, 15+ country privacy laws, OWASP, NIST, ISO 27001, CIS, HIPAA, and PCI DSS, plus a built-in MCP server for AI assistants",
   "devDependencies": {
+    "@greenarmor/ges-mcp-server": "1.8.0",
     "@types/node": "^22.0.0",
-    "@types/vscode": "^1.80.0",
+    "@types/vscode": "^1.120.0",
     "esbuild": "^0.28.1",
     "typescript": "^6.0.0"
   },
   "displayName": "GESF - Green Engineering Standard Framework",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.120.0"
   },
   "files": [
     "dist",
+    "schemas",
+    "media",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "galleryBanner": {
+    "color": "#1a7f37",
+    "theme": "dark"
+  },
+  "homepage": "https://github.com/greenarmor/gesf/tree/master/packages/vscode-extension",
+  "icon": "media/icon.png",
+  "keywords": [
+    "gdpr",
+    "compliance",
+    "security",
+    "owasp",
+    "nist",
+    "audit",
+    "vulnerability",
+    "secrets",
+    "encryption",
+    "privacy",
+    "mcp",
+    "ai"
   ],
   "license": "MIT",
   "main": "./dist/extension.js",
   "name": "gesf-vscode",
+  "preview": false,
   "publisher": "greenarmor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/greenarmor/gesf.git",
+    "directory": "packages/vscode-extension"
+  },
   "scripts": {
     "build": "node build.js",
     "test": "echo \"no tests yet\""
   },
-  "version": "1.7.0"
+  "version": "1.8.0"
 }
