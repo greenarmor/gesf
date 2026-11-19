@@ -406,3 +406,310 @@ export function generateHtmlReport(
 </body>
 </html>`;
 }
+
+// ===========================================================================
+// NIST SP 800-53 control assessment reports
+// ===========================================================================
+import type {
+  NistAssessmentSummary,
+  NistEvidenceItem,
+  NistFinding,
+  NistPoamItem,
+  NistWorkflowState,
+} from "@greenarmor/ges-core";
+
+export interface NistReportControlRow {
+  id: string;
+  title: string;
+  family: string;
+  implementation_status?: string;
+  determination?: string;
+  assessor?: string;
+  assessment_date?: string;
+  owner?: string;
+  evidence_count: number;
+  open_findings: number;
+  open_poam: number;
+}
+
+export interface NistReportInput {
+  system_name: string;
+  scope: string;
+  baseline_label: string | null;
+  catalog_version: string;
+  assessment_period?: { from?: string; to?: string };
+  assessor?: string;
+  generated_at: string;
+  summary: NistAssessmentSummary;
+  workflow_state: NistWorkflowState | null;
+  controls: NistReportControlRow[];
+  evidence: NistEvidenceItem[];
+  findings: NistFinding[];
+  poam: NistPoamItem[];
+}
+
+export interface NistPublicEvidenceEntry {
+  id: string;
+  title: string;
+  evidence_type: string;
+  classification: string;
+  review_status: string;
+  control_ids: string[];
+  collected_at: string;
+  expires_at?: string;
+}
+
+/**
+ * Confidential and restricted evidence is never exposed with file references,
+ * URLs, or source detail in reports. Only identification metadata is included.
+ */
+export function sanitizeEvidenceForReport(evidence: NistEvidenceItem[]): NistPublicEvidenceEntry[] {
+  return evidence.map((item) => ({
+    id: item.id,
+    title: item.title,
+    evidence_type: item.evidence_type,
+    classification: item.classification,
+    review_status: item.review_status,
+    control_ids: item.control_ids,
+    collected_at: item.collected_at,
+    ...(item.expires_at ? { expires_at: item.expires_at } : {}),
+  }));
+}
+
+function pct(part: number, total: number): string {
+  if (total === 0) return "0%";
+  return `${Math.round((part / total) * 100)}%`;
+}
+
+export function generateNistAssessmentMarkdownReport(input: NistReportInput): string {
+  const s = input.summary;
+  const lines: string[] = [];
+  const confidentialEvidence = new Set(["confidential", "restricted"]);
+
+  lines.push(`# NIST SP 800-53 Control Assessment Report`);
+  lines.push("");
+  lines.push(`**System:** ${input.system_name}`);
+  lines.push(`**Assessment scope:** ${input.scope || "Not defined"}`);
+  lines.push(`**Baseline:** ${input.baseline_label ?? "No baseline selected"}`);
+  lines.push(`**Catalog version:** NIST SP 800-53 Rev. 5 (OSCAL ${input.catalog_version})`);
+  if (input.assessment_period) {
+    lines.push(
+      `**Assessment period:** ${input.assessment_period.from ?? "n/a"} to ${input.assessment_period.to ?? "n/a"}`,
+    );
+  }
+  if (input.assessor) lines.push(`**Assessor:** ${input.assessor}`);
+  lines.push(`**Workflow state:** ${input.workflow_state ?? "not started"}`);
+  lines.push(`**Generated:** ${input.generated_at}`);
+  lines.push("");
+  lines.push(
+    `> This report reflects recorded assessment evidence only. It is not a certification, an accreditation, or a statement of NIST or FedRAMP compliance. Determinations are organization-recorded conclusions under NIST SP 800-53A.`,
+  );
+  lines.push("");
+
+  // Executive summary
+  lines.push(`## Executive Summary`);
+  lines.push("");
+  lines.push(`| Measure | Value |`);
+  lines.push(`|---|---|`);
+  lines.push(`| Applicable controls | ${s.applicable_controls} |`);
+  lines.push(`| Assessed | ${s.assessed} (${pct(s.assessed, s.applicable_controls)}) |`);
+  lines.push(`| Satisfied | ${s.satisfied} |`);
+  lines.push(`| Other than satisfied | ${s.other_than_satisfied} |`);
+  lines.push(`| Not applicable | ${s.not_applicable} |`);
+  lines.push(`| **Not assessed** | **${s.not_assessed}** |`);
+  lines.push(`| Controls awaiting evidence | ${s.awaiting_evidence} |`);
+  lines.push(`| Open findings | ${s.open_findings} |`);
+  lines.push(`| Open POA&M items | ${s.open_poam} |`);
+  lines.push(`| Overdue POA&M items | ${s.overdue_poam} |`);
+  lines.push("");
+  if (s.applicable_controls === 0) {
+    lines.push(`No baseline selected — control coverage is not yet defined.`);
+    lines.push("");
+  } else if (s.not_assessed > 0) {
+    lines.push(
+      `**${s.not_assessed} control(s) have not been assessed.** Unassessed controls must not be interpreted as satisfied.`,
+    );
+    lines.push("");
+  }
+
+  // Control implementation statement
+  lines.push(`## Control Implementation Statement`);
+  lines.push("");
+  lines.push(`| Implementation status | Controls |`);
+  lines.push(`|---|---|`);
+  for (const [status, count] of Object.entries(s.implementation_status_counts)) {
+    lines.push(`| ${status} | ${count} |`);
+  }
+  lines.push("");
+
+  // Assessment determinations
+  lines.push(`## Assessment Determinations (NIST SP 800-53A)`);
+  lines.push("");
+  lines.push(`| Determination | Controls |`);
+  lines.push(`|---|---|`);
+  for (const [determination, count] of Object.entries(s.determination_counts)) {
+    lines.push(`| ${determination} | ${count} |`);
+  }
+  lines.push("");
+
+  // Per-control detail
+  lines.push(`## Control Assessment Detail`);
+  lines.push("");
+  if (input.controls.length === 0) {
+    lines.push(`No applicable controls recorded.`);
+  } else {
+    lines.push(`| Control | Family | Implementation | Determination | Assessor | Date | Evidence | Open findings | POA&M |`);
+    lines.push(`|---|---|---|---|---|---|---|---|---|`);
+    for (const control of input.controls) {
+      lines.push(
+        `| ${control.id} | ${control.family} | ${control.implementation_status ?? "—"} | ${control.determination ?? "not-assessed"} | ${control.assessor ?? "—"} | ${control.assessment_date ?? "—"} | ${control.evidence_count} | ${control.open_findings} | ${control.open_poam} |`,
+      );
+    }
+  }
+  lines.push("");
+
+  // Evidence register
+  const publicEvidence = sanitizeEvidenceForReport(input.evidence);
+  lines.push(`## Evidence Register`);
+  lines.push("");
+  if (publicEvidence.length === 0) {
+    lines.push(`No evidence recorded. Missing evidence is not proof of implementation.`);
+  } else {
+    lines.push(`| Evidence | Type | Classification | Review status | Controls | Collected | Expires |`);
+    lines.push(`|---|---|---|---|---|---|---|`);
+    for (const item of publicEvidence) {
+      lines.push(
+        `| ${item.title} (${item.id}) | ${item.evidence_type} | ${item.classification} | ${item.review_status} | ${item.control_ids.join(", ") || "—"} | ${item.collected_at} | ${item.expires_at ?? "—"} |`,
+      );
+    }
+    const hidden = input.evidence.filter((e) => confidentialEvidence.has(e.classification)).length;
+    if (hidden > 0) {
+      lines.push("");
+      lines.push(
+        `${hidden} confidential/restricted evidence item(s) are listed by metadata only; references are withheld from this report.`,
+      );
+    }
+  }
+  lines.push("");
+
+  // Findings register
+  lines.push(`## Findings Register`);
+  lines.push("");
+  const openFindings = input.findings.filter((f) => f.status === "open");
+  if (input.findings.length === 0) {
+    lines.push(`No findings recorded.`);
+  } else {
+    lines.push(`| Finding | Control | Severity | Status |`);
+    lines.push(`|---|---|---|---|`);
+    for (const finding of input.findings) {
+      lines.push(`| ${finding.title} (${finding.id}) | ${finding.control_id} | ${finding.severity} | ${finding.status} |`);
+    }
+    if (openFindings.length > 0) {
+      lines.push("");
+      lines.push(`**${openFindings.length} open finding(s) require remediation and reassessment.**`);
+    }
+  }
+  lines.push("");
+
+  // POA&M report
+  lines.push(`## Plan of Action and Milestones (POA&M)`);
+  lines.push("");
+  if (input.poam.length === 0) {
+    lines.push(`No POA&M items recorded.`);
+  } else {
+    lines.push(`| POA&M | Control | Owner | Status | Target | Milestones |`);
+    lines.push(`|---|---|---|---|---|---|`);
+    for (const item of input.poam) {
+      const completed = item.milestones.filter((m) => m.status === "completed").length;
+      lines.push(
+        `| ${item.title} (${item.id}) | ${item.control_id} | ${item.owner} | ${item.status} | ${item.target_completion_date ?? "—"} | ${completed}/${item.milestones.length} |`,
+      );
+    }
+    const withMilestones = input.poam.filter((p) => p.milestones.length > 0);
+    if (withMilestones.length > 0) {
+      lines.push("");
+      for (const item of withMilestones) {
+        lines.push(`**${item.title}** milestones:`);
+        for (const milestone of item.milestones) {
+          lines.push(
+            `- ${milestone.title} — due ${milestone.due_date}, status: ${milestone.status}${milestone.completed_date ? ` (completed ${milestone.completed_date})` : ""}`,
+          );
+        }
+        lines.push("");
+      }
+    }
+    const accepted = input.poam.filter((p) => p.status === "accepted-risk");
+    if (accepted.length > 0) {
+      lines.push("");
+      lines.push(`### Accepted Risks`);
+      for (const item of accepted) {
+        lines.push(
+          `- **${item.title}**: accepted by ${item.risk_acceptance_authority ?? "unrecorded authority"} — ${item.risk_acceptance_rationale ?? "no rationale recorded"}`,
+        );
+      }
+    }
+  }
+  lines.push("");
+
+  // Risk decisions
+  const riskPoam = input.poam.filter((p) => p.risk_level);
+  lines.push(`## Risk Decisions (Organizational)`);
+  lines.push("");
+  lines.push(
+    `> Risk ratings below are organizational decisions using the project's configurable risk matrix. They are not official NIST risk scores.`,
+  );
+  lines.push("");
+  if (riskPoam.length === 0) {
+    lines.push(`No risk decisions recorded.`);
+  } else {
+    lines.push(`| Item | Control | Likelihood | Risk level | Treatment |`);
+    lines.push(`|---|---|---|---|---|`);
+    for (const item of riskPoam) {
+      lines.push(
+        `| ${item.title} | ${item.control_id} | ${item.likelihood ?? "—"} | ${item.risk_level} | ${item.status === "accepted-risk" ? "accept" : "mitigate"} |`,
+      );
+    }
+  }
+  lines.push("");
+  lines.push(`---`);
+  lines.push(`Generated by GESF at ${input.generated_at}. Report content is derived from recorded assessment data; absence of evidence is never treated as proof of implementation.`);
+
+  return lines.join("\n");
+}
+
+export function generateNistAssessmentHtmlReport(input: NistReportInput): string {
+  const md = generateNistAssessmentMarkdownReport(input);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NIST SP 800-53 Assessment - ${input.system_name}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1200px; margin: 0 auto; padding: 2rem; color: #333; }
+    pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <pre>${md}</pre>
+</body>
+</html>`;
+}
+
+export function generateNistAssessmentPdfReport(input: NistReportInput): string {
+  const md = generateNistAssessmentMarkdownReport(input);
+  return markdownToPdf(md, `NIST SP 800-53 Assessment - ${input.system_name}`);
+}
+
+export function buildNistAssessmentJsonReport(input: NistReportInput): string {
+  return JSON.stringify(
+    {
+      ...input,
+      evidence: sanitizeEvidenceForReport(input.evidence),
+      disclaimer:
+        "Organization-recorded assessment data. Not a certification or statement of NIST/FedRAMP compliance. Unassessed controls must not be interpreted as satisfied.",
+    },
+    null,
+    2,
+  );
+}

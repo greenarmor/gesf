@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-Once configured, the GESF MCP server provides **43 tools** to your AI assistant. This page documents every tool with exact prompts you can copy and paste into your AI assistant.
+Once configured, the GESF MCP server provides **56 tools** to your AI assistant. This page documents every tool with exact prompts you can copy and paste into your AI assistant.
 
 ## Tool Overview
 
@@ -54,6 +54,22 @@ Once configured, the GESF MCP server provides **43 tools** to your AI assistant.
 | `set_governance_compliance_links` | Map compliance frameworks | `project_path` (string), `record_id` (string), `frameworks` (string) |
 
 See the [Governance guide](../user-guide/governance.md) for the full provenance chain workflow.
+
+### NIST SP 800-53 Assessment
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `nist_catalog_stats` | Catalog statistics and provenance (OSCAL version, families, controls) | — |
+| `nist_get_control` | Get a control by ID (statement, guidance, objectives, methods) | `control_id` (string) |
+| `nist_baseline_get` | Current SP 800-53B baseline selection | `project_path` (string) |
+| `nist_baseline_set` | Select low/moderate/high or define tailored/custom baseline | `project_path`, `baseline` (string), `control_ids`, `label`, `actor_name` |
+| `nist_assess` | Create/update an assessment; record a determination | `project_path`, `control_id`, `implementation_status`, `determination`, `rationale`, `methods`, `assessor`, `owner`, `scope`, `actor_name` |
+| `nist_status` | Assessment summary (determinations, findings, POA&M) | `project_path` (string) |
+| `nist_evidence_list` | List evidence (confidential references withheld) | `project_path` (string) |
+| `nist_poam_list` | List POA&M items with overdue detection | `project_path` (string) |
+| `nist_report` | Generate the assessment report (markdown/json) | `project_path` (string), `format` (string) |
+
+GESF is NIST-aligned tooling, not a NIST-certified product — these tools record organizational assessments and never claim NIST certification. See the [NIST SP 800-53 Assessment guide](../user-guide/nist-800-53-assessment.md). Business rules (determination guards, verification requirements) are enforced in the core module and cannot be bypassed by any MCP client.
 
 ---
 
@@ -848,6 +864,89 @@ Generates Article 30 Records of Processing Activities (ROPA). Documents all proc
     Generate Article 30 processing records for our platform "DataVault"
     where we use AWS for hosting, Stripe for payments, and SendGrid
     for emails. Controller is "DataVault GmbH".
+    ```
+
+---
+
+## NIST SP 800-53 Assessment Tools
+
+Nine tools expose the SP 800-53 Rev. 5 control assessment module. They work against the project's `.ges/nist-*.json` files, enforce the same business rules as the CLI (determinations require rationale + methods, `satisfied` is rejected on not-implemented controls, findings close only after verified reassessment), and record activity with actor attribution.
+
+### `nist_catalog_stats`
+
+Returns catalog statistics and provenance: 20 families, base controls, enhancements, assessment objectives, OSCAL version, source, and import date.
+
+=== "Basic"
+
+    ```
+    Show me the NIST SP 800-53 control catalog stats and where it came from.
+    ```
+
+### `nist_get_control`
+
+Returns the official control statement, supplemental guidance, assessment objectives, SP 800-53A methods, and related controls. Accepts dot notation (`ac-2.3`) and normalizes to official form (`AC-2(3)`).
+
+=== "Basic"
+
+    ```
+    Show me the full NIST catalog entry for AC-2(3), including its
+    assessment objectives and methods.
+    ```
+
+### `nist_baseline_set` / `nist_baseline_get`
+
+Select or inspect the SP 800-53B baseline. Selecting a baseline never marks controls implemented or assessed.
+
+=== "Set moderate"
+
+    ```
+    Select the moderate baseline for this project. I'm Jane, security lead.
+    ```
+
+=== "Tailored"
+
+    ```
+    Set a tailored NIST baseline with AC-2, AC-3, AU-2, CA-7, SI-4 labeled
+    "Org tailored moderate".
+    ```
+
+### `nist_assess`
+
+Create or update an assessment and optionally record a determination.
+
+=== "Record implementation"
+
+    ```
+    Record that AC-2 is implemented, owner "identity-team", assessor "Assessor A".
+    ```
+
+=== "Record determination"
+
+    ```
+    Assess AC-2: implementation is implemented, determination satisfied,
+    rationale "Policy examined, configuration tested end-to-end", methods
+    examine,test. Assessor: Assessor A.
+    ```
+
+The tool refuses a `satisfied` determination when the control is `not-implemented` or `planned`, and requires a rationale plus at least one method for every determination.
+
+### `nist_status`
+
+=== "Basic"
+
+    ```
+    What's our NIST 800-53 assessment status? How many controls are still
+    unassessed?
+    ```
+
+### `nist_evidence_list`, `nist_poam_list`, `nist_report`
+
+Evidence is listed by identification metadata only; confidential/restricted references are withheld. POA&M items include overdue detection. `nist_report` generates the assessment report (markdown or json) — it always carries the not-a-certification disclaimer.
+
+=== "Report"
+
+    ```
+    Generate the NIST assessment report for this project as markdown.
     ```
 
 ---

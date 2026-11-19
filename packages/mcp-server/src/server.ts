@@ -3,7 +3,7 @@
 import * as readline from "node:readline";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { getAllPacks, getPacksForProjectType, getPack, listPackIds, PRIVACY_COUNTRIES, getCountryByCode, getCountryPackId } from "@greenarmor/ges-policy-engine";
+import { getAllPacks, getPacksForProjectType, getPack, listPackIds, PRIVACY_COUNTRIES, getCountryByCode, getCountryPackId, getCatalogStats, getCatalogMetadata, getNistControl, getNistBaseline, resolveBaselineControlIds, normalizeNistControlId } from "@greenarmor/ges-policy-engine";
 
 const PE = ["process", "env"].join(".");
 const HT = ["http", "//"].join(":");
@@ -15,6 +15,24 @@ import type { Control, ProjectType, FrameworkName, ScoreFile, ControlOverride, C
 import { GESF_VERSION, GES_DIR, COMPLIANCE_DIR, SECURITY_DIR, CONTROLS_DIR, POLICIES_DIR, CHECKLISTS_DIR, DOCS_DIR, REPORTS_DIR, PROJECT_TYPES, FRAMEWORKS, DEFAULT_FRAMEWORKS, PROJECT_TYPE_PACKS } from "@greenarmor/ges-core";
 import { appendFixHistory, createFixHistoryEntry } from "@greenarmor/ges-core";
 import { addFrameworkToConfig, removeFrameworkFromConfig, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls, getInstalledPackIds, recordActivity, recordAIRecommendation } from "@greenarmor/ges-core";
+import {
+  loadConfig as loadConfigFromCore,
+  loadNistBaselineSelection,
+  setNistBaselineSelection,
+  ensureNistWorkflow,
+  loadNistWorkflow,
+  getLatestNistAssessmentForControl,
+  createNistAssessment,
+  updateNistAssessment,
+  recordNistDetermination,
+  summarizeNistAssessment,
+  loadNistEvidence,
+  loadNistFindings,
+  loadNistPoam,
+  getOverdueNistPoam,
+} from "@greenarmor/ges-core";
+import type { NistImplementationStatus, NistAssessmentDetermination, NistAssessmentMethodKind } from "@greenarmor/ges-core";
+import { generateNistAssessmentMarkdownReport, buildNistAssessmentJsonReport } from "@greenarmor/ges-report-generator";
 import {
   loadGovernanceRecords,
   createGovernanceRecord,
@@ -804,6 +822,111 @@ const TOOLS = [
       type: "object" as const,
       properties: {
         project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+      },
+    },
+  },
+  {
+    name: "nist_catalog_stats",
+    description: "Get NIST SP 800-53 Rev. 5 control catalog statistics: families, base controls, enhancements, assessment objectives, and catalog provenance (OSCAL version, source, import date).",
+    inputSchema: {
+      type: "object" as const,
+      properties: {},
+    },
+  },
+  {
+    name: "nist_get_control",
+    description: "Get a NIST SP 800-53 control by ID (e.g. AC-2, AC-2(3), ac-2.3): official statement, supplemental guidance, assessment objectives, assessment methods (SP 800-53A), related controls.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        control_id: { type: "string", description: "NIST control ID (e.g. AC-2, AC-2(3))" },
+      },
+      required: ["control_id"],
+    },
+  },
+  {
+    name: "nist_baseline_get",
+    description: "Get the current NIST SP 800-53B baseline selection for a project: baseline kind/label, control count, exclusions with justification, inherited controls, and compensating controls.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+      },
+    },
+  },
+  {
+    name: "nist_baseline_set",
+    description: "Select a NIST SP 800-53B baseline (low, moderate, high) or define a tailored/custom baseline from explicit control IDs. Baseline selection never marks controls implemented or assessed.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+        baseline: { type: "string", description: "low | moderate | high | tailored | custom" },
+        control_ids: { type: "string", description: "Comma-separated control IDs (required for tailored/custom)" },
+        label: { type: "string", description: "Label for tailored/custom baselines" },
+        actor_name: { type: "string", description: "Name of person performing this action" },
+      },
+      required: ["baseline"],
+    },
+  },
+  {
+    name: "nist_assess",
+    description: "Create or update a NIST control assessment. Optionally record a determination (satisfied / other-than-satisfied / not-applicable) which requires a rationale and at least one assessment method. A satisfied determination is rejected when the control is not implemented.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+        control_id: { type: "string", description: "NIST control ID (e.g. AC-2)" },
+        implementation_status: { type: "string", description: "not-implemented | planned | partially-implemented | implemented | alternative-implementation | inherited | not-applicable" },
+        assessor: { type: "string", description: "Assessor name" },
+        owner: { type: "string", description: "Control owner" },
+        scope: { type: "string", description: "Assessment scope" },
+        determination: { type: "string", description: "satisfied | other-than-satisfied | not-applicable (optional)" },
+        rationale: { type: "string", description: "Rationale for the determination (required when determination is set)" },
+        methods: { type: "string", description: "Comma-separated: examine, interview, test (required when determination is set)" },
+        actor_name: { type: "string", description: "Name of person performing this action" },
+      },
+      required: ["control_id"],
+    },
+  },
+  {
+    name: "nist_status",
+    description: "Get the NIST SP 800-53 assessment summary for a project: baseline, workflow state, assessed/satisfied/other-than-satisfied/not-assessed counts, awaiting evidence, open findings, open and overdue POA&M items.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+      },
+    },
+  },
+  {
+    name: "nist_evidence_list",
+    description: "List NIST assessment evidence for a project (identification metadata only; confidential/restricted references are withheld).",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+      },
+    },
+  },
+  {
+    name: "nist_poam_list",
+    description: "List NIST POA&M items with status, risk level, milestones, and overdue detection.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+      },
+    },
+  },
+  {
+    name: "nist_report",
+    description: "Generate a NIST SP 800-53 control assessment report in markdown or json. Reflects recorded assessment data only; not a certification of compliance.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        project_path: { type: "string", description: "Absolute path to the project root. Defaults to current working directory." },
+        format: { type: "string", description: "markdown (default) | json" },
       },
     },
   },
@@ -4520,6 +4643,305 @@ export function handleRequest(request: MCPRequest): MCPResponse | null {
           }
 
           resultText = lines.join("\n");
+          break;
+        }
+        case "nist_catalog_stats": {
+          const stats = getCatalogStats();
+          const meta = getCatalogMetadata();
+          const lines: string[] = [];
+          lines.push("# NIST SP 800-53 Rev. 5 Control Catalog\n");
+          lines.push(`**Catalog**: OSCAL ${meta.oscal_version}`);
+          lines.push(`**Source**: ${meta.source}`);
+          lines.push(`**Imported**: ${meta.import_date}`);
+          lines.push("");
+          lines.push(`- Control families: **${stats.families}**`);
+          lines.push(`- Base controls: **${stats.base_controls}**`);
+          lines.push(`- Control enhancements: **${stats.enhancements}**`);
+          lines.push(`- Total catalog entries: **${stats.total_entries}**`);
+          lines.push(`- Assessment objectives: **${stats.objectives}**`);
+          lines.push("");
+          lines.push("NIST CSF 2.0 outcomes are tracked separately (policy pack `nist`).");
+          resultText = lines.join("\n");
+          break;
+        }
+        case "nist_get_control": {
+          const control = getNistControl(String(args.control_id || ""));
+          if (!control) {
+            resultText = `Control "${args.control_id}" not found in the NIST SP 800-53 Rev. 5 catalog.`;
+            break;
+          }
+          const lines: string[] = [];
+          lines.push(`# ${control.id} — ${control.title}\n`);
+          lines.push(`**Family**: ${control.family}${control.parent_id ? ` (enhancement of ${control.parent_id})` : ""}`);
+          lines.push("");
+          lines.push("## Statement");
+          lines.push(control.statement);
+          if (control.supplemental_guidance) {
+            lines.push("");
+            lines.push("## Supplemental guidance");
+            lines.push(control.supplemental_guidance);
+          }
+          if (control.objectives?.length) {
+            lines.push("");
+            lines.push("## Assessment objectives");
+            for (const objective of control.objectives) {
+              lines.push(`- **${objective.label}**: ${objective.text}`);
+            }
+          }
+          if (control.methods?.length) {
+            lines.push("");
+            lines.push("## Assessment methods (SP 800-53A)");
+            lines.push(control.methods.map((m) => m.method.toUpperCase()).join(", "));
+          }
+          if (control.related_controls?.length) {
+            lines.push("");
+            lines.push(`**Related controls**: ${control.related_controls.join(", ")}`);
+          }
+          resultText = lines.join("\n");
+          break;
+        }
+        case "nist_baseline_get": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const selection = loadNistBaselineSelection(projectPath);
+          if (!selection) {
+            resultText = "No NIST baseline selected. Use nist_baseline_set with low, moderate, or high.";
+            break;
+          }
+          const lines: string[] = [];
+          lines.push(`# Baseline: ${selection.label} (${selection.kind})\n`);
+          lines.push(`- Controls: ${selection.control_ids.length}`);
+          lines.push(`- Catalog version: ${selection.catalog_version}`);
+          lines.push(`- Selected at: ${selection.selected_at}${selection.selected_by ? ` by ${selection.selected_by}` : ""}`);
+          if (selection.exclusions.length > 0) {
+            lines.push(`- Exclusions (documented): ${selection.exclusions.map((e) => `${e.control_id} — ${e.justification}`).join("; ")}`);
+          }
+          if (selection.inherited.length > 0) {
+            lines.push(`- Inherited: ${selection.inherited.map((i) => `${i.control_id} from ${i.from_system}`).join("; ")}`);
+          }
+          if (selection.compensating.length > 0) {
+            lines.push(`- Compensating: ${selection.compensating.map((c) => c.control_id).join(", ")}`);
+          }
+          if (selection.previous_selections.length > 0) {
+            lines.push(`- Previous selections preserved: ${selection.previous_selections.length}`);
+          }
+          resultText = lines.join("\n");
+          break;
+        }
+        case "nist_baseline_set": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const name = String(args.baseline || "").toLowerCase();
+          if (!["low", "moderate", "high", "tailored", "custom"].includes(name)) {
+            resultText = "baseline must be low, moderate, high, tailored, or custom.";
+            break;
+          }
+          let controlIds: string[];
+          let label: string;
+          if (name === "low" || name === "moderate" || name === "high") {
+            const official = getNistBaseline(name as "low" | "moderate" | "high");
+            controlIds = official.control_ids;
+            label = official.label;
+          } else {
+            const raw = String(args.control_ids || "").split(",").map((c) => c.trim()).filter(Boolean);
+            if (raw.length === 0) {
+              resultText = "tailored/custom baselines require control_ids (comma-separated).";
+              break;
+            }
+            controlIds = raw;
+            label = String(args.label || (name === "tailored" ? "Tailored Organizational Baseline" : "Custom Baseline"));
+          }
+          const resolution = resolveBaselineControlIds(controlIds);
+          if (resolution.unknown.length > 0) {
+            resultText = `Unknown control IDs (not in catalog): ${resolution.unknown.join(", ")}`;
+            break;
+          }
+          const config = loadConfigFromCore(projectPath);
+          const selection = setNistBaselineSelection(projectPath, {
+            kind: name as "low" | "moderate" | "high" | "tailored" | "custom",
+            label,
+            control_ids: resolution.resolved,
+            catalog_version: getCatalogMetadata().oscal_version,
+            selected_by: args.actor_name ? String(args.actor_name) : undefined,
+          });
+          ensureNistWorkflow(projectPath, config?.project_name || "project");
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "nist_baseline",
+            title: `NIST baseline selected: ${selection.label}`,
+            description: `${selection.control_ids.length} controls selected (${selection.kind}).`,
+            actor_name: args.actor_name ? String(args.actor_name) : undefined,
+          });
+          resultText = `Baseline selected: ${selection.label} (${selection.control_ids.length} controls). Baseline selection does not mark any control implemented or assessed.`;
+          break;
+        }
+        case "nist_assess": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const controlId = normalizeNistControlId(String(args.control_id || ""));
+          const control = getNistControl(controlId);
+          if (!control) {
+            resultText = `Control "${args.control_id}" not found in the NIST catalog.`;
+            break;
+          }
+          const config = loadConfigFromCore(projectPath);
+          const status = (args.implementation_status ? String(args.implementation_status) : "not-implemented") as NistImplementationStatus;
+          const validStatuses = ["not-implemented", "planned", "partially-implemented", "implemented", "alternative-implementation", "inherited", "not-applicable"];
+          if (!validStatuses.includes(status)) {
+            resultText = `Invalid implementation_status. Allowed: ${validStatuses.join(", ")}`;
+            break;
+          }
+          const existing = getLatestNistAssessmentForControl(projectPath, controlId);
+          const assessor = args.assessor ? String(args.assessor) : existing?.assessor ?? "unassigned";
+          const owner = args.owner ? String(args.owner) : existing?.control_owner ?? "unassigned";
+          const scope = args.scope ? String(args.scope) : existing?.scope ?? "Full system";
+          const objective = `Determine whether ${controlId} is implemented correctly, operating as intended, and producing the desired outcome.`;
+          let record = existing;
+          if (!existing) {
+            record = createNistAssessment(projectPath, {
+              project_id: config?.project_name || "project",
+              control_id: control.parent_id ?? controlId,
+              ...(control.parent_id ? { control_enhancement_id: controlId } : {}),
+              scope,
+              implementation_status: status,
+              assessment_objective: objective,
+              assessor,
+              control_owner: owner,
+            });
+          } else {
+            record = updateNistAssessment(projectPath, existing.id, { implementation_status: status, scope }, args.actor_name ? String(args.actor_name) : undefined) ?? undefined;
+          }
+          if (!record) {
+            resultText = "Failed to save assessment.";
+            break;
+          }
+          if (args.determination) {
+            const determination = String(args.determination);
+            const methods = String(args.methods || "examine").split(",").map((m) => m.trim()).filter(Boolean);
+            const result = recordNistDetermination(projectPath, record.id, {
+              determination: determination as NistAssessmentDetermination,
+              rationale: String(args.rationale || ""),
+              methods: methods as NistAssessmentMethodKind[],
+              assessor: args.assessor ? String(args.assessor) : undefined,
+              actor: args.actor_name ? String(args.actor_name) : undefined,
+            });
+            if (!result.record || result.error) {
+              resultText = result.error ?? "Determination rejected.";
+              break;
+            }
+            record = result.record;
+          }
+          recordActivity(projectPath, {
+            source: "mcp",
+            action: "nist_assess",
+            title: `NIST assessment recorded: ${controlId}`,
+            description: `Assessment ${record.id} (${record.implementation_status}, ${record.determination}).`,
+            details: { control_id: controlId, assessment_id: record.id },
+            actor_name: args.actor_name ? String(args.actor_name) : undefined,
+          });
+          resultText = `Assessment ${record.id} for ${controlId}: implementation=${record.implementation_status}, determination=${record.determination}.`;
+          break;
+        }
+        case "nist_status": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const summary = summarizeNistAssessment(projectPath);
+          const workflow = loadNistWorkflow(projectPath);
+          const lines: string[] = [];
+          lines.push("# NIST SP 800-53 Assessment Status\n");
+          lines.push(`- Baseline: ${summary.baseline_label ?? "none selected"}`);
+          lines.push(`- Workflow: ${workflow?.state ?? "not started"}`);
+          lines.push(`- Applicable controls: ${summary.applicable_controls}`);
+          lines.push(`- Assessed: ${summary.assessed} (satisfied ${summary.satisfied}, other-than-satisfied ${summary.other_than_satisfied})`);
+          lines.push(`- Not assessed: ${summary.not_assessed}`);
+          lines.push(`- Awaiting evidence: ${summary.awaiting_evidence}`);
+          lines.push(`- Open findings: ${summary.open_findings}`);
+          lines.push(`- Open POA&M: ${summary.open_poam} (overdue: ${summary.overdue_poam})`);
+          lines.push("");
+          lines.push("Unassessed controls must not be interpreted as satisfied.");
+          lines.push("GESF is NIST-aligned tooling, not a NIST-certified product: results are organization-recorded assessments, not certification, accreditation, or authorization by NIST.");
+          resultText = lines.join("\n");
+          break;
+        }
+        case "nist_evidence_list": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const evidence = loadNistEvidence(projectPath);
+          if (evidence.length === 0) {
+            resultText = "No NIST assessment evidence recorded.";
+            break;
+          }
+          const lines: string[] = [];
+          lines.push("# NIST Assessment Evidence\n");
+          for (const item of evidence) {
+            const confidential = item.classification === "confidential" || item.classification === "restricted";
+            lines.push(
+              `- **${item.title}** (${item.id}) — type: ${item.evidence_type}, classification: ${item.classification}, review: ${item.review_status}, controls: ${item.control_ids.join(", ") || "—"}${confidential ? " (references withheld: confidential)" : ""}`,
+            );
+          }
+          resultText = lines.join("\n");
+          break;
+        }
+        case "nist_poam_list": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const items = loadNistPoam(projectPath);
+          const overdue = getOverdueNistPoam(projectPath);
+          if (items.length === 0) {
+            resultText = "No POA&M items recorded.";
+            break;
+          }
+          const lines: string[] = [];
+          lines.push("# Plan of Action and Milestones\n");
+          for (const item of items) {
+            const isOverdue = overdue.some((o) => o.item.id === item.id);
+            const completed = item.milestones.filter((m) => m.status === "completed").length;
+            lines.push(
+              `- **${item.title}** (${item.id}) — control: ${item.control_id}, owner: ${item.owner}, status: ${item.status}${item.risk_level ? `, risk: ${item.risk_level}` : ""}${isOverdue ? ", **OVERDUE**" : ""}, milestones: ${completed}/${item.milestones.length}`,
+            );
+          }
+          resultText = lines.join("\n");
+          break;
+        }
+        case "nist_report": {
+          const projectPath = resolveProjectPath(args.project_path);
+          const format = String(args.format || "markdown");
+          const summary = summarizeNistAssessment(projectPath);
+          const workflow = loadNistWorkflow(projectPath);
+          const config = loadConfigFromCore(projectPath);
+          const baseline = loadNistBaselineSelection(projectPath);
+          const evidence = loadNistEvidence(projectPath);
+          const findings = loadNistFindings(projectPath);
+          const poam = loadNistPoam(projectPath);
+          const excluded = new Set(baseline?.exclusions.map((e) => e.control_id) ?? []);
+          const ids = (baseline?.control_ids ?? []).filter((id) => !excluded.has(id));
+          const controls = ids.map((id) => {
+            const catalogControl = getNistControl(id);
+            const assessment = getLatestNistAssessmentForControl(projectPath, id);
+            return {
+              id,
+              title: catalogControl?.title ?? "(unknown)",
+              family: catalogControl?.family ?? id.slice(0, 2),
+              implementation_status: assessment?.implementation_status,
+              determination: assessment?.determination,
+              assessor: assessment?.assessor,
+              assessment_date: assessment?.assessment_date,
+              owner: assessment?.control_owner,
+              evidence_count: evidence.filter((e) => e.control_ids.includes(id)).length,
+              open_findings: findings.filter((f) => f.status === "open" && f.control_id === id).length,
+              open_poam: poam.filter((p) => p.control_id === id && !["closed", "completed", "accepted-risk"].includes(p.status)).length,
+            };
+          });
+          const input = {
+            system_name: config?.project_name || "project",
+            scope: workflow?.scope ?? "",
+            baseline_label: summary.baseline_label,
+            catalog_version: getCatalogMetadata().oscal_version,
+            generated_at: new Date().toISOString(),
+            summary,
+            workflow_state: workflow?.state ?? null,
+            controls,
+            evidence,
+            findings,
+            poam,
+          };
+          resultText = format === "json"
+            ? buildNistAssessmentJsonReport(input)
+            : generateNistAssessmentMarkdownReport(input);
           break;
         }
         default:

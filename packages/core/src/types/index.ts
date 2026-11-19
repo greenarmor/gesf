@@ -290,7 +290,13 @@ export type ActivityAction =
   | "dashboard_start"
   | "badge_generate"
   | "fix_assign"
-  | "fix_resolve";
+  | "fix_resolve"
+  | "nist_baseline"
+  | "nist_assess"
+  | "nist_evidence"
+  | "nist_finding"
+  | "nist_poam"
+  | "nist_workflow";
 
 export type ActivityStatus = "success" | "partial" | "failed" | "info";
 
@@ -492,3 +498,4 @@ export interface GovernanceVerificationResult {
   approval_status: "valid" | "expired" | "pending" | "none";
   days_until_expiry: number | null;
 }
+export * from "./nist.js";

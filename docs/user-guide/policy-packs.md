@@ -1,6 +1,6 @@
 # Managing Policy Packs
 
-Policy packs are collections of compliance controls grouped by framework. GESF ships with 27 packs including GDPR, OWASP, CIS, NIST, AI, blockchain, government, governance, ISO 27001, ISO 27701, HIPAA, privacy-core, and 15 country-specific privacy packs. You can list, install, and remove them.
+Policy packs are collections of compliance controls grouped by framework. GESF ships with 34 packs including GDPR, OWASP, CIS, NIST, AI, blockchain, government, governance, ISO 27001, ISO 27701, HIPAA, privacy-core, and country-specific privacy packs. You can list, install, and remove them.
 
 ## List Available Packs
 
@@ -106,6 +106,12 @@ This deletes the `controls/blockchain/` directory.
 ### NIST CSF Pack (`nist`)
 
 **23 controls / 145 checks** based on NIST Cybersecurity Framework 2.0. Covers all six Functions: Govern (GV), Identify (ID), Protect (PR), Detect (DE), Respond (RS), and Recover (RC) — 23 Categories with SP 800-53 informative references.
+
+> **NIST packs vs. the SP 800-53 assessment module.** Policy packs (`nist`, `nist-800-53`) drive GESF's automated compliance *scoring*. The [NIST SP 800-53 Rev. 5 assessment module](nist-800-53-assessment.md) (`ges nist`) is a separate, deeper capability: the full authoritative control catalog (20 families, 1,196 entries from NIST OSCAL), SP 800-53B baselines, SP 800-53A assessment methods, evidence, findings, and POA&M. Keeping CSF scoring and SP 800-53 assessment distinct is intentional — an assessment determination can never be produced by the scoring engine.
+
+### NIST SP 800-53 Pack (`nist-800-53`)
+
+**76 controls** derived from NIST SP 800-53 Rev. 5 base controls (IDs like `NIST-800-53-AC-2`), used for compliance scoring. For the full catalog, enhancements, assessment objectives, and the assessment lifecycle, use `ges nist` — see the [NIST SP 800-53 Assessment guide](nist-800-53-assessment.md).
 
 ### AI System Pack (`ai`)
 

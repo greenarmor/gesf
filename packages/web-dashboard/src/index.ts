@@ -2,7 +2,7 @@ import * as http from "node:http";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { runAudit, deduplicateFindings } from "@greenarmor/ges-audit-engine";
-import { getAllPacks, getPacksForProjectType, getPack } from "@greenarmor/ges-policy-engine";
+import { getAllPacks, getPacksForProjectType, getPack, getCatalogStats, getNistControl, normalizeNistControlId } from "@greenarmor/ges-policy-engine";
 import { generateScoreFile } from "@greenarmor/ges-scoring-engine";
 import type { ProjectConfig, ScoreFile, Control, PolicyPack, FixHistoryEntry, ActivityLogEntry, GovernanceRecord, GovernanceVerificationResult, GovernanceSystemType, GovernanceRiskLevel, FixAssignment } from "@greenarmor/ges-core";
 import { loadFixHistory, loadActivityLog, loadControlsFromDisk, loadControlOverrides, applyOverridesToControls } from "@greenarmor/ges-core";
@@ -37,6 +37,17 @@ import {
   findingKey,
 } from "@greenarmor/ges-core";
 import { getInstalledPackIds as getInstalledPackIdsFromDisk } from "@greenarmor/ges-core";
+import {
+  loadNistBaselineSelection,
+  loadNistWorkflow,
+  loadNistAssessments,
+  loadNistEvidence,
+  loadNistFindings,
+  loadNistPoam,
+  getLatestNistAssessmentForControl,
+  getOverdueNistPoam,
+  summarizeNistAssessment,
+} from "@greenarmor/ges-core";
 import { generateMarkdownReport, generateHtmlReport } from "@greenarmor/ges-report-generator";
 import type { Finding } from "@greenarmor/ges-audit-engine";
 import { runInference } from "@greenarmor/ges-inference-engine";
@@ -105,6 +116,67 @@ export interface DashboardData {
   governance: GovernanceData;
   fixAssignments: FixAssignment[];
   lastAudit: string;
+  nist: NistDashboardData;
+}
+
+export interface NistDashboardControl {
+  id: string;
+  title: string;
+  family: string;
+  statement: string;
+  guidance?: string;
+  objectives: number;
+  methods: string[];
+  implementation_status: string | null;
+  determination: string | null;
+  owner: string | null;
+  evidence_count: number;
+  open_findings: number;
+  open_poam: number;
+  inherited_from: string | null;
+  excluded: boolean;
+}
+
+export interface NistDashboardData {
+  catalog: {
+    version: string;
+    families: number;
+    base_controls: number;
+    enhancements: number;
+    total_entries: number;
+  };
+  baseline: {
+    label: string;
+    kind: string;
+    control_count: number;
+    exclusions: Array<{ control_id: string; justification: string }>;
+    inherited: Array<{ control_id: string; from_system: string; description: string }>;
+    compensating: Array<{ control_id: string; alternative_implementation: string }>;
+  } | null;
+  workflow: {
+    state: string;
+    scope: string;
+    transitions: Array<{ timestamp: string; from: string; to: string; actor?: string }>;
+  } | null;
+  summary: import("@greenarmor/ges-core").NistAssessmentSummary;
+  controls: NistDashboardControl[];
+  evidence: Array<{
+    id: string;
+    title: string;
+    evidence_type: string;
+    classification: string;
+    review_status: string;
+    control_ids: string[];
+    collected_at: string;
+    expires_at?: string;
+    withheld: boolean;
+  }>;
+  findings: import("@greenarmor/ges-core").NistFinding[];
+  poam: Array<{
+    item: import("@greenarmor/ges-core").NistPoamItem;
+    overdue_milestones: string[];
+    target_overdue: boolean;
+  }>;
 }
 
 export interface GovernanceData {
@@ -309,6 +381,7 @@ export function collectDashboardData(projectPath: string): DashboardData {
   const activityLog = loadActivityLog(projectPath);
   const governance = collectGovernanceData(projectPath);
   const fixAssignments = loadFixAssignments(projectPath);
+  const nist = collectNistData(projectPath);
 
   const metadataPath = path.join(projectPath, ".ges", "metadata.json");
   let lastAudit = "";
@@ -335,6 +408,101 @@ export function collectDashboardData(projectPath: string): DashboardData {
     governance,
     fixAssignments,
     lastAudit,
+    nist,
+  };
+}
+
+export function collectNistData(projectPath: string): NistDashboardData {
+  const stats = getCatalogStats();
+  const baseline = loadNistBaselineSelection(projectPath);
+  const workflow = loadNistWorkflow(projectPath);
+  const assessments = loadNistAssessments(projectPath);
+  const evidence = loadNistEvidence(projectPath);
+  const findings = loadNistFindings(projectPath);
+  const poamItems = loadNistPoam(projectPath);
+  const overdue = getOverdueNistPoam(projectPath);
+
+  const excluded = new Set(baseline?.exclusions.map((e) => e.control_id) ?? []);
+  const inherited = new Map(baseline?.inherited.map((i) => [i.control_id, i]) ?? []);
+  const openFindingsByControl = new Map<string, number>();
+  for (const finding of findings) {
+    if (finding.status !== "open") continue;
+    openFindingsByControl.set(finding.control_id, (openFindingsByControl.get(finding.control_id) ?? 0) + 1);
+  }
+  const openPoamByControl = new Map<string, number>();
+  for (const item of poamItems) {
+    if (["closed", "completed", "accepted-risk"].includes(item.status)) continue;
+    openPoamByControl.set(item.control_id, (openPoamByControl.get(item.control_id) ?? 0) + 1);
+  }
+
+  const controls: NistDashboardControl[] = (baseline?.control_ids ?? []).map((id) => {
+    const catalogControl = getNistControl(id);
+    const assessment = getLatestNistAssessmentForControl(projectPath, id);
+    return {
+      id,
+      title: catalogControl?.title ?? "(unknown)",
+      family: catalogControl?.family ?? id.slice(0, 2),
+      statement: catalogControl?.statement ?? "",
+      ...(catalogControl?.supplemental_guidance ? { guidance: catalogControl.supplemental_guidance } : {}),
+      objectives: catalogControl?.objectives?.length ?? 0,
+      methods: catalogControl?.methods?.map((m) => m.method) ?? [],
+      implementation_status: assessment?.implementation_status ?? null,
+      determination: assessment?.determination ?? null,
+      owner: assessment?.control_owner ?? null,
+      evidence_count: evidence.filter((e) => e.control_ids.includes(id)).length,
+      open_findings: openFindingsByControl.get(id) ?? 0,
+      open_poam: openPoamByControl.get(id) ?? 0,
+      inherited_from: inherited.get(id)?.from_system ?? null,
+      excluded: excluded.has(id),
+    };
+  });
+
+  return {
+    catalog: {
+      version: stats.catalog_version,
+      families: stats.families,
+      base_controls: stats.base_controls,
+      enhancements: stats.enhancements,
+      total_entries: stats.total_entries,
+    },
+    baseline: baseline
+      ? {
+          label: baseline.label,
+          kind: baseline.kind,
+          control_count: baseline.control_ids.length,
+          exclusions: baseline.exclusions,
+          inherited: baseline.inherited,
+          compensating: baseline.compensating,
+        }
+      : null,
+    workflow: workflow
+      ? { state: workflow.state, scope: workflow.scope, transitions: workflow.transitions }
+      : null,
+    summary: summarizeNistAssessment(projectPath),
+    controls,
+    evidence: evidence.map((item) => {
+      const confidential = item.classification === "confidential" || item.classification === "restricted";
+      return {
+        id: item.id,
+        title: item.title,
+        evidence_type: item.evidence_type,
+        classification: item.classification,
+        review_status: item.review_status,
+        control_ids: item.control_ids,
+        collected_at: item.collected_at,
+        ...(item.expires_at ? { expires_at: item.expires_at } : {}),
+        withheld: confidential,
+      };
+    }),
+    findings,
+    poam: poamItems.map((item) => {
+      const overdueEntry = overdue.find((o) => o.item.id === item.id);
+      return {
+        item,
+        overdue_milestones: (overdueEntry?.overdue_milestones ?? []).map((m) => m.title),
+        target_overdue: overdueEntry?.target_overdue ?? false,
+      };
+    }),
   };
 }
 
@@ -809,6 +977,55 @@ export function startDashboard(options: DashboardOptions): http.Server {
       return;
     }
 
+    if (req.method === "POST" && pathname === "/api/nist/baseline/set") {
+      try {
+        const body = await readBody(req);
+        const name = String(body.baseline || "").toLowerCase();
+        if (!["low", "moderate", "high", "tailored", "custom"].includes(name)) {
+          jsonError(res, "baseline must be low, moderate, high, tailored, or custom", 400);
+          return;
+        }
+        const { getNistBaseline, getCatalogMetadata, resolveBaselineControlIds } = await import("@greenarmor/ges-policy-engine");
+        const { setNistBaselineSelection, ensureNistWorkflow, recordActivity: logActivity } = await import("@greenarmor/ges-core");
+        let controlIds: string[];
+        let label: string;
+        if (name === "low" || name === "moderate" || name === "high") {
+          const official = getNistBaseline(name);
+          controlIds = official.control_ids;
+          label = official.label;
+        } else {
+          const raw = Array.isArray(body.control_ids) ? body.control_ids : String(body.control_ids || "").split(",");
+          controlIds = raw.map((c: string) => normalizeNistControlId(c.trim())).filter(Boolean);
+          label = String(body.label || (name === "tailored" ? "Tailored Organizational Baseline" : "Custom Baseline"));
+        }
+        const resolution = resolveBaselineControlIds(controlIds);
+        if (resolution.unknown.length > 0) {
+          jsonError(res, `Unknown control IDs: ${resolution.unknown.join(", ")}`, 400);
+          return;
+        }
+        const selection = setNistBaselineSelection(options.projectPath, {
+          kind: name as "low" | "moderate" | "high" | "tailored" | "custom",
+          label,
+          control_ids: resolution.resolved,
+          catalog_version: getCatalogMetadata().oscal_version,
+          selected_by: body.actor_name ? String(body.actor_name) : undefined,
+        });
+        ensureNistWorkflow(options.projectPath, loadConfig(options.projectPath)?.project_name || "project");
+        logActivity(options.projectPath, {
+          source: "cli",
+          action: "nist_baseline",
+          title: `NIST baseline selected: ${selection.label}`,
+          description: `${selection.control_ids.length} controls selected (${selection.kind}).`,
+          actor_name: body.actor_name ? String(body.actor_name) : undefined,
+          actor_role: body.actor_role ? String(body.actor_role) : undefined,
+        });
+        jsonResponse(res, { success: true, selection });
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : "Failed to set baseline");
+      }
+      return;
+    }
+
     if (req.method !== "GET") {
       jsonError(res, "Method not allowed", 405);
       return;
@@ -881,6 +1098,16 @@ export function startDashboard(options: DashboardOptions): http.Server {
       try {
         const report = runInference(options.projectPath);
         jsonResponse(res, report);
+      } catch (err) {
+        jsonError(res, err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
+
+    if (pathname === "/api/nist") {
+      try {
+        const nist = collectNistData(options.projectPath);
+        jsonResponse(res, nist);
       } catch (err) {
         jsonError(res, err instanceof Error ? err.message : String(err));
       }

@@ -9,7 +9,16 @@ your-project/
 │   ├── config.json              # Machine-readable project configuration
 │   ├── metadata.json            # Project metadata and timestamps
 │   ├── score.json               # Compliance scores (updated by ges audit)
-│   └── framework-version.json   # Policy pack version tracking
+│   ├── framework-version.json   # Policy pack version tracking
+│   │
+│   ├── nist-baseline.json       # NIST SP 800-53B baseline selection + tailoring (ges nist baseline)
+│   ├── nist-assessments.json    # NIST control assessments with full history (ges nist assess)
+│   ├── nist-evidence.json       # NIST assessment evidence register (ges nist evidence)
+│   ├── nist-findings.json       # NIST assessment findings (ges nist findings)
+│   ├── nist-poam.json           # Plan of Action and Milestones (ges nist poam)
+│   ├── nist-assessment-workflow.json  # Assessment lifecycle state + transitions (ges nist workflow)
+│   ├── nist-control-owners.json # Control ownership assignments
+│   └── nist-risk-matrix.json    # Custom organizational risk matrix (optional)
 │
 ├── compliance/
 │   ├── gdpr.md                  # GDPR compliance tracker
@@ -53,7 +62,7 @@ your-project/
 
 | Directory | Created by | Updated by | Git Track |
 |-----------|-----------|------------|:---------:|
-| `.ges/` | `ges init` | `ges audit`, `ges score` | Optional |
+| `.ges/` | `ges init` | `ges audit`, `ges score`, `ges nist` | Optional |
 | `compliance/` | `ges init` | `ges generate --docs` | Yes |
 | `security/` | `ges init` | `ges generate --docs` | Yes |
 | `controls/` | `ges init` | `ges policy install/remove` | Yes |

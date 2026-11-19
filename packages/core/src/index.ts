@@ -8,3 +8,4 @@ export * from "./recommendations/index.js";
 export * from "./governance/index.js";
 export * from "./fix-assignments/index.js";
 export * from "./utils/index.js";
+export * from "./nist/index.js";

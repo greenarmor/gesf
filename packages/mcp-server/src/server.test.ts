@@ -1,4 +1,7 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { handleRequest, stopDashboardServer } from "./server.js";
 import type { MCPRequest } from "./server.js";
 
@@ -45,10 +48,10 @@ describe("MCP Protocol", () => {
     expect(res).toBeNull();
   });
 
-  it("responds to tools/list with 47 tools", () => {
+  it("responds to tools/list with 56 tools", () => {
     const res = handleRequest(req("tools/list"));
     const tools = (res as { result: { tools: { name: string }[] } }).result.tools;
-    expect(tools.length).toBe(47);
+    expect(tools.length).toBe(56);
   });
 
   it("returns error for unknown method", () => {
@@ -92,6 +95,15 @@ describe("tools/list content", () => {
     expect(names).toContain("install_hooks");
     expect(names).toContain("start_dashboard");
     expect(names).toContain("record_recommendation");
+    expect(names).toContain("nist_catalog_stats");
+    expect(names).toContain("nist_get_control");
+    expect(names).toContain("nist_baseline_get");
+    expect(names).toContain("nist_baseline_set");
+    expect(names).toContain("nist_assess");
+    expect(names).toContain("nist_status");
+    expect(names).toContain("nist_evidence_list");
+    expect(names).toContain("nist_poam_list");
+    expect(names).toContain("nist_report");
   });
 });
 
@@ -274,5 +286,138 @@ describe("new tools", () => {
 
   afterEach(() => {
     stopDashboardServer();
+  });
+});
+
+describe("nist tools", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gesf-mcp-nist-"));
+    fs.mkdirSync(path.join(tmpDir, ".ges"), { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("nist_catalog_stats reports catalog provenance", () => {
+    const res = handleRequest(callTool("nist_catalog_stats"));
+    const text = getResultText(res);
+    expect(text).toContain("800-53");
+    expect(text).toContain("OSCAL");
+    expect(text).toContain("Control families: **20**");
+  });
+
+  it("nist_get_control normalizes dot notation for enhancements", () => {
+    const res = handleRequest(callTool("nist_get_control", { control_id: "ac-2.3" }));
+    const text = getResultText(res);
+    expect(text).toContain("AC-2(3)");
+    expect(text).toContain("Assessment objectives");
+  });
+
+  it("nist_get_control reports unknown controls", () => {
+    const res = handleRequest(callTool("nist_get_control", { control_id: "ZZ-99" }));
+    const text = getResultText(res);
+    expect(text).toContain("not found");
+  });
+
+  it("nist_baseline_get explains when no baseline exists", () => {
+    const res = handleRequest(callTool("nist_baseline_get", { project_path: tmpDir }));
+    const text = getResultText(res);
+    expect(text).toContain("No NIST baseline selected");
+  });
+
+  it("nist_baseline_set selects the moderate baseline and persists it", () => {
+    const res = handleRequest(callTool("nist_baseline_set", { project_path: tmpDir, baseline: "moderate", actor_name: "tester" }));
+    const text = getResultText(res);
+    expect(text).toContain("Baseline selected");
+    expect(text).toContain("does not mark any control");
+    const baseline = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, ".ges", "nist-baseline.json"), "utf-8"),
+    );
+    expect(baseline.kind).toBe("moderate");
+    expect(baseline.control_ids.length).toBeGreaterThan(200);
+    expect(fs.existsSync(path.join(tmpDir, ".ges", "nist-assessment-workflow.json"))).toBe(true);
+  });
+
+  it("nist_baseline_set rejects unknown baselines and unknown control IDs", () => {
+    const bad = getResultText(handleRequest(callTool("nist_baseline_set", { project_path: tmpDir, baseline: "ultra" })));
+    expect(bad).toContain("baseline must be");
+    const unknown = getResultText(
+      handleRequest(callTool("nist_baseline_set", { project_path: tmpDir, baseline: "tailored", control_ids: "AC-2,NOPE-1" })),
+    );
+    expect(unknown).toContain("Unknown control IDs");
+    expect(unknown).toContain("NOPE-1");
+  });
+
+  it("nist_assess records a satisfied determination with methods", () => {
+    const res = handleRequest(
+      callTool("nist_assess", {
+        project_path: tmpDir,
+        control_id: "ac-2",
+        implementation_status: "implemented",
+        determination: "satisfied",
+        rationale: "Policy examined, configuration tested, admins interviewed.",
+        methods: "examine,test",
+        assessor: "Assessor A",
+        actor_name: "tester",
+      }),
+    );
+    const text = getResultText(res);
+    expect(text).toContain("determination=satisfied");
+    expect(fs.existsSync(path.join(tmpDir, ".ges", "nist-assessments.json"))).toBe(true);
+  });
+
+  it("nist_assess refuses satisfied on a not-implemented control", () => {
+    const res = handleRequest(
+      callTool("nist_assess", {
+        project_path: tmpDir,
+        control_id: "AC-3",
+        implementation_status: "not-implemented",
+        determination: "satisfied",
+        rationale: "Should be blocked.",
+        methods: "examine",
+      }),
+    );
+    const text = getResultText(res);
+    expect(text).toContain("satisfied");
+    expect(text).toContain("not-implemented");
+  });
+
+  it("nist_status summarizes the assessment after baseline and assessment", () => {
+    handleRequest(callTool("nist_baseline_set", { project_path: tmpDir, baseline: "low" }));
+    handleRequest(
+      callTool("nist_assess", {
+        project_path: tmpDir,
+        control_id: "AC-2",
+        implementation_status: "implemented",
+        determination: "satisfied",
+        rationale: "Verified.",
+        methods: "examine",
+      }),
+    );
+    const res = handleRequest(callTool("nist_status", { project_path: tmpDir }));
+    const text = getResultText(res);
+    expect(text).toContain("Low Impact Baseline");
+    expect(text).toContain("Assessed: 1");
+    expect(text).toContain("satisfied 1");
+    expect(text).toContain("must not be interpreted as satisfied");
+  });
+
+  it("nist_evidence_list and nist_poam_list report empty states", () => {
+    expect(getResultText(handleRequest(callTool("nist_evidence_list", { project_path: tmpDir })))).toContain(
+      "No NIST assessment evidence",
+    );
+    expect(getResultText(handleRequest(callTool("nist_poam_list", { project_path: tmpDir })))).toContain(
+      "No POA&M items",
+    );
+  });
+
+  it("nist_report generates a markdown assessment report", () => {
+    handleRequest(callTool("nist_baseline_set", { project_path: tmpDir, baseline: "low" }));
+    const res = handleRequest(callTool("nist_report", { project_path: tmpDir, format: "markdown" }));
+    const text = getResultText(res);
+    expect(text).toContain("800-53");
   });
 });

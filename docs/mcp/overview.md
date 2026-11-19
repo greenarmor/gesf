@@ -27,7 +27,7 @@ MCP (Model Context Protocol) is a standard protocol that allows AI applications 
 ```
 ┌─────────────────┐     MCP (JSON-RPC)     ┌──────────────────┐
 │  AI Assistant   │ ◄──────────────────────► │  GESF MCP Server │
-│  (Claude, etc.) │    stdin / stdout        │  (17 tools)       │
+│  (Claude, etc.) │    stdin / stdout        │  (56 tools)       │
 └─────────────────┘                          └──────────────────┘
 ```
 

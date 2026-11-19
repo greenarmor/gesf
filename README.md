@@ -99,6 +99,21 @@ ges infer         # AI-powered insights
 ges dashboard     # Start web dashboard
 ```
 
+### NIST SP 800-53 Rev. 5 Assessment
+
+GESF is a NIST-aligned compliance and control assessment platform — **not** a NIST-certified product. It ships an authoritative SP 800-53 Rev. 5 control catalog (20 families, 324 base controls, 872 enhancements, generated from NIST OSCAL content), SP 800-53B baseline selection and tailoring, SP 800-53A assessment methods, evidence management with path-traversal protection, findings, POA&M tracking with overdue detection, and assessment reports in Markdown/HTML/PDF/JSON:
+
+```bash
+ges nist catalog                      # Browse the control catalog
+ges nist baseline set moderate        # Select an SP 800-53B baseline
+ges nist assess AC-2 --status implemented
+ges nist assess AC-2 --determination satisfied --rationale "..." --methods examine,test
+ges nist poam add --control AC-3 ...
+ges nist report -f pdf
+```
+
+Assessment results are organization-recorded; GESF never claims NIST certification, accreditation, or authorization. See [NIST SP 800-53 Assessment](docs/user-guide/nist-800-53-assessment.md).
+
 ## Quick Comparison
 
 | Method | Install Command | Requires Node? | Best For |

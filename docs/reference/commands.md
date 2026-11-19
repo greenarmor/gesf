@@ -587,3 +587,76 @@ The inference engine uses four statistical analyzers:
 See the [AI Inference guide](../user-guide/ai-inference.md) for full details with output examples, MCP integration, dashboard visualization, and interactive exercises.
 
 ---
+
+## `ges nist`
+
+NIST SP 800-53 Rev. 5 control assessment and POA&M management. GESF is a NIST-aligned assessment platform — **not** a NIST-certified product; results are organization-recorded assessments, never certification or authorization claims. See the [NIST SP 800-53 Assessment guide](../user-guide/nist-800-53-assessment.md).
+
+```bash
+ges nist                     # Interactive menu (TTY)
+ges nist status              # Assessment summary
+ges nist status --json
+```
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `catalog [target]` | Catalog stats, a family (`AC`), a control (`AC-2`, `ac-2.3` → `AC-2(3)`), or `-s <query>` search |
+| `baseline [action]` | `show` \| `set <low\|moderate\|high\|tailored\|custom>` \| `exclude` \| `inherit` \| `compensate` |
+| `assess <controlId>` | Create/update an assessment; optionally record a determination |
+| `evidence [action]` | `list` \| `add` \| `review <id>` \| `delete <id>` \| `hash <file>` |
+| `findings [action]` | `list` \| `add` \| `close <id>` |
+| `poam [action]` | `list` \| `add` \| `status <id>` \| `milestone <id>` \| `complete-milestone <id>` |
+| `workflow [state]` | Show or transition the lifecycle (draft → in-progress → ready-for-assessment → under-assessment → assessment-completed → remediation-required → closed) |
+| `status` | Baseline, determination counts, awaiting-evidence, findings, POA&M summary |
+| `report` | Assessment report (markdown/html/pdf/json) |
+
+### Examples
+
+```bash
+ges nist baseline set moderate
+ges nist baseline set tailored --controls "AC-2,AC-3,AU-2" --label "Org baseline"
+ges nist baseline exclude AC-4 --justification "Out of scope for this SaaS."
+ges nist baseline inherit AU-2 --from "Corporate SIEM" --description "Central platform"
+
+ges nist assess AC-2 --status implemented --owner identity-team --assessor "Assessor A"
+ges nist assess AC-2 --determination satisfied \
+  --rationale "Policy examined, configuration tested." --methods "examine,test"
+ges nist assess AC-2 --json
+
+ges nist evidence add --title "AC policy" --type policy --controls AC-1,AC-2 \
+  --url "https://wiki.example.test/ac" --method export --collected-by auditor \
+  --owner security --classification internal
+ges nist evidence review <id> --status approved --by "lead assessor"
+ges nist evidence delete <id> --by "ciso" --force     # approved evidence requires --force
+
+ges nist findings add --control AC-3 --title "Enforcement gap" --severity high
+ges nist findings close <findingId> --verification <assessmentId>
+
+ges nist poam add --control AC-3 --title "Enforce on staging" \
+  --strategy "Update ingress." --owner platform --target 2026-09-30
+ges nist poam milestone <poamId> --milestone-title "Ingress update" --due 2026-08-15
+ges nist poam complete-milestone <poamId> --milestone-id <milestoneId>
+
+ges nist workflow in-progress --scope "Production boundary"
+ges nist report -f pdf --assessor "Assessor A" --period-from 2026-06-01 --period-to 2026-06-30
+```
+
+### Flags (shared by mutating subcommands)
+
+| Flag | Description |
+|------|-------------|
+| `--actor <name>` | Name of the person performing the action (recorded in the activity log) |
+| `--actor-role <role>` | Role of the person performing the action |
+| `--json` | Machine-readable output (subcommand-specific) |
+
+### Assessment rules enforced
+
+- A `satisfied` determination requires `--rationale` and at least one `--methods` (examine/interview/test) and is rejected when implementation status is `not-implemented` or `planned`.
+- Findings close only with a verification assessment on the same control determined `satisfied`/`not-applicable`.
+- Evidence file references must stay inside the project (path traversal rejected); only http(s) URLs are accepted.
+- Deleting approved evidence requires `--force`.
+- Baseline changes preserve previous selections and applicable tailoring decisions.
+
+---

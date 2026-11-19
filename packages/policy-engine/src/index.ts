@@ -169,3 +169,6 @@ export { createSOC2PolicyPack } from "./packs/soc2.js";
 export { createZeroTrustPolicyPack } from "./packs/zero-trust.js";
 export { PRIVACY_COUNTRIES, getCountryByCode, getCountryPackId, getCountriesByRegion } from "./packs/countries.js";
 export type { CountryPrivacyPack } from "./packs/countries.js";
+
+export * from "./nist-catalog/index.js";
+export * from "./nist-catalog/crosswalks.js";

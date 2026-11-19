@@ -390,6 +390,7 @@ export function renderDashboard(data: DashboardData): string {
     <button class="nav-tab" onclick="showPage('traceability', this)">Traceability</button>
     <button class="nav-tab" onclick="showPage('activity', this)">Activity Log</button>
     <button class="nav-tab" onclick="showPage('governance', this)">Governance</button>
+    <button class="nav-tab" onclick="showPage('nist', this)">NIST 800-53</button>
     <button class="nav-tab" onclick="showPage('inference', this)">🤖 AI Insights</button>
   </div>
 </div>
@@ -685,6 +686,10 @@ export function renderDashboard(data: DashboardData): string {
     ${renderGovernanceSection(governance)}
   </div>
 
+  <div id="page-nist" class="page">
+    ${renderNistSection(data.nist)}
+  </div>
+
   <div id="page-inference" class="page">
     ${renderInferencePage()}
   </div>
@@ -719,7 +724,7 @@ export function renderDashboard(data: DashboardData): string {
     }
   };
 
-  var navTabMap = { overview: 0, packs: 1, fixes: 2, findings: 3, traceability: 4, activity: 5, governance: 6, inference: 7 };
+  var navTabMap = { overview: 0, packs: 1, fixes: 2, findings: 3, traceability: 4, activity: 5, governance: 6, nist: 7, inference: 8 };
 
   window.navigateToPage = function(page) {
     var tabs = document.querySelectorAll('.nav-tab');
@@ -2752,4 +2757,203 @@ function renderGovModals(): string {
 
 function renderGovToastContainer(): string {
   return `<div class="gov-toast-container" id="gov-toast-container"></div>`;
+}
+
+function nistDeterminationBadge(determination: string | null): string {
+  if (!determination || determination === "not-assessed") return `<span class="badge badge-status" style="background:#9ca3af;">not-assessed</span>`;
+  if (determination === "satisfied") return `<span class="badge badge-status" style="background:#16a34a;">satisfied</span>`;
+  if (determination === "other-than-satisfied") return `<span class="badge badge-status" style="background:#dc2626;">other-than-satisfied</span>`;
+  return `<span class="badge badge-status" style="background:#6b7280;">${determination}</span>`;
+}
+
+function nistStatusBadge(status: string | null): string {
+  if (!status) return `<span class="badge badge-status" style="background:#9ca3af;">—</span>`;
+  const colors: Record<string, string> = {
+    "not-implemented": "#6b7280",
+    planned: "#d97706",
+    "partially-implemented": "#ca8a04",
+    implemented: "#16a34a",
+    "alternative-implementation": "#0ea5e9",
+    inherited: "#8b5cf6",
+    "not-applicable": "#9ca3af",
+  };
+  return `<span class="badge badge-status" style="background:${colors[status] ?? "#6b7280"};">${status}</span>`;
+}
+
+function nistSevBadge(severity: string): string {
+  const colors: Record<string, string> = { critical: "#dc2626", high: "#ea580c", medium: "#d97706", low: "#6b7280" };
+  return `<span class="badge badge-sev" style="background:${colors[severity] ?? "#6b7280"};">${severity}</span>`;
+}
+
+function renderNistSection(nist: import("./index.js").NistDashboardData): string {
+  const s = nist.summary;
+  const statCards = `
+    <div class="grid grid-4">
+      <div class="card"><div class="stat-value">${s.applicable_controls}</div><div class="stat-label">Applicable Controls</div></div>
+      <div class="card"><div class="stat-value">${s.assessed}</div><div class="stat-label">Assessed</div></div>
+      <div class="card"><div class="stat-value" style="color:#16a34a;">${s.satisfied}</div><div class="stat-label">Satisfied</div></div>
+      <div class="card"><div class="stat-value" style="color:#dc2626;">${s.other_than_satisfied}</div><div class="stat-label">Other Than Satisfied</div></div>
+    </div>
+    <div class="grid grid-4" style="margin-top:12px;">
+      <div class="card"><div class="stat-value" style="color:#9ca3af;">${s.not_assessed}</div><div class="stat-label">Not Assessed</div></div>
+      <div class="card"><div class="stat-value" style="color:#d97706;">${s.awaiting_evidence}</div><div class="stat-label">Awaiting Evidence</div></div>
+      <div class="card"><div class="stat-value" style="color:#dc2626;">${s.open_findings}</div><div class="stat-label">Open Findings</div></div>
+      <div class="card"><div class="stat-value" style="color:${s.overdue_poam > 0 ? "#dc2626" : "#333"};">${s.open_poam} (${s.overdue_poam})</div><div class="stat-label">Open POA&M (Overdue)</div></div>
+    </div>`;
+
+  const baselineInfo = nist.baseline
+    ? `<div class="card" style="margin-top:12px;">
+        <h3>Baseline & Workflow</h3>
+        <p style="margin:4px 0;"><strong>${escapeHtml(nist.baseline.label)}</strong> (${escapeHtml(nist.baseline.kind)}) — ${nist.baseline.control_count} controls · Catalog OSCAL ${escapeHtml(nist.catalog.version)}</p>
+        <p style="margin:4px 0;">Workflow: <strong>${escapeHtml(nist.workflow?.state ?? "not started")}</strong>${nist.workflow?.scope ? ` · Scope: ${escapeHtml(nist.workflow.scope)}` : ""}</p>
+        ${nist.baseline.exclusions.length ? `<p style="margin:4px 0;color:#b45309;">Excluded: ${nist.baseline.exclusions.map((e) => `${escapeHtml(e.control_id)} (${escapeHtml(e.justification)})`).join(", ")}</p>` : ""}
+        ${nist.baseline.inherited.length ? `<p style="margin:4px 0;color:#7c3aed;">Inherited: ${nist.baseline.inherited.map((i) => `${escapeHtml(i.control_id)} from ${escapeHtml(i.from_system)}`).join(", ")}</p>` : ""}
+        ${nist.baseline.compensating.length ? `<p style="margin:4px 0;color:#0ea5e9;">Compensating: ${nist.baseline.compensating.map((c) => escapeHtml(c.control_id)).join(", ")}</p>` : ""}
+        <p style="margin:8px 0 0;color:#6b7280;font-size:12px;">Determination counts never mark controls compliant by themselves. Unassessed controls are not satisfied.</p>
+      </div>`
+    : `<div class="card" style="margin-top:12px;"><h3>No baseline selected</h3><p>Run <code>ges nist baseline set moderate</code> to begin.</p></div>`;
+
+  const families = [...new Set(nist.controls.map((c) => c.family))].sort();
+  const explorer = `
+    <div class="tab-bar" id="nist-tabs">
+      <button class="tab-btn active" onclick="showNistTab('overview', this)">Overview</button>
+      <button class="tab-btn" onclick="showNistTab('controls', this)">Control Explorer (${nist.controls.length})</button>
+      <button class="tab-btn" onclick="showNistTab('evidence', this)">Evidence (${nist.evidence.length})</button>
+      <button class="tab-btn" onclick="showNistTab('poam', this)">POA&M (${nist.poam.length})</button>
+      <button class="tab-btn" onclick="showNistTab('workflow', this)">Workflow</button>
+    </div>
+    <div id="nist-tab-overview" class="tab-panel">
+      ${statCards}
+      ${baselineInfo}
+      <div class="card" style="margin-top:12px;padding:10px 14px;background:#f8fafc;">
+        <p style="margin:0;font-size:12px;color:#6b7280;">GESF is a NIST-aligned assessment tool, not a NIST-certified product. Dashboard figures are organization-recorded assessment data; they do not constitute certification, accreditation, authorization, or endorsement by NIST.</p>
+      </div>
+    </div>
+    <div id="nist-tab-controls" class="tab-panel" style="display:none;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <input id="nist-filter-search" placeholder="Search ID / title..." oninput="renderNistControls(0)" style="flex:1;min-width:160px;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;">
+        <select id="nist-filter-family" onchange="renderNistControls(0)"><option value="">All families</option>${families.map((f) => `<option value="${f}">${f}</option>`).join("")}</select>
+        <select id="nist-filter-impl" onchange="renderNistControls(0)"><option value="">Any implementation</option><option value="implemented">implemented</option><option value="partially-implemented">partially-implemented</option><option value="planned">planned</option><option value="not-implemented">not-implemented</option><option value="alternative-implementation">alternative-implementation</option><option value="inherited">inherited</option></select>
+        <select id="nist-filter-det" onchange="renderNistControls(0)"><option value="">Any determination</option><option value="satisfied">satisfied</option><option value="other-than-satisfied">other-than-satisfied</option><option value="not-assessed">not-assessed</option><option value="not-applicable">not-applicable</option></select>
+        <select id="nist-filter-evidence" onchange="renderNistControls(0)"><option value="">Any evidence</option><option value="with">with evidence</option><option value="without">awaiting evidence</option></select>
+      </div>
+      <div id="nist-controls-table"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+        <button class="gov-btn" onclick="renderNistControls(Math.max(0, nistPage-1))">Prev</button>
+        <span id="nist-page-info" style="font-size:12px;color:#6b7280;"></span>
+        <button class="gov-btn" onclick="renderNistControls(nistPage+1)">Next</button>
+      </div>
+    </div>
+    <div id="nist-tab-evidence" class="tab-panel" style="display:none;">
+      <table><thead><tr><th>Evidence</th><th>Type</th><th>Classification</th><th>Review</th><th>Controls</th><th>Collected</th><th>Expires</th></tr></thead><tbody>
+        ${nist.evidence.length === 0 ? `<tr><td colspan="7">No evidence recorded. Evidence existence is not proof of implementation.</td></tr>` : ""}
+        ${nist.evidence.map((e) => `<tr>
+          <td>${escapeHtml(e.title)}${e.withheld ? ` <span class="badge badge-status" style="background:#b45309;">refs withheld</span>` : ""}</td>
+          <td>${escapeHtml(e.evidence_type)}</td>
+          <td>${escapeHtml(e.classification)}</td>
+          <td>${escapeHtml(e.review_status)}</td>
+          <td>${e.control_ids.map(escapeHtml).join(", ") || "—"}</td>
+          <td>${escapeHtml(e.collected_at)}</td>
+          <td>${e.expires_at ? escapeHtml(e.expires_at) : "—"}</td>
+        </tr>`).join("")}
+      </tbody></table>
+    </div>
+    <div id="nist-tab-poam" class="tab-panel" style="display:none;">
+      <table><thead><tr><th>POA&M</th><th>Control</th><th>Owner</th><th>Status</th><th>Risk</th><th>Target</th><th>Milestones</th></tr></thead><tbody>
+        ${nist.poam.length === 0 ? `<tr><td colspan="7">No POA&M items.</td></tr>` : ""}
+        ${nist.poam.map((p) => {
+          const overdue = p.overdue_milestones.length > 0 || p.target_overdue;
+          const completed = p.item.milestones.filter((m) => m.status === "completed").length;
+          return `<tr${overdue ? ' style="background:#fef2f2;"' : ""}>
+            <td>${escapeHtml(p.item.title)}${overdue ? ` <span class="badge badge-sev" style="background:#dc2626;">overdue</span>` : ""}</td>
+            <td>${escapeHtml(p.item.control_id)}</td>
+            <td>${escapeHtml(p.item.owner)}</td>
+            <td>${escapeHtml(p.item.status)}</td>
+            <td>${p.item.risk_level ? nistSevBadge(p.item.risk_level) : "—"}</td>
+            <td>${p.item.target_completion_date ? escapeHtml(p.item.target_completion_date) : "—"}</td>
+            <td>${completed}/${p.item.milestones.length}</td>
+          </tr>`;
+        }).join("")}
+      </tbody></table>
+      ${nist.findings.length ? `<h3 style="margin-top:16px;">Findings</h3>
+      <table><thead><tr><th>Finding</th><th>Control</th><th>Severity</th><th>Status</th></tr></thead><tbody>
+        ${nist.findings.map((f) => `<tr><td>${escapeHtml(f.title)}</td><td>${escapeHtml(f.control_id)}</td><td>${nistSevBadge(f.severity)}</td><td>${f.status === "open" ? `<span class="badge badge-status" style="background:#dc2626;">open</span>` : `<span class="badge badge-status" style="background:#16a34a;">resolved</span>`}</td></tr>`).join("")}
+      </tbody></table>` : ""}
+    </div>
+    <div id="nist-tab-workflow" class="tab-panel" style="display:none;">
+      ${nist.workflow && nist.workflow.transitions.length > 0 ? `<table><thead><tr><th>When</th><th>From</th><th>To</th><th>Actor</th></tr></thead><tbody>
+        ${nist.workflow.transitions.map((t) => `<tr><td>${escapeHtml(t.timestamp)}</td><td>${escapeHtml(t.from)}</td><td>${escapeHtml(t.to)}</td><td>${t.actor ? escapeHtml(t.actor) : "—"}</td></tr>`).join("")}
+      </tbody></table>` : "<p>No workflow transitions recorded. Use <code>ges nist workflow</code>.</p>"}
+    </div>
+    <div class="gov-modal-overlay" id="nist-modal-overlay" onclick="if(event.target===this)closeNistModal()">
+      <div class="gov-modal" id="nist-modal"></div>
+    </div>
+    <script>
+    (function() {
+      window.nistControls = ${JSON.stringify(nist.controls)};
+      window.nistPage = 0;
+      window.showNistTab = function(tab, btn) {
+        var panels = document.querySelectorAll('#nist-tabs ~ div[id^="nist-tab-"]');
+        for (var i = 0; i < panels.length; i++) panels[i].style.display = 'none';
+        var target = document.getElementById('nist-tab-' + tab);
+        if (target) target.style.display = 'block';
+        var btns = document.querySelectorAll('#nist-tabs .tab-btn');
+        for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
+        if (btn) btn.classList.add('active');
+      };
+      window.renderNistControls = function(page) {
+        var search = (document.getElementById('nist-filter-search').value || '').toUpperCase();
+        var family = document.getElementById('nist-filter-family').value;
+        var impl = document.getElementById('nist-filter-impl').value;
+        var det = document.getElementById('nist-filter-det').value;
+        var ev = document.getElementById('nist-filter-evidence').value;
+        var filtered = window.nistControls.filter(function(c) {
+          if (search && c.id.toUpperCase().indexOf(search) === -1 && c.title.toUpperCase().indexOf(search) === -1) return false;
+          if (family && c.family !== family) return false;
+          if (impl && (c.implementation_status || 'not-implemented') !== impl) return false;
+          if (det && (c.determination || 'not-assessed') !== det) return false;
+          if (ev === 'with' && c.evidence_count === 0) return false;
+          if (ev === 'without' && c.evidence_count > 0) return false;
+          return true;
+        });
+        var perPage = 25;
+        var pages = Math.max(1, Math.ceil(filtered.length / perPage));
+        if (page >= pages) page = pages - 1;
+        if (page < 0) page = 0;
+        window.nistPage = page;
+        var slice = filtered.slice(page * perPage, (page + 1) * perPage);
+        var rows = slice.map(function(c) {
+          var detBadge = c.determination === 'satisfied' ? '<span class="badge badge-status" style="background:#16a34a;">satisfied</span>'
+            : c.determination === 'other-than-satisfied' ? '<span class="badge badge-status" style="background:#dc2626;">other-than-satisfied</span>'
+            : '<span class="badge badge-status" style="background:#9ca3af;">not-assessed</span>';
+          return '<tr onclick="openNistControl(\'' + c.id + '\')" style="cursor:pointer;">'
+            + '<td><strong>' + c.id + '</strong></td><td>' + c.title + '</td><td>' + c.family + '</td>'
+            + '<td>' + (c.implementation_status || '—') + '</td><td>' + detBadge + '</td>'
+            + '<td>' + c.evidence_count + '</td><td>' + c.open_findings + '</td><td>' + c.open_poam + '</td></tr>';
+        }).join('');
+        document.getElementById('nist-controls-table').innerHTML = '<table><thead><tr><th>Control</th><th>Title</th><th>Family</th><th>Implementation</th><th>Determination</th><th>Evidence</th><th>Findings</th><th>POA&M</th></tr></thead><tbody>'
+          + (rows || '<tr><td colspan="8">No controls match the current filters.</td></tr>') + '</tbody></table>';
+        document.getElementById('nist-page-info').textContent = 'Page ' + (page + 1) + ' of ' + pages + ' (' + filtered.length + ' controls)';
+      };
+      window.openNistControl = function(id) {
+        var c = window.nistControls.find(function(x) { return x.id === id; });
+        if (!c) return;
+        var html = '<h3 style="margin-top:0;">' + c.id + ' — ' + c.title + '</h3>'
+          + '<p><strong>Family:</strong> ' + c.family + ' · <strong>Implementation:</strong> ' + (c.implementation_status || '—') + ' · <strong>Determination:</strong> ' + (c.determination || 'not-assessed') + '</p>'
+          + (c.owner ? '<p><strong>Owner:</strong> ' + c.owner + '</p>' : '')
+          + (c.inherited_from ? '<p><strong>Inherited from:</strong> ' + c.inherited_from + '</p>' : '')
+          + '<h4>Control statement</h4><pre style="white-space:pre-wrap;background:#f4f4f4;padding:8px;border-radius:4px;">' + c.statement + '</pre>'
+          + (c.guidance ? '<h4>Supplemental guidance</h4><p style="font-size:13px;">' + c.guidance + '</p>' : '')
+          + '<p style="font-size:12px;color:#6b7280;">' + c.objectives + ' assessment objectives · Methods: ' + (c.methods.length ? c.methods.join(', ') : '—') + '</p>'
+          + '<div style="text-align:right;"><button class="gov-btn" onclick="closeNistModal()">Close</button></div>';
+        document.getElementById('nist-modal').innerHTML = html;
+        document.getElementById('nist-modal-overlay').style.display = 'flex';
+      };
+      window.closeNistModal = function() {
+        document.getElementById('nist-modal-overlay').style.display = 'none';
+      };
+      if (document.getElementById('nist-controls-table')) renderNistControls(0);
+    })();
+    </script>`;
+  return explorer;
 }

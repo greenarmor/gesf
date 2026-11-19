@@ -1204,3 +1204,789 @@ describe("safeWriteJson / safeWriteFile / safeReadJson", () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// NIST SP 800-53 assessment module (Phase 14 tests)
+// ---------------------------------------------------------------------------
+import {
+  loadNistBaselineSelection,
+  setNistBaselineSelection,
+  addBaselineExclusion,
+  addBaselineInheritance,
+  addBaselineCompensating,
+  loadNistControlOwners,
+  setNistControlOwner,
+  createNistAssessment,
+  updateNistAssessment,
+  recordNistDetermination,
+  addNistDeficiency,
+  getLatestNistAssessmentForControl,
+  loadNistEvidence,
+  addNistEvidence,
+  validateEvidenceReference,
+  reviewNistEvidence,
+  deleteNistEvidence,
+  linkEvidenceToControl,
+  hasEvidenceForControl,
+  getExpiringNistEvidence,
+  computeSha256,
+  loadNistFindings,
+  addNistFinding,
+  closeNistFinding,
+  addNistPoamItem,
+  addNistPoamMilestone,
+  completeNistPoamMilestone,
+  getOverdueNistPoam,
+  setNistPoamStatus,
+  ensureNistWorkflow,
+  loadNistWorkflow,
+  setNistWorkflowScope,
+  transitionNistWorkflow,
+  isWorkflowTransitionAllowed,
+  DEFAULT_RISK_MATRIX,
+  scoreNistRisk,
+  buildNistRiskRating,
+  loadNistRiskMatrix,
+  saveNistRiskMatrix,
+  summarizeNistAssessment,
+} from "./nist/index.js";
+import {
+  NistBaselineSelectionSchema,
+  NistAssessmentRecordSchema,
+  NistEvidenceItemSchema,
+  NistPoamItemSchema,
+} from "./schemas/index.js";
+
+describe("NIST SP 800-53 assessment module", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gesf-nist-test-"));
+    fs.mkdirSync(path.join(tmpDir, ".ges"), { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  const MODERATE_IDS = ["AC-2", "AC-3", "AU-2", "CA-7"];
+
+  function setModerateBaseline(): void {
+    setNistBaselineSelection(tmpDir, {
+      kind: "moderate",
+      label: "Moderate Baseline",
+      control_ids: [...MODERATE_IDS],
+      catalog_version: "5.2.0",
+    });
+  }
+
+  function makeAssessment(controlId: string, status: Parameters<typeof createNistAssessment>[1]["implementation_status"]) {
+    return createNistAssessment(tmpDir, {
+      project_id: "proj-1",
+      control_id: controlId,
+      scope: "Full system boundary",
+      implementation_status: status,
+      assessment_objective: "Determine whether the control is implemented correctly and operating as intended.",
+      assessor: "Assessor One",
+      control_owner: "Control Owner",
+    });
+  }
+
+  describe("baseline selection (SP 800-53B)", () => {
+    it("persists low, moderate and high selections", () => {
+      for (const kind of ["low", "moderate", "high"] as const) {
+        const selection = setNistBaselineSelection(tmpDir, {
+          kind,
+          label: `${kind} baseline`,
+          control_ids: ["AC-2", "AC-3"],
+          catalog_version: "5.2.0",
+        });
+        expect(selection.kind).toBe(kind);
+        expect(fs.existsSync(path.join(tmpDir, ".ges", "nist-baseline.json"))).toBe(true);
+        const loaded = loadNistBaselineSelection(tmpDir);
+        expect(loaded?.control_ids).toEqual(["AC-2", "AC-3"]);
+      }
+    });
+
+    it("supports tailored baselines with derived_from", () => {
+      const tailored = setNistBaselineSelection(tmpDir, {
+        kind: "tailored",
+        label: "Org tailored moderate",
+        derived_from: "moderate",
+        control_ids: [...MODERATE_IDS, "SI-4"],
+        catalog_version: "5.2.0",
+      });
+      expect(tailored.kind).toBe("tailored");
+      expect(tailored.derived_from).toBe("moderate");
+      expect(tailored.control_ids).toContain("SI-4");
+    });
+
+    it("never marks controls as assessed when a baseline is set", () => {
+      setModerateBaseline();
+      expect(fs.existsSync(path.join(tmpDir, ".ges", "nist-assessments.json"))).toBe(false);
+      const summary = summarizeNistAssessment(tmpDir);
+      expect(summary.applicable_controls).toBe(MODERATE_IDS.length);
+      expect(summary.assessed).toBe(0);
+      expect(summary.not_assessed).toBe(MODERATE_IDS.length);
+    });
+
+    it("preserves the previous selection instead of silently discarding it", () => {
+      setModerateBaseline();
+      const second = setNistBaselineSelection(tmpDir, {
+        kind: "high",
+        label: "High Baseline",
+        control_ids: [...MODERATE_IDS, "SC-8"],
+        catalog_version: "5.2.0",
+      });
+      expect(second.previous_selections).toHaveLength(1);
+      expect(second.previous_selections[0].label).toBe("Moderate Baseline");
+      expect(second.previous_selections[0].control_ids).toEqual(MODERATE_IDS);
+    });
+
+    it("carries over tailoring decisions that still apply and drops the rest", () => {
+      setModerateBaseline();
+      addBaselineExclusion(tmpDir, "AC-3", "Not applicable to this system boundary.");
+      addBaselineInheritance(tmpDir, "AU-2", "Corporate SIEM", "Audit logging inherited from central platform.");
+      addBaselineCompensating(tmpDir, "CA-7", "Commercial CSPM tooling", "Alternative continuous monitoring stack.");
+
+      const high = setNistBaselineSelection(tmpDir, {
+        kind: "high",
+        label: "High Baseline",
+        control_ids: [...MODERATE_IDS, "SC-8"],
+        catalog_version: "5.2.0",
+      });
+      expect(high.exclusions.map((e) => e.control_id)).toEqual(["AC-3"]);
+      expect(high.inherited.map((i) => i.control_id)).toEqual(["AU-2"]);
+      expect(high.compensating.map((c) => c.control_id)).toEqual(["CA-7"]);
+
+      const low = setNistBaselineSelection(tmpDir, {
+        kind: "low",
+        label: "Low Baseline",
+        control_ids: ["AC-2"],
+        catalog_version: "5.2.0",
+      });
+      expect(low.exclusions).toHaveLength(0);
+      expect(low.inherited).toHaveLength(0);
+      expect(low.compensating).toHaveLength(0);
+    });
+  });
+
+  describe("control ownership", () => {
+    it("assigns and replaces a control owner", () => {
+      setNistControlOwner(tmpDir, "AC-2", "alice", "Security", "cio");
+      setNistControlOwner(tmpDir, "AC-3", "bob", "Platform", "cio");
+      const replaced = setNistControlOwner(tmpDir, "AC-2", "carol", "Security", "cio");
+      expect(replaced.owner).toBe("carol");
+      const owners = loadNistControlOwners(tmpDir);
+      expect(owners).toHaveLength(2);
+      expect(owners.find((o) => o.control_id === "AC-2")?.owner).toBe("carol");
+    });
+  });
+
+  describe("assessment records and determinations", () => {
+    it("creates assessments as not-assessed regardless of implementation status", () => {
+      const record = makeAssessment("AC-2", "implemented");
+      expect(record.determination).toBe("not-assessed");
+      expect(record.methods).toEqual([]);
+      expect(record.history).toHaveLength(1);
+      expect(record.history[0].action).toBe("created");
+    });
+
+    it("records a satisfied determination with examine/interview/test methods", () => {
+      for (const methods of [["examine"], ["interview"], ["test"], ["examine", "interview", "test"]] as const) {
+        const record = makeAssessment("AC-2", "implemented");
+        const result = recordNistDetermination(tmpDir, record.id, {
+          determination: "satisfied",
+          rationale: "Examined policy, interviewed admins and tested enforcement end to end.",
+          methods: [...methods],
+          actor: "assessor-1",
+        });
+        expect(result.error).toBeUndefined();
+        expect(result.record?.determination).toBe("satisfied");
+        expect(result.record?.methods).toEqual([...methods]);
+        expect(result.record?.history.at(-1)?.action).toBe("determination");
+        expect(result.record?.history.at(-1)?.actor).toBe("assessor-1");
+      }
+    });
+
+    it("rejects satisfied when implementation status is not-implemented or planned", () => {
+      for (const status of ["not-implemented", "planned"] as const) {
+        const record = makeAssessment("AC-3", status);
+        const result = recordNistDetermination(tmpDir, record.id, {
+          determination: "satisfied",
+          rationale: "Claiming satisfaction anyway.",
+          methods: ["examine"],
+        });
+        expect(result.record).toBeNull();
+        expect(result.error).toContain("satisfied");
+        const still = getLatestNistAssessmentForControl(tmpDir, "AC-3");
+        expect(still?.determination).toBe("not-assessed");
+      }
+    });
+
+    it("allows other-than-satisfied on not-implemented controls", () => {
+      const record = makeAssessment("AU-2", "not-implemented");
+      const result = recordNistDetermination(tmpDir, record.id, {
+        determination: "other-than-satisfied",
+        rationale: "No audit logging capability exists.",
+        methods: ["examine"],
+      });
+      expect(result.record?.determination).toBe("other-than-satisfied");
+    });
+
+    it("requires a rationale and at least one method", () => {
+      const record = makeAssessment("CA-7", "implemented");
+      const noRationale = recordNistDetermination(tmpDir, record.id, {
+        determination: "satisfied",
+        rationale: "   ",
+        methods: ["examine"],
+      });
+      expect(noRationale.error).toContain("rationale");
+      const noMethods = recordNistDetermination(tmpDir, record.id, {
+        determination: "satisfied",
+        rationale: "Valid rationale.",
+        methods: [],
+      });
+      expect(noMethods.error).toContain("method");
+    });
+
+    it("records per-objective determination results", () => {
+      const record = makeAssessment("AC-2", "implemented");
+      const result = recordNistDetermination(tmpDir, record.id, {
+        determination: "other-than-satisfied",
+        rationale: "One objective failed.",
+        methods: ["test"],
+        objective_results: [
+          { objective_id: "AC-02.01", determination: "satisfied" },
+          { objective_id: "AC-02.02", determination: "other-than-satisfied", notes: "Guest access not reviewed." },
+        ],
+      });
+      expect(result.record?.objectives).toHaveLength(2);
+      expect(result.record?.objectives[1].determination).toBe("other-than-satisfied");
+    });
+
+    it("blocks direct determination changes through updateNistAssessment", () => {
+      const record = makeAssessment("AC-2", "implemented");
+      const updated = updateNistAssessment(tmpDir, record.id, {
+        determination: "satisfied",
+      } as Parameters<typeof updateNistAssessment>[2]);
+      expect(updated?.determination).toBe("not-assessed");
+    });
+
+    it("returns null when updating a missing assessment", () => {
+      expect(updateNistAssessment(tmpDir, "missing", {})).toBeNull();
+    });
+
+    it("tracks deficiencies and latest assessment per control", () => {
+      const first = makeAssessment("AC-2", "partially-implemented");
+      const later = createNistAssessment(tmpDir, {
+        project_id: "proj-1",
+        control_id: "AC-2",
+        scope: "Full system boundary",
+        implementation_status: "implemented",
+        assessment_objective: "Reassessment.",
+        assessor: "Assessor Two",
+        control_owner: "Control Owner",
+        assessment_date: "2099-01-01",
+      });
+      const withDeficiency = addNistDeficiency(tmpDir, first.id, "Account review not performed.", ["AC-02.03"]);
+      expect(withDeficiency?.deficiencies).toHaveLength(1);
+      expect(withDeficiency?.deficiencies[0].objective_ids).toEqual(["AC-02.03"]);
+      expect(getLatestNistAssessmentForControl(tmpDir, "AC-2")?.id).toBe(later.id);
+    });
+  });
+
+  describe("evidence management", () => {
+    it("adds evidence with a URL reference and defaults to pending review", () => {
+      const { evidence, error } = addNistEvidence(tmpDir, {
+        title: "Access control policy",
+        description: "Latest AC policy from the governance wiki.",
+        evidence_type: "policy",
+        control_ids: ["AC-1", "AC-2"],
+        source_system: "Confluence",
+        url: "https://wiki.example.test/display/security/ac-policy",
+        collection_method: "export",
+        collected_by: "auditor",
+        owner: "security-team",
+        classification: "internal",
+      });
+      expect(error).toBeUndefined();
+      expect(evidence?.review_status).toBe("pending-review");
+      expect(evidence?.control_ids).toEqual(["AC-1", "AC-2"]);
+      expect(hasEvidenceForControl(tmpDir, "AC-1")).toBe(true);
+      expect(hasEvidenceForControl(tmpDir, "AC-2")).toBe(true);
+    });
+
+    it("adds evidence with a relative file reference inside the project", () => {
+      const { evidence, error } = addNistEvidence(tmpDir, {
+        title: "Firewall ruleset",
+        description: "Exported perimeter rules.",
+        evidence_type: "configuration",
+        control_ids: ["SC-7"],
+        source_system: "firewall",
+        file_reference: "evidence/firewall-rules.txt",
+        collection_method: "manual export",
+        collected_by: "netops",
+        owner: "netops",
+        classification: "confidential",
+      });
+      expect(error).toBeUndefined();
+      expect(evidence?.file_reference).toBe("evidence/firewall-rules.txt");
+    });
+
+    it("rejects path traversal in file references", () => {
+      const { evidence, error } = addNistEvidence(tmpDir, {
+        title: "Hostile",
+        description: "Attempts to escape the project root.",
+        evidence_type: "other",
+        control_ids: ["AC-2"],
+        source_system: "test",
+        file_reference: "../../etc/passwd",
+        collection_method: "manual",
+        collected_by: "attacker",
+        owner: "attacker",
+        classification: "public",
+      });
+      expect(evidence).toBeNull();
+      expect(error).toBeTruthy();
+    });
+
+    it("rejects absolute file references and non-http(s) URLs", () => {
+      expect(
+        validateEvidenceReference(tmpDir, { file_reference: "/etc/passwd" }).valid,
+      ).toBe(false);
+      expect(
+        validateEvidenceReference(tmpDir, { url: "file:///etc/passwd" }).valid,
+      ).toBe(false);
+      expect(
+        validateEvidenceReference(tmpDir, { url: "not a url" }).valid,
+      ).toBe(false);
+      expect(
+        validateEvidenceReference(tmpDir, {}).valid,
+      ).toBe(false);
+      expect(
+        validateEvidenceReference(tmpDir, { url: "https://example.test/evidence" }).valid,
+      ).toBe(true);
+    });
+
+    it("requires explicit authorization to delete approved evidence", () => {
+      const { evidence } = addNistEvidence(tmpDir, {
+        title: "Pen test report",
+        description: "Annual penetration test.",
+        evidence_type: "penetration-test",
+        control_ids: ["RA-5"],
+        source_system: "pentest vendor",
+        url: "https://example.test/pentest",
+        collection_method: "vendor delivery",
+        collected_by: "vendor",
+        owner: "security-team",
+        classification: "restricted",
+      });
+      const id = evidence?.id as string;
+      reviewNistEvidence(tmpDir, id, "approved", "lead assessor");
+      const blocked = deleteNistEvidence(tmpDir, id, { authorized_by: "someone" });
+      expect(blocked.deleted).toBe(false);
+      expect(blocked.error).toBeTruthy();
+      const forced = deleteNistEvidence(tmpDir, id, { authorized_by: "ciso", force: true });
+      expect(forced.deleted).toBe(true);
+      expect(loadNistEvidence(tmpDir)).toHaveLength(0);
+    });
+
+    it("deletes pending-review evidence without force", () => {
+      const { evidence } = addNistEvidence(tmpDir, {
+        title: "Draft screenshot",
+        description: "Wrong control.",
+        evidence_type: "screenshot",
+        control_ids: ["AC-2"],
+        source_system: "laptop",
+        url: "https://example.test/draft",
+        collection_method: "screenshot",
+        collected_by: "auditor",
+        owner: "auditor",
+        classification: "internal",
+      });
+      const result = deleteNistEvidence(tmpDir, evidence?.id as string, { authorized_by: "auditor" });
+      expect(result.deleted).toBe(true);
+    });
+
+    it("links existing evidence to additional controls", () => {
+      const { evidence } = addNistEvidence(tmpDir, {
+        title: "Shared config",
+        description: "Covers several controls.",
+        evidence_type: "configuration",
+        control_ids: ["CM-2"],
+        source_system: "ansible",
+        url: "https://example.test/config",
+        collection_method: "export",
+        collected_by: "ops",
+        owner: "ops",
+        classification: "internal",
+      });
+      const linked = linkEvidenceToControl(tmpDir, evidence?.id as string, "CM-6");
+      expect(linked?.control_ids).toEqual(["CM-2", "CM-6"]);
+      const again = linkEvidenceToControl(tmpDir, evidence?.id as string, "CM-6");
+      expect(again?.control_ids).toEqual(["CM-2", "CM-6"]);
+    });
+
+    it("detects evidence approaching expiry", () => {
+      const today = new Date("2026-06-15T00:00:00Z");
+      const soon = "2026-06-25";
+      const far = "2027-06-25";
+      for (const expires_at of [soon, far]) {
+        addNistEvidence(tmpDir, {
+          title: `Scan ${expires_at}`,
+          description: "Scanner output.",
+          evidence_type: "vulnerability-report",
+          control_ids: ["RA-5"],
+          source_system: "scanner",
+          url: `https://example.test/scan/${expires_at}`,
+          collection_method: "automated",
+          collected_by: "scanner",
+          owner: "security-team",
+          classification: "internal",
+          expires_at,
+        });
+      }
+      const expiring = getExpiringNistEvidence(tmpDir, 30, today);
+      expect(expiring).toHaveLength(1);
+      expect(expiring[0].expires_at).toBe(soon);
+    });
+
+    it("computes a SHA-256 integrity digest for known content", () => {
+      const filePath = path.join(tmpDir, "evidence.txt");
+      fs.writeFileSync(filePath, "gesf evidence integrity");
+      const digest = computeSha256(filePath);
+      expect(digest).toMatch(/^[a-f0-9]{64}$/);
+      expect(computeSha256(path.join(tmpDir, "missing.txt"))).toBeNull();
+    });
+  });
+
+  describe("findings", () => {
+    it("creates findings and links them to the assessment", () => {
+      const record = makeAssessment("AC-2", "partially-implemented");
+      const finding = addNistFinding(tmpDir, {
+        control_id: "AC-2",
+        assessment_id: record.id,
+        title: "Quarterly account review missing",
+        description: "No evidence of quarterly reviews.",
+        severity: "medium",
+      });
+      expect(finding.status).toBe("open");
+      const linked = getLatestNistAssessmentForControl(tmpDir, "AC-2");
+      expect(linked?.finding_ids).toContain(finding.id);
+      expect(loadNistFindings(tmpDir)).toHaveLength(1);
+    });
+
+    it("refuses to close findings without a satisfied verification on the same control", () => {
+      const original = makeAssessment("AC-2", "partially-implemented");
+      const finding = addNistFinding(tmpDir, {
+        control_id: "AC-2",
+        assessment_id: original.id,
+        title: "Deficiency",
+        description: "Not fixed yet.",
+        severity: "low",
+      });
+
+      const unassessed = makeAssessment("AC-2", "implemented");
+      const blocked = closeNistFinding(tmpDir, finding.id, unassessed.id);
+      expect(blocked.finding).toBeNull();
+      expect(blocked.error).toContain("satisfied");
+
+      const otherControl = makeAssessment("AC-3", "implemented");
+      recordNistDetermination(tmpDir, otherControl.id, {
+        determination: "satisfied",
+        rationale: "AC-3 verified.",
+        methods: ["examine"],
+      });
+      const wrongControl = closeNistFinding(tmpDir, finding.id, otherControl.id);
+      expect(wrongControl.finding).toBeNull();
+      expect(wrongControl.error).toContain("AC-3");
+    });
+
+    it("closes a finding after a verified reassessment", () => {
+      const original = makeAssessment("AC-2", "partially-implemented");
+      const finding = addNistFinding(tmpDir, {
+        control_id: "AC-2",
+        assessment_id: original.id,
+        title: "Deficiency",
+        description: "Fixed via POA&M remediation.",
+        severity: "low",
+      });
+      const verification = makeAssessment("AC-2", "implemented");
+      recordNistDetermination(tmpDir, verification.id, {
+        determination: "satisfied",
+        rationale: "Remediation verified by test.",
+        methods: ["test"],
+      });
+      const closed = closeNistFinding(tmpDir, finding.id, verification.id);
+      expect(closed.finding?.status).toBe("resolved");
+      expect(closed.finding?.resolution_assessment_id).toBe(verification.id);
+      expect(loadNistFindings(tmpDir)[0].status).toBe("resolved");
+    });
+  });
+
+  describe("POA&M", () => {
+    function addOverduePoam(): string {
+      const item = addNistPoamItem(tmpDir, {
+        control_id: "AU-2",
+        title: "Deploy central audit logging",
+        description: "Audit records are incomplete.",
+        root_cause: "Logging never configured on staging.",
+        security_impact: "Reduced investigative capability.",
+        likelihood: "high",
+        risk_level: "high",
+        remediation_strategy: "Ship central logging agent to all hosts.",
+        corrective_actions: ["Install agent", "Verify pipeline"],
+        owner: "platform-team",
+        department: "Engineering",
+        target_completion_date: "2020-01-01",
+        milestones: [{ title: "Agent rollout", due_date: "2019-12-01" }],
+      });
+      return item.id;
+    }
+
+    it("creates a POA&M item with milestones in open status", () => {
+      const item = addNistPoamItem(tmpDir, {
+        control_id: "CA-7",
+        title: "Continuous monitoring gaps",
+        description: "No alerting on privileged access.",
+        remediation_strategy: "Deploy SIEM alert pack.",
+        owner: "soc",
+        milestones: [{ title: "Alert rules", due_date: "2099-01-01" }],
+      });
+      expect(item.status).toBe("open");
+      expect(item.milestones).toHaveLength(1);
+      expect(item.milestones[0].status).toBe("planned");
+    });
+
+    it("detects overdue milestones and target dates for active items", () => {
+      const id = addOverduePoam();
+      const overdue = getOverdueNistPoam(tmpDir);
+      expect(overdue).toHaveLength(1);
+      expect(overdue[0].item.id).toBe(id);
+      expect(overdue[0].overdue_milestones).toHaveLength(1);
+      expect(overdue[0].target_overdue).toBe(true);
+    });
+
+    it("clears overdue detection when the milestone is completed", () => {
+      const id = addOverduePoam();
+      const item = getOverdueNistPoam(tmpDir)[0].item;
+      completeNistPoamMilestone(tmpDir, id, item.milestones[0].id);
+      const stillOverdue = getOverdueNistPoam(tmpDir);
+      expect(stillOverdue).toHaveLength(1);
+      expect(stillOverdue[0].overdue_milestones).toHaveLength(0);
+      expect(stillOverdue[0].target_overdue).toBe(true);
+    });
+
+    it("ignores completed, accepted-risk and closed items", () => {
+      const id = addOverduePoam();
+      for (const status of ["completed", "accepted-risk", "closed"] as const) {
+        setNistPoamStatus(tmpDir, id, status);
+        expect(getOverdueNistPoam(tmpDir)).toHaveLength(0);
+      }
+    });
+
+    it("appends additional milestones", () => {
+      const id = addOverduePoam();
+      const updated = addNistPoamMilestone(tmpDir, id, "Pipeline verification", "2099-02-02");
+      expect(updated?.milestones).toHaveLength(2);
+    });
+  });
+
+  describe("assessment workflow", () => {
+    it("creates a draft campaign once and reuses it", () => {
+      const first = ensureNistWorkflow(tmpDir, "proj-1");
+      expect(first.state).toBe("draft");
+      const second = ensureNistWorkflow(tmpDir, "proj-1");
+      expect(second.id).toBe(first.id);
+      expect(setNistWorkflowScope(tmpDir, "Production system")?.scope).toBe("Production system");
+    });
+
+    it("walks the full lifecycle through allowed transitions", () => {
+      ensureNistWorkflow(tmpDir, "proj-1");
+      const chain = [
+        "in-progress",
+        "ready-for-assessment",
+        "under-assessment",
+        "assessment-completed",
+        "remediation-required",
+        "under-assessment",
+        "assessment-completed",
+        "closed",
+      ] as const;
+      for (const state of chain) {
+        const result = transitionNistWorkflow(tmpDir, state, { actor: "pm" });
+        expect(result.error).toBeUndefined();
+        expect(result.campaign?.state).toBe(state);
+      }
+      const campaign = loadNistWorkflow(tmpDir);
+      expect(campaign?.transitions).toHaveLength(chain.length);
+      expect(campaign?.transitions[0].actor).toBe("pm");
+    });
+
+    it("rejects invalid transitions and repeats", () => {
+      ensureNistWorkflow(tmpDir, "proj-1");
+      const invalid = transitionNistWorkflow(tmpDir, "closed");
+      expect(invalid.campaign).toBeNull();
+      expect(invalid.error).toContain("not allowed");
+      expect(isWorkflowTransitionAllowed("draft", "closed")).toBe(false);
+      expect(isWorkflowTransitionAllowed("draft", "in-progress")).toBe(true);
+      const repeat = transitionNistWorkflow(tmpDir, "draft");
+      expect(repeat.error).toContain("already");
+      expect(transitionNistWorkflow("/nonexistent-gesf-dir", "in-progress").campaign).toBeNull();
+    });
+  });
+
+  describe("risk matrix", () => {
+    it("scores risk with the default 5x5 organizational matrix", () => {
+      expect(scoreNistRisk("moderate", "high")).toEqual({ score: 12, rating: "high" });
+      expect(scoreNistRisk("very-low", "very-low")).toEqual({ score: 1, rating: "low" });
+      expect(scoreNistRisk("very-high", "very-high")).toEqual({ score: 25, rating: "critical" });
+      expect(scoreNistRisk("bogus", "high")).toBeNull();
+    });
+
+    it("builds risk ratings with treatment metadata", () => {
+      const { rating, error } = buildNistRiskRating("high", "moderate", DEFAULT_RISK_MATRIX, {
+        treatment: "mitigate",
+        risk_owner: "ciso",
+      });
+      expect(error).toBeUndefined();
+      expect(rating?.score).toBe(12);
+      expect(rating?.rating).toBe("high");
+      expect(rating?.matrix_name).toBe("default-5x5");
+      expect(rating?.treatment).toBe("mitigate");
+    });
+
+    it("persists a custom organizational matrix", () => {
+      const custom = {
+        name: "org-3x3",
+        likelihood_levels: ["low", "moderate", "high"],
+        impact_levels: ["low", "moderate", "high"],
+        scores: [
+          [1, 2, 3],
+          [2, 4, 6],
+          [3, 6, 9],
+        ],
+        rating_bands: [
+          { rating: "low", max_score: 3 },
+          { rating: "moderate", max_score: 6 },
+          { rating: "high", max_score: 9 },
+        ],
+      };
+      saveNistRiskMatrix(tmpDir, custom);
+      expect(loadNistRiskMatrix(tmpDir).name).toBe("org-3x3");
+      expect(scoreNistRisk("high", "high", custom)).toEqual({ score: 9, rating: "high" });
+    });
+
+    it("falls back to the default matrix when none is saved", () => {
+      expect(loadNistRiskMatrix(tmpDir).name).toBe(DEFAULT_RISK_MATRIX.name);
+    });
+  });
+
+  describe("assessment summary", () => {
+    it("counts determinations, evidence and open work accurately", () => {
+      setModerateBaseline();
+      const ac2 = makeAssessment("AC-2", "implemented");
+      recordNistDetermination(tmpDir, ac2.id, {
+        determination: "satisfied",
+        rationale: "Verified.",
+        methods: ["examine", "test"],
+      });
+      const ac3 = makeAssessment("AC-3", "not-implemented");
+      recordNistDetermination(tmpDir, ac3.id, {
+        determination: "other-than-satisfied",
+        rationale: "Enforcement missing.",
+        methods: ["test"],
+      });
+      addNistEvidence(tmpDir, {
+        title: "AC-2 evidence",
+        description: "Supports AC-2.",
+        evidence_type: "policy",
+        control_ids: ["AC-2"],
+        source_system: "wiki",
+        url: "https://example.test/ac2",
+        collection_method: "export",
+        collected_by: "auditor",
+        owner: "security",
+        classification: "internal",
+      });
+      addNistFinding(tmpDir, {
+        control_id: "AC-3",
+        assessment_id: ac3.id,
+        title: "AC-3 deficiency",
+        description: "Not enforced.",
+        severity: "high",
+      });
+      addNistPoamItem(tmpDir, {
+        control_id: "AC-3",
+        title: "Remediate AC-3",
+        description: "Enforce access policy.",
+        remediation_strategy: "Implement policy enforcement point.",
+        owner: "platform",
+        target_completion_date: "2099-01-01",
+      });
+
+      const summary = summarizeNistAssessment(tmpDir);
+      expect(summary.baseline_kind).toBe("moderate");
+      expect(summary.applicable_controls).toBe(4);
+      expect(summary.assessed).toBe(2);
+      expect(summary.satisfied).toBe(1);
+      expect(summary.other_than_satisfied).toBe(1);
+      expect(summary.not_assessed).toBe(2);
+      expect(summary.awaiting_evidence).toBe(1);
+      expect(summary.open_findings).toBe(1);
+      expect(summary.open_poam).toBe(1);
+      expect(summary.overdue_poam).toBe(0);
+    });
+
+    it("excludes tailored-out controls from applicable scope", () => {
+      setModerateBaseline();
+      addBaselineExclusion(tmpDir, "AC-3", "Out of scope.");
+      const summary = summarizeNistAssessment(tmpDir);
+      expect(summary.applicable_controls).toBe(3);
+    });
+  });
+
+  describe("schemas", () => {
+    it("parses a persisted baseline selection", () => {
+      setModerateBaseline();
+      const selection = loadNistBaselineSelection(tmpDir);
+      expect(() => NistBaselineSelectionSchema.parse(selection)).not.toThrow();
+    });
+
+    it("parses an assessment record after a determination", () => {
+      const record = makeAssessment("AC-2", "implemented");
+      recordNistDetermination(tmpDir, record.id, {
+        determination: "satisfied",
+        rationale: "Verified.",
+        methods: ["examine"],
+      });
+      const stored = getLatestNistAssessmentForControl(tmpDir, "AC-2");
+      expect(() => NistAssessmentRecordSchema.parse(stored)).not.toThrow();
+    });
+
+    it("parses evidence and POA&M items", () => {
+      const { evidence } = addNistEvidence(tmpDir, {
+        title: "Cert",
+        description: "ISO certificate.",
+        evidence_type: "certificate",
+        control_ids: ["SA-9"],
+        source_system: "vendor",
+        url: "https://example.test/cert",
+        collection_method: "vendor delivery",
+        collected_by: "procurement",
+        owner: "procurement",
+        classification: "public",
+      });
+      expect(() => NistEvidenceItemSchema.parse(evidence)).not.toThrow();
+      const item = addNistPoamItem(tmpDir, {
+        control_id: "SA-9",
+        title: "Vendor follow-up",
+        description: "Renewal overdue.",
+        remediation_strategy: "Chase vendor.",
+        owner: "procurement",
+      });
+      expect(() => NistPoamItemSchema.parse(item)).not.toThrow();
+    });
+  });
+});

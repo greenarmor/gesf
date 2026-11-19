@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as http from "node:http";
-import { collectDashboardData, collectPackDetail, collectControlDetail, startDashboard } from "./index.js";
+import { collectDashboardData, collectPackDetail, collectControlDetail, collectNistData, startDashboard } from "./index.js";
 import { renderDashboard } from "./template.js";
 
 describe("web-dashboard", () => {
@@ -1114,6 +1114,86 @@ describe("web-dashboard", () => {
       expect(parsed.length).toBe(1);
       expect(parsed[0].assignee).toBe("Second");
       await close(server);
+    });
+  });
+
+  describe("collectNistData", () => {
+    it("reports catalog stats and empty assessment state for a fresh project", () => {
+      setupProject();
+      const nist = collectNistData(tmpDir);
+      expect(nist.catalog.families).toBe(20);
+      expect(nist.catalog.total_entries).toBeGreaterThan(1000);
+      expect(nist.baseline).toBeNull();
+      expect(nist.controls).toHaveLength(0);
+      expect(nist.summary.not_assessed).toBe(0);
+      expect(nist.summary.applicable_controls).toBe(0);
+    });
+
+    it("embeds baseline controls with statements and carries summary fields", async () => {
+      setupProject();
+      const { setNistBaselineSelection } = await import("@greenarmor/ges-core");
+      setNistBaselineSelection(tmpDir, {
+        kind: "moderate",
+        label: "Moderate Baseline",
+        control_ids: ["AC-2", "AC-3", "AU-2"],
+        catalog_version: "5.2.0",
+      });
+      const nist = collectNistData(tmpDir);
+      expect(nist.baseline?.label).toBe("Moderate Baseline");
+      expect(nist.controls).toHaveLength(3);
+      expect(nist.controls[0].statement.length).toBeGreaterThan(20);
+      expect(nist.summary.applicable_controls).toBe(3);
+      expect(nist.summary.not_assessed).toBe(3);
+      expect(nist.summary.satisfied).toBe(0);
+    });
+
+    it("withholds confidential evidence references and marks them", async () => {
+      setupProject();
+      const { addNistEvidence } = await import("@greenarmor/ges-core");
+      addNistEvidence(tmpDir, {
+        title: "Public policy",
+        description: "Public.",
+        evidence_type: "policy",
+        control_ids: ["AC-1"],
+        source_system: "wiki",
+        url: "https://example.test/policy",
+        collection_method: "export",
+        collected_by: "auditor",
+        owner: "security",
+        classification: "public",
+      });
+      addNistEvidence(tmpDir, {
+        title: "Restricted pentest",
+        description: "Restricted.",
+        evidence_type: "penetration-test",
+        control_ids: ["RA-5"],
+        source_system: "vendor",
+        url: "https://example.test/pentest",
+        collection_method: "vendor delivery",
+        collected_by: "vendor",
+        owner: "security",
+        classification: "restricted",
+      });
+      const nist = collectNistData(tmpDir);
+      const restricted = nist.evidence.find((e) => e.title === "Restricted pentest");
+      const publicItem = nist.evidence.find((e) => e.title === "Public policy");
+      expect(restricted?.withheld).toBe(true);
+      expect(publicItem?.withheld).toBe(false);
+    });
+
+    it("renders the NIST page with controls and positioning note", async () => {
+      setupProject();
+      const { setNistBaselineSelection } = await import("@greenarmor/ges-core");
+      setNistBaselineSelection(tmpDir, {
+        kind: "low",
+        label: "Low Impact Baseline",
+        control_ids: ["AC-2"],
+        catalog_version: "5.2.0",
+      });
+      const html = renderDashboard(collectDashboardData(tmpDir));
+      expect(html).toContain("page-nist");
+      expect(html).toContain("NIST-aligned assessment tool, not a NIST-certified product");
+      expect(html).toContain("AC-2");
     });
   });
 });
