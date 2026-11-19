@@ -1,0 +1,56 @@
+:root {
+  --logo-max-width: 280px;
+}
+
+.md-typeset .tagline {
+  margin: -0.4rem 0 1.4rem;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--md-primary-fg-color);
+  border-left: 3px solid var(--md-primary-fg-color);
+  padding-left: 0.85rem;
+  font-style: normal;
+}
+
+.md-typeset .tagline em {
+  font-style: italic;
+  color: var(--md-accent-fg-color);
+}
+
+.md-typeset center {
+  margin-bottom: 1.2rem;
+}
+
+.md-typeset center img {
+  max-width: var(--logo-max-width);
+  height: auto;
+  border-radius: 12px;
+}
+
+.compliance-badge {
+  margin: 1rem auto;
+}
+
+.compliance-badge img {
+  max-width: 220px;
+  height: auto;
+}
+
+.compliance-score-table {
+  margin: 0 auto 1.5rem;
+  max-width: 520px;
+}
+
+.compliance-score-table th {
+  background-color: var(--md-primary-fg-color);
+  color: #fff;
+}
+
+.compliance-score-table td {
+  text-align: center;
+}
+
+.compliance-score-table td:first-child {
+  text-align: left;
+  font-weight: 700;
+}
